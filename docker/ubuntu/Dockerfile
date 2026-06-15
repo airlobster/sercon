@@ -25,9 +25,10 @@ RUN echo "alias ll='ls -la --color=auto'" >> /etc/bash.bashrc
 RUN groupadd -r appusers && useradd -r -g appusers -u 1001 appuser
 USER appuser
 
-WORKDIR /projects/sercon
+WORKDIR /sercon
+ENV ARTIFACTS_ROOT_DIR=/tmp/sercon-artifacts
 
 # to build:
 # > docker build -t my-ubuntu -f Dockerfile.ubuntu .
 # to run:
-# > docker run -it -v ~/projects:/projects my-ubuntu bash
+# > docker run -it -v ~/sercon:/sercon my-ubuntu bash
