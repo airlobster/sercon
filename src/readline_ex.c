@@ -1,0 +1,408 @@
+#include <stdio.h>
+#include <pwd.h>
+#include <sys/param.h>
+#include <unistd.h>
+#include <string.h>
+#include <ctype.h>
+#include <libgen.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include "readline_ex.h"
+#include "command.h"
+
+// registered command linked list node type
+typedef struct _rlx_command_node_t {
+	struct _rlx_command_node_t* next;
+	rlx_registered_command_t cmd;
+} rlx_command_node_t;
+
+// internal readline context structure type
+typedef struct {
+	bool isInitialized;
+	unsigned long options;
+	const char* prompt;
+	char* historyFilePath;
+	size_t maxHistoryEntries;
+	char* savedLineBuffer;
+	rlx_command_node_t* commands;
+	char** completionVocabulary;
+	bool ownsCompletionVocabulary;
+	bool isPaused;
+} rlx_internal_t;
+
+// singleton readline context
+static rlx_internal_t rlxStatic = {0};
+
+// forward local declarations
+static char** rlx_build_completion_vocabulary(rlx_t h);
+static void rlx_free_completion_vocabulary(char** vocab);
+static char** rlx_custom_completion(const char* text, int start, int end);
+static char* rlx_custom_completion_generator(const char* text, int state);
+static void rlx_add_history_entry(rlx_t h, const char* line);
+
+static char* makeHistoryFilePath(const char* appname, const char* historyContext) {
+	char* path = 0;
+	const char* homeDir = getenv("HOME");
+	if( ! homeDir ) {
+		homeDir = getpwuid(getuid())->pw_dir;
+	}
+	if( historyContext && *historyContext ) {
+		// if a history context is provided, we will include it in the history file name
+		// to allow separate histories for different contexts (e.g. different serial ports).
+		char* historyContextCpy = strdup(historyContext);
+		// normalize the history context by replacing any non-alphanumeric characters with underscores
+		for(char* p = historyContextCpy; *p; p++) {
+			if( ! isalnum(*p) ) {
+				*p = '_'; // replace any non-alphanumeric characters with underscores to ensure a valid file name
+			}
+		}
+		asprintf(&path, "%s/.%s.%s.rlx.history", homeDir, appname, historyContextCpy);
+		free(historyContextCpy);
+	} else {
+		asprintf(&path, "%s/.%s.rlx.history", homeDir, appname);
+	}
+	return path;
+}
+
+rlx_t rlx_begin(
+	const char* appname,
+	const char* prompt,
+	void (*readline_callback)(char*),
+	size_t maxHistoryEntries,
+	const char* historyContext,
+	unsigned long options
+) {
+	rlx_internal_t* rlx = &rlxStatic;
+
+	if( ! appname || ! *appname || ! readline_callback ) {
+		fprintf(stderr, "rlx_begin: appname and readline_callback are required parameters\n");
+		return 0;
+	}
+
+	// allow only a single readline context since readline uses global state !!!
+	if( rlx->isInitialized ) return 0;
+
+	rlx->isInitialized = true;
+	rlx->options = options;
+	rlx->prompt = prompt;
+	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
+	rlx->maxHistoryEntries = MAX(maxHistoryEntries, 10);
+	rlx->savedLineBuffer = 0;
+	rlx->commands = 0;
+	rlx->completionVocabulary = 0;
+	rlx->ownsCompletionVocabulary = true;
+	rlx->isPaused = false;
+
+	// if the option to persist history is enabled, we will load the history from the file on startup
+	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
+		read_history(rlx->historyFilePath);
+	}
+
+	rl_callback_handler_install(rlx->prompt, readline_callback);
+
+	// setup auto-complete
+	// (RLX_OPT_AUTOCOMPLETE_COMMANDS and RLX_OPT_AUTOCOMPLETE_HISTORY takes priority
+	// over RLX_OPT_AUTOCOMPLETE_FILES)
+	if( rlx->options & RLX_OPT_AUTOCOMPLETE_MASK ) {
+		// some kind of auto-completion was requested,
+		// so we set up the completion function and word break characters accordingly.
+		if( rlx->options & (RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY) ) {
+			rl_attempted_completion_function = rlx_custom_completion;
+		} else if( rlx->options & RLX_OPT_AUTOCOMPLETE_FILES ) {
+			rl_attempted_completion_function = 0; // use default readline filename completion
+		}
+		rl_bind_key('\t', rl_complete);
+		rl_completer_word_break_characters = " \t\n\"'`@$><=;|&{(";
+	} else {
+		// auto-complete is disabled
+		rl_bind_key('\t', rl_insert);
+	}
+
+	return (rlx_t)rlx;
+}
+
+void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx || ! commands ) return;
+	for( const rlx_registered_command_t* rc = commands; rc && rc->command && rc->handler; rc++ ) {
+		if( rlx_get_command(h, rc->command) ) continue;
+		rlx_command_node_t* cmd = malloc(sizeof(rlx_command_node_t));
+		cmd->cmd = *rc;
+		cmd->next = rlx->commands;
+		rlx->commands = cmd;
+	}
+}
+
+const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx || ! command ) return 0;
+	for(const rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
+		if( strcmp(cmd->cmd.command, command) == 0 ) {
+			return &cmd->cmd;
+		}
+	}
+	return 0;
+}
+
+bool rlx_process_command(rlx_t h, const char* line, void* userData) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	char* expanded = 0;
+	int argc=0;
+	char** argv=0;
+
+	if( ! rlx || ! line || ! *line ) return false;
+
+	int expansionResult = history_expand(line, &expanded);
+	if( expansionResult < 0 || expansionResult == 2 ) {
+		// history expansion failed, or should be ignored
+		free(expanded);
+		return false;
+	} else if( expansionResult > 0 ) {
+		line = expanded;
+	}
+
+	rlx_add_history_entry((rlx_t)rlx, line);
+
+	parse_command_line(line, &argc, &argv);
+	const rlx_registered_command_t* cmd = rlx_get_command(h, argv[0]);
+	if( cmd ) {
+		cmd->handler(cmd, argc, (const char**)argv, userData);
+	}
+	free_command_args(argc, argv);
+
+	if( expanded ) {
+		free(expanded);
+	}
+
+	return cmd != 0;
+}
+
+void rlx_pause(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx ) return;
+	if( rlx->isPaused ) return; // if we're already paused, no need to do anything
+	rlx->savedLineBuffer = strdup(rl_line_buffer); // save the current readline input so we can restore it after printing serial output
+	rl_save_prompt(); // save the current prompt in case it gets overwritten by serial output
+	rl_replace_line("", 0); // clear any partial input from the user while waiting for serial input
+	rl_redisplay();
+	rlx->isPaused = true;
+}
+
+void rlx_resume(rlx_t h, bool redisplayPrompt) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx || ! rlx->isPaused ) return; // if we're not currently paused, no need to do anything
+	rl_restore_prompt(); // restore the prompt that was saved before we paused readline for printing serial output
+	rl_replace_line(rlx->savedLineBuffer, 0); // restore the saved input line so the user can continue editing it after we print serial output
+	if( redisplayPrompt ) {
+		rl_redisplay(); // redraw the prompt and any user input after printing serial output
+	}
+	free(rlx->savedLineBuffer);
+	rlx->savedLineBuffer = 0;
+	rlx->isPaused = false;
+}
+
+static void rlx_add_history_entry(rlx_t h, const char* line) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx || ! line ) return;
+	while( isspace(*line) ) line++; // skip leading whitespace
+	if( ! *line ) return; // don't add empty or whitespace-only lines to history
+	add_history(line);
+}
+
+void rlx_process_input(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx ) return;
+	// this will trigger readline to read the input and call our readline_callback function
+	rl_callback_read_char();
+}
+
+void rlx_end(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+
+	if( ! rlx || ! rlx->isInitialized ) return;
+
+	rl_callback_handler_remove();
+
+	// commit current history
+	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
+		write_history(rlx->historyFilePath);
+		history_truncate_file(rlx->historyFilePath, rlx->maxHistoryEntries);
+	}
+
+	free(rlx->historyFilePath);
+	if( rlx->savedLineBuffer ) {
+		free(rlx->savedLineBuffer);
+	}
+	// free the registered commands linked list
+	for(rlx_command_node_t* cmd = rlx->commands; cmd; ) {
+		rlx_command_node_t* next = cmd->next;
+		free(cmd);
+		cmd = next;
+	}
+	// free autocomplete vocabulary
+	if( rlx->ownsCompletionVocabulary ) {
+		rlx_free_completion_vocabulary(rlx->completionVocabulary);
+		rlx->completionVocabulary = 0;
+	}
+	// reset the readline context to its initial state
+	memset(rlx, 0, sizeof(*rlx));
+}
+
+void rlx_reset_history(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx ) return;
+	rl_clear_history();
+}
+
+void rlx_print_history(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx ) return;
+	int index = history_base;
+	for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
+		printf("%d: %s\n", index++, (*entry)->line);
+	}
+}
+
+static int compare_commands(const void* a, const void* b) {
+	const rlx_registered_command_t* cmdA = *(const rlx_registered_command_t**)a;
+	const rlx_registered_command_t* cmdB = *(const rlx_registered_command_t**)b;
+	return strcasecmp(cmdA->command, cmdB->command);
+}
+void rlx_print_registered_commands(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	int i = 0;
+
+	if( ! rlx ) return;
+	if( ! rlx->commands || ! rlx->commands->cmd.command ) return;
+
+	// count the number of registered commands
+	int nCommands = 0;
+	for( rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
+		++nCommands;
+	}
+
+	// create an array of pointers to the registered commands for sorting
+	const rlx_registered_command_t** commands = malloc(sizeof(rlx_registered_command_t*) * nCommands);
+	for( rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
+		commands[i++] = &cmd->cmd;
+	}
+
+	// sort the array of command pointers alphabetically by command name
+	qsort(commands, nCommands, sizeof(rlx_registered_command_t*), compare_commands);
+
+	// print sorted array of commands with their descriptions
+	for(i=0; i < nCommands; i++) {
+		const rlx_registered_command_t* cmd = commands[i];
+		printf("  %s - %s\n",
+			cmd->command,
+			cmd->description ? cmd->description : "(no description)");
+	}
+
+	// cleanup
+	free(commands);
+}
+
+// completion-related functions
+
+// This function builds the completion vocabulary by combining
+// the registered commands and the history entries.
+static char** rlx_build_completion_vocabulary(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx ) return 0;
+
+	char** vocab = 0;
+	size_t vocabSize = 0;
+
+	if( ! rlx ) return 0;
+
+	if( rlx->options & RLX_OPT_AUTOCOMPLETE_COMMANDS ) {
+		// count the number of registered commands
+		for( rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
+			vocabSize++;
+		}
+	}
+	if( rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY ) {
+		// add the count of history entries to the vocabulary size
+		// since we also want to include those in the completion vocabulary
+		for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
+			vocabSize++;
+		}
+	}
+	// add one for the NULL terminator
+	vocabSize++;
+
+	vocab = malloc(sizeof(char*) * vocabSize);
+	int i = 0;
+	if( rlx->options & RLX_OPT_AUTOCOMPLETE_COMMANDS ) {
+		// registered commands
+		for( rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
+			vocab[i++] = strdup(cmd->cmd.command);
+		}
+	}
+	if( rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY ) {
+		// history entries
+		for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
+			vocab[i++] = strdup((*entry)->line);
+		}
+	}
+	vocab[i] = 0; // NULL terminate the vocabulary array
+
+	return vocab;
+}
+
+static void rlx_free_completion_vocabulary(char** vocab) {
+	if( ! vocab ) return;
+	for(char** p = vocab; *p; p++) {
+		free(*p);
+	}
+	free(vocab);
+}
+
+static char** rlx_custom_completion(const char* text, int start, int end) {
+	(void)start;
+	(void)end;
+	rl_attempted_completion_over = 1;
+	return rl_completion_matches(text, rlx_custom_completion_generator);
+}
+
+static char* rlx_custom_completion_generator(const char* text, int state) {
+	static size_t vocabIndex = 0;
+	static size_t textLen = 0;
+
+	if( state == 0 ) {
+		// first call, build the completion vocabulary
+		if( rlxStatic.ownsCompletionVocabulary ) {
+			rlx_free_completion_vocabulary(rlxStatic.completionVocabulary);
+			rlxStatic.completionVocabulary = rlx_build_completion_vocabulary((rlx_t)&rlxStatic);
+		}
+		vocabIndex = 0;
+		textLen = strlen(text);
+	}
+
+	// search through the vocabulary for the next matching the input text
+	while( rlxStatic.completionVocabulary[vocabIndex] ) {
+		const char* candidate = rlxStatic.completionVocabulary[vocabIndex++];
+		if( strncmp(candidate, text, textLen) == 0 ) {
+			return strdup(candidate);
+		}
+	}
+
+	return 0;
+}
+
+// override the default rlx's completion vocabulary.
+// if this function is called with a non-null vocabulary,
+// the caller is responsible for managing the memory of the vocabulary array and its contents.
+// If called with a null vocabulary, rlx gains back ownership of the default completion vocabulary
+// and will manage its memory automatically.
+void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	if( ! rlx ) return;
+	if( rlx->ownsCompletionVocabulary ) {
+		// dispose of the old vocabulary if we own it before replacing it with the new one
+		rlx_free_completion_vocabulary(rlx->completionVocabulary);
+		rlx->completionVocabulary = 0;
+	}
+	rlx->completionVocabulary = vocab;
+	rlx->ownsCompletionVocabulary = vocab == 0;
+}

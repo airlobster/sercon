@@ -1,0 +1,14 @@
+build/
+dist/
+sercon
+*.o
+*.so
+*.a
+*.log
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+*.vscode
+*.gz
+.local-test

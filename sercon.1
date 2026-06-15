@@ -1,0 +1,97 @@
+.TH SERCON 1 "June 2026" "sercon" "User Commands"
+.SH NAME
+sercon \- interactive serial console for Arduino and UART devices
+.SH SYNOPSIS
+.B sercon
+.RI [ options ]
+.SH DESCRIPTION
+.B sercon
+connects your terminal to a serial device and forwards input/output in both directions.
+It can list available serial ports, set baud rate, print timestamps on incoming lines,
+and render ANSI styling when supported.
+.PP
+.SH OPTIONS
+.TP
+.BR -l , " --list"
+List available serial ports and exit.
+.TP
+.BR -h , " --help"
+Show help text and exit.
+.TP
+.BR -p , " --port " PORT
+Serial port to open
+.TP
+.BR -b , " --baud " BAUD
+Set baud rate. Minimum accepted value is 9600.
+Values below 9600 are clamped to 9600.
+.TP
+.BR -r , " --retry-delay"
+Delay in seconds between connection retries (default: 1).
+.TP
+.BR -T , " --no-timestamps"
+Disable timestamp prefix on incoming lines.
+.TP
+.BR -v , " --version"
+Print version information and exit.
+.TP
+.BR -w , " --eof-wait"
+Seconds to wait after EOF on stdin before exiting (default: 1).
+.SH EXAMPLES
+List ports:
+.PP
+.RS
+.B sercon --list
+.RE
+.PP
+Show help:
+.PP
+.RS
+.B sercon --help
+.RE
+.PP
+Connect at 9600 baud:
+.PP
+.RS
+.B sercon --port cu.usbmodem1101
+.RE
+.PP
+Connect at 115200 baud:
+.PP
+.RS
+.B sercon -p cu.usbmodem1101 -b 115200
+.RE
+.PP
+Disable timestamps:
+.PP
+.RS
+.B sercon -p cu.usbmodem1101 --no-timestamps
+.RE
+.PP
+Print version:
+.PP
+.RS
+.B sercon --version
+.RE
+.SH SIGNALS
+.TP
+.B SIGINT
+Ctrl+C triggers graceful shutdown.
+.SH BEHAVIOR NOTES
+.PP
+Prompt text defaults to the selected port basename (or the executable name).
+.PP
+Prompt and cursor UI are shown only in interactive mode with ANSI enabled.
+.PP
+Carriage returns are ignored, and linefeeds define line/timestamp boundaries.
+.SH EXIT STATUS
+.TP
+.B 0
+Successful execution.
+.TP
+.B 1
+Invalid arguments, missing required port, or serial open/read error.
+.SH SEE ALSO
+.BR stty (1),
+.BR screen (1),
+.BR picocom (1),
+.BR minicom (1)

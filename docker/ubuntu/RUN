@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cd $(dirname "$0")
+docker run -it -v ~/projects:/projects --name sercon-ubuntu -e ARTIFACTS_ROOT_DIR=/tmp  dev-sercon-ubuntu bash
