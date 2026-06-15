@@ -11,4 +11,5 @@ sercon
 *.DS_Store
 *.vscode
 *.gz
+*.d
 .local-test
