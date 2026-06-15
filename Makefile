@@ -124,6 +124,7 @@ install: BUILD_DIR := $(BUILD_PLAT_ROOT_DIR)/release
 install:
 	$(MAKE) BUILD=release all
 	install -m 755 $(BUILD_DIR)/$(TARGET) $(PREFIX)/bin/$(TARGET)
+	mkdir -p $(MAN_DIR)
 	install -m 644 $(MAN_PAGE) $(MAN_DIR)/$(MAN_PAGE)
 	@printf "$(COLOR_SUCCESS)** Installed $(TARGET) to $(PREFIX)/bin and man page to $(MAN_DIR)$(COLOR_RESET)\n"
 
