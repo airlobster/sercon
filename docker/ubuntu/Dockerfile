@@ -14,7 +14,8 @@ RUN apt install -y \
 	net-tools \
 	build-essential \
 	libreadline-dev \
-	libserialport-dev
+	libserialport-dev \
+	git
 
 RUN yes | unminimize
 

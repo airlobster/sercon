@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 cd $(dirname "$0")
-docker run -it -v ~/sercon:/sercon --name sercon-ubuntu dev-sercon-ubuntu bash
+docker run --rm -it -v ~/sercon:/sercon --name sercon-ubuntu dev-sercon-ubuntu bash
