@@ -84,7 +84,7 @@ endif
 OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(src)))
 
 # default entry point
-all: config_error vars $(TARGET)
+all: config_error vars $(TARGET) doxygen
 
 # LINK
 $(TARGET): $(OBJS)
@@ -158,7 +158,6 @@ help:
 	@printf "  $(COLOR_INFO)man$(COLOR_RESET)       - Display the man page\n"
 	@printf "  $(COLOR_INFO)readme$(COLOR_RESET)    - Open the README.md file in the default viewer\n"
 	@printf "  $(COLOR_INFO)test$(COLOR_RESET)      - Run basic tests for proper installation\n"
-	@printf "  $(COLOR_INFO)doxygen$(COLOR_RESET)   - Generate documentation using Doxygen\n"
 	@printf "  $(COLOR_INFO)vars$(COLOR_RESET)      - Display current variable settings\n"
 	@printf "$(COLOR_UNDERLINE)Build types:$(COLOR_RESET)\n"
 	@printf "  $(COLOR_INFO)debug$(COLOR_RESET)      - Build with debug symbols and no optimizations (default)\n"
