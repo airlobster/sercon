@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
 cd $(dirname "$0")
+rm -rf html latex
 doxygen Doxyfile
 open html/index.html
-

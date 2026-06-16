@@ -15,4 +15,3 @@ sercon
 *.gz
 *.d
 .local-test
-Doxyfile
