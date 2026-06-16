@@ -169,22 +169,20 @@ test:
 	man $(TARGET)
 
 vars:
-	@printf "================================\n"
-	@printf "$(COLOR_BOLD)Platform$(COLOR_RESET): $(COLOR_INFO)$(PLATFORM)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Architecture$(COLOR_RESET): $(COLOR_INFO)$(ARCH)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Version$(COLOR_RESET): $(COLOR_INFO)$(VERSION)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Compiler flags$(COLOR_RESET): $(COLOR_INFO)$(CFLAGS)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Include directories$(COLOR_RESET): $(COLOR_INFO)$(INCLUDE_DIRS)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Library directories$(COLOR_RESET): $(COLOR_INFO)$(LIB_DIRS)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Artifacts root directory$(COLOR_RESET): $(COLOR_INFO)$(ARTIFACTS_ROOT_DIR)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Build directory$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Source files$(COLOR_RESET): $(COLOR_INFO)$(SRCS)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Object files$(COLOR_RESET): $(COLOR_INFO)$(OBJS)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Libraries$(COLOR_RESET): $(COLOR_INFO)$(LIBS)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Target$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)/$(TARGET)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Run arguments$(COLOR_RESET): $(COLOR_INFO)$(RUN_ARGS)$(COLOR_RESET)\n"
-	@printf "$(COLOR_BOLD)Full version$(COLOR_RESET): $(COLOR_INFO)$(FULL_VERSION)$(COLOR_RESET)\n"
-	@printf "================================\n"
+	@printf "* $(COLOR_BOLD)Platform$(COLOR_RESET): $(COLOR_INFO)$(PLATFORM)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Architecture$(COLOR_RESET): $(COLOR_INFO)$(ARCH)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Version$(COLOR_RESET): $(COLOR_INFO)$(VERSION)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Compiler flags$(COLOR_RESET): $(COLOR_INFO)$(CFLAGS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Include directories$(COLOR_RESET): $(COLOR_INFO)$(INCLUDE_DIRS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Library directories$(COLOR_RESET): $(COLOR_INFO)$(LIB_DIRS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Artifacts root directory$(COLOR_RESET): $(COLOR_INFO)$(ARTIFACTS_ROOT_DIR)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Build directory$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Source files$(COLOR_RESET): $(COLOR_INFO)$(SRCS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Object files$(COLOR_RESET): $(COLOR_INFO)$(OBJS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Libraries$(COLOR_RESET): $(COLOR_INFO)$(LIBS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Target$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)/$(TARGET)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Run arguments$(COLOR_RESET): $(COLOR_INFO)$(RUN_ARGS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Full version$(COLOR_RESET): $(COLOR_INFO)$(FULL_VERSION)$(COLOR_RESET)\n"
 
 # check for non-empty CONFIG_ERROR variable and print it if set, then exit with an error code.
 # this is used to catch configuration errors early and provide clear feedback to the user.
