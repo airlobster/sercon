@@ -1,5 +1,7 @@
 build/
 dist/
+html/
+latex/
 sercon
 *.o
 *.so
@@ -13,3 +15,5 @@ sercon
 *.gz
 *.d
 .local-test
+Doxyfile
+
