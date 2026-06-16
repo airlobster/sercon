@@ -137,7 +137,7 @@ uninstall:
 doxygen:
 	rm -rf $(DOXYGEN_ROOT_DIR)/html $(DOXYGEN_ROOT_DIR)/latex
 	doxygen Doxyfile
-	open $(DOXYGEN_ROOT_DIR)/html/index.html
+	@printf "$(COLOR_SUCCESS)** Documentation generated successfully: $(DOXYGEN_ROOT_DIR)/html/index.html$(COLOR_RESET)\n"
 
 clean:
 	rm -rf $(BUILD_DIR)
