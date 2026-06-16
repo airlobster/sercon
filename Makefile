@@ -133,11 +133,16 @@ uninstall:
 	rm -f $(MAN_DIR)/$(MAN_PAGE)
 	@printf "$(COLOR_SUCCESS)** Uninstalled $(TARGET) and its man page from $(PREFIX)$(COLOR_RESET)\n"
 
+doxygen:
+	rm -rf html latex
+	doxygen Doxyfile
+	open html/index.html
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-cleanall:
-	rm -rf $(BUILD_ROOT) $(DIST_DIR)
+cleanall: clean
+	rm -rf $(BUILD_ROOT) $(DIST_DIR) html latex
 
 help:
 	@printf "$(COLOR_BOLD)Usage: make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
@@ -152,6 +157,7 @@ help:
 	@printf "  $(COLOR_INFO)man$(COLOR_RESET)       - Display the man page\n"
 	@printf "  $(COLOR_INFO)readme$(COLOR_RESET)    - Open the README.md file in the default viewer\n"
 	@printf "  $(COLOR_INFO)test$(COLOR_RESET)      - Run basic tests for proper installation\n"
+	@printf "  $(COLOR_INFO)doxygen$(COLOR_RESET)   - Generate documentation using Doxygen\n"
 	@printf "  $(COLOR_INFO)vars$(COLOR_RESET)      - Display current variable settings\n"
 	@printf "$(COLOR_UNDERLINE)Build types:$(COLOR_RESET)\n"
 	@printf "  $(COLOR_INFO)debug$(COLOR_RESET)      - Build with debug symbols and no optimizations (default)\n"
@@ -198,4 +204,4 @@ endif
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 
-.PHONY: all clean cleanall help install uninstall package man vars readme test config_error run
+.PHONY: all clean cleanall help install uninstall package man vars readme test config_error run doxygen

@@ -15,7 +15,10 @@ RUN apt install -y \
 	build-essential \
 	libreadline-dev \
 	libserialport-dev \
-	git
+	git \
+	doxygen \
+	graphviz \
+	xdg-utils
 
 RUN yes | unminimize
 
