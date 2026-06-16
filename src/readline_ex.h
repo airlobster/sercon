@@ -1,8 +1,10 @@
 #ifndef _READLINE_EX_H
 #define _READLINE_EX_H
 
-/*
-	readline_ex is a wrapper around GNU readline that provides some additional features:
+/**
+	@file readline_ex.h
+	@brief readline_ex is a wrapper around the GNU readline library that provides some additional features.
+	@details Features include:
 	- support for registering commands with associated handlers and descriptions,
 		and processing user input to execute those commands.
 	- support for autocompletion.

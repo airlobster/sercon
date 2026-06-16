@@ -40,6 +40,12 @@ static char** rlx_custom_completion(const char* text, int start, int end);
 static char* rlx_custom_completion_generator(const char* text, int state);
 static void rlx_add_history_entry(rlx_t h, const char* line);
 
+/**
+	@brief Create the file path for the history file.
+	@param appname The name of the application.
+	@param historyContext The context for the history file (optional).
+	@return The file path for the history file.
+*/
 static char* makeHistoryFilePath(const char* appname, const char* historyContext) {
 	char* path = 0;
 	const char* homeDir = getenv("HOME");
@@ -64,6 +70,16 @@ static char* makeHistoryFilePath(const char* appname, const char* historyContext
 	return path;
 }
 
+/**
+	@brief Begin a readline_ex session.
+	@param appname The name of the application.
+	@param prompt The prompt string to display.
+	@param readline_callback The callback function to handle input lines.
+	@param maxHistoryEntries The maximum number of history entries to keep.
+	@param historyContext The context for the history file (optional).
+	@param options Options for configuring the readline_ex session.
+	@return A handle to the readline_ex session, or NULL on failure.
+*/
 rlx_t rlx_begin(
 	const char* appname,
 	const char* prompt,
@@ -121,6 +137,11 @@ rlx_t rlx_begin(
 	return (rlx_t)rlx;
 }
 
+/**
+	@brief Register commands with the readline_ex session.
+	@param h The readline_ex session handle.
+	@param commands An array of commands to register.
+*/
 void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx || ! commands ) return;
@@ -133,6 +154,12 @@ void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
 	}
 }
 
+/**
+	@brief Get a registered command by its name.
+	@param h The readline_ex session handle.
+	@param command The name of the command to retrieve.
+	@return A pointer to the registered command, or NULL if not found.
+*/
 const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx || ! command ) return 0;
@@ -144,6 +171,13 @@ const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
 	return 0;
 }
 
+/**
+	@brief Process a command line, executing the corresponding command handler if a registered command is found.
+	@param h The readline_ex session handle.
+	@param line The command line to process.
+	@param userData User data to pass to the command handler.
+	@return true if a registered command was found and executed, false otherwise.
+*/
 bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	char* expanded = 0;
@@ -177,6 +211,10 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 	return cmd != 0;
 }
 
+/**
+	@brief Pause the readline_ex session, saving the current input line and prompt.
+	@param h The readline_ex session handle.
+*/
 void rlx_pause(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx ) return;
@@ -188,6 +226,11 @@ void rlx_pause(rlx_t h) {
 	rlx->isPaused = true;
 }
 
+/**
+	@brief Resume the readline_ex session, restoring the saved input line and prompt.
+	@param h The readline_ex session handle.
+	@param redisplayPrompt Whether to redisplay the prompt and input line.
+*/
 void rlx_resume(rlx_t h, bool redisplayPrompt) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx || ! rlx->isPaused ) return; // if we're not currently paused, no need to do anything
@@ -201,6 +244,11 @@ void rlx_resume(rlx_t h, bool redisplayPrompt) {
 	rlx->isPaused = false;
 }
 
+/**
+	@brief Add a line to the command history for the readline_ex session.
+	@param h The readline_ex session handle.
+	@param line The line to add to the history.
+*/
 static void rlx_add_history_entry(rlx_t h, const char* line) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx || ! line ) return;
@@ -209,6 +257,10 @@ static void rlx_add_history_entry(rlx_t h, const char* line) {
 	add_history(line);
 }
 
+/**
+	@brief Process input for the readline_ex session.
+	@param h The readline_ex session handle.
+*/
 void rlx_process_input(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx ) return;
@@ -216,6 +268,10 @@ void rlx_process_input(rlx_t h) {
 	rl_callback_read_char();
 }
 
+/**
+	@brief End the readline_ex session, cleaning up resources.
+	@param h The readline_ex session handle.
+*/
 void rlx_end(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 
@@ -248,12 +304,20 @@ void rlx_end(rlx_t h) {
 	memset(rlx, 0, sizeof(*rlx));
 }
 
+/**
+	@brief Reset the command history for the readline_ex session.
+	@param h The readline_ex session handle.
+*/
 void rlx_reset_history(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx ) return;
 	rl_clear_history();
 }
 
+/**
+	@brief Print the command history for the readline_ex session.
+	@param h The readline_ex session handle.
+*/
 void rlx_print_history(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx ) return;
@@ -268,6 +332,10 @@ static int compare_commands(const void* a, const void* b) {
 	const rlx_registered_command_t* cmdB = *(const rlx_registered_command_t**)b;
 	return strcasecmp(cmdA->command, cmdB->command);
 }
+/**
+	@brief Print the registered commands for the readline_ex session.
+	@param h The readline_ex session handle.
+*/
 void rlx_print_registered_commands(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	int i = 0;
@@ -302,10 +370,11 @@ void rlx_print_registered_commands(rlx_t h) {
 	free(commands);
 }
 
-// completion-related functions
-
-// This function builds the completion vocabulary by combining
-// the registered commands and the history entries.
+/**
+	@brief Build the completion vocabulary for the readline_ex session.
+	@param h The readline_ex session handle.
+	@return An array of strings representing the completion vocabulary, or NULL on failure.
+*/
 static char** rlx_build_completion_vocabulary(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx ) return 0;
@@ -350,6 +419,10 @@ static char** rlx_build_completion_vocabulary(rlx_t h) {
 	return vocab;
 }
 
+/**
+	@brief Free the memory allocated for the completion vocabulary.
+	@param vocab The completion vocabulary to free.
+*/
 static void rlx_free_completion_vocabulary(char** vocab) {
 	if( ! vocab ) return;
 	for(char** p = vocab; *p; p++) {
@@ -358,6 +431,13 @@ static void rlx_free_completion_vocabulary(char** vocab) {
 	free(vocab);
 }
 
+/**
+	@brief Custom completion function for readline_ex.
+	@param text The text to complete.
+	@param start The start position of the text.
+	@param end The end position of the text.
+	@return An array of completion matches.
+*/
 static char** rlx_custom_completion(const char* text, int start, int end) {
 	(void)start;
 	(void)end;
@@ -390,11 +470,11 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 	return 0;
 }
 
-// override the default rlx's completion vocabulary.
-// if this function is called with a non-null vocabulary,
-// the caller is responsible for managing the memory of the vocabulary array and its contents.
-// If called with a null vocabulary, rlx gains back ownership of the default completion vocabulary
-// and will manage its memory automatically.
+/**
+	@brief Set a custom autocomplete vocabulary for the readline_ex session.
+	@param h The readline_ex session handle.
+	@param vocab The custom autocomplete vocabulary, or NULL to use the default vocabulary.
+*/
 void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	if( ! rlx ) return;
