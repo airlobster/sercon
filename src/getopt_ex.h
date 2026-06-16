@@ -1,6 +1,13 @@
 #ifndef _GETOPT_EX_H
 #define _GETOPT_EX_H
 
+/**
+ * @file getopt_ex.h
+ * @author your name (you@domain.com)
+ * @brief Extended getopt functionality with help text and callbacks
+ * @version 0.1
+ * @date 2026-06-16
+ */
 #include <getopt.h>
 
 #ifdef __cplusplus

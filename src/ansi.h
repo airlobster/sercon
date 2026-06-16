@@ -1,6 +1,11 @@
 #ifndef _ANSI_H_
 #define _ANSI_H_
 
+/**
+ * @file ansi.h
+ * @brief Header file for ANSI escape codes and related functions.
+ */
+ 
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdarg.h>

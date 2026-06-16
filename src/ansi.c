@@ -10,6 +10,9 @@
 ansi_mode_t ANSI_mode = ANSI_MODE_AUTO;
 static bool bUseAltScreen = false;
 
+/**
+ * @brief Terminates ANSI mode and restores the terminal state.
+ */
 static void terminate_ansi() {
 	if( bUseAltScreen ) {
 		afprintf(stdout, ANSI_END_ALT_SCREEN);
@@ -23,6 +26,10 @@ static void terminate_ansi() {
 	}
 }
 
+/**
+ * @brief Initializes ANSI mode and optionally enables the alternate screen buffer.
+ * @param bAltScreen Whether to enable the alternate screen buffer.
+ */
 void begin_ansi(bool bAltScreen) {
 	// if( ! isatty(fileno(stdout)) || ! isatty(fileno(stderr)) ) {
 	//   a_error("STDOUT and STDERR are not allowed to be redirected!\n");
@@ -38,6 +45,12 @@ void begin_ansi(bool bAltScreen) {
 	atexit(terminate_ansi);
 }
 
+/**
+ * @brief Checks if ANSI mode is active for the given stream.
+ * @param stream The file stream to check.
+ * @return true If ANSI mode is active.
+ * @return false If ANSI mode is not active.
+ */
 bool isAnsiActive(FILE* stream) {
 	switch( ANSI_mode ) {
 		case ANSI_MODE_AUTO:
@@ -50,8 +63,14 @@ bool isAnsiActive(FILE* stream) {
 	return false; // should never reach here
 }
 
-// Custom printf function that respects ANSI color codes
-// (i.e. only prints them if the stream is a TTY or if ANSI_MODE_ALWAYS is set)
+/**
+ * @brief Prints formatted output to a stream, while respecting ANSI color codes.
+ * @param stream The file stream to print to.
+ * @param fmt The format string.
+ * @param args The variable argument list.
+ * @return int The number of characters printed.
+ * @note ANSI color codes will only be printed if ANSI mode is active for the stream.
+ */
 int afvprintf(FILE* stream, const char* fmt, va_list args) {
 	const bool bAnsiActive = isAnsiActive(stream);
 	char *buffer;
@@ -119,7 +138,14 @@ int afvprintf(FILE* stream, const char* fmt, va_list args) {
 	return n;
 }
 
-// Simple wrapper around afvprintf for convenience
+/**
+ * @brief Prints formatted output to a stream, while respecting ANSI color codes.
+ * @param stream The file stream to print to.
+ * @param fmt The format string.
+ * @param ... The variable arguments.
+ * @return int The number of characters printed.
+ * @note ANSI color codes will only be printed if ANSI mode is active for the stream.
+ */
 int afprintf(FILE* stream, const char* fmt, ...) {
 	va_list args;
 	int n;
@@ -131,6 +157,12 @@ int afprintf(FILE* stream, const char* fmt, ...) {
 	return n;
 }
 
+/**
+ * @brief Prints an informational message with ANSI styling.
+ * @param fmt The format string.
+ * @param ... The variable arguments.
+ * @return int The number of characters printed.
+ */
 int a_info(const char* fmt, ...) {
 	char* buf;
 	va_list args;
@@ -147,6 +179,12 @@ int a_info(const char* fmt, ...) {
 	return n;
 }
 
+/**
+ * @brief Prints an error message with ANSI styling.
+ * @param fmt The format string.
+ * @param ... The variable arguments.
+ * @return int The number of characters printed.
+ */
 int a_error(const char* fmt, ...) {
 	char* buf;
 	va_list args;
@@ -163,6 +201,12 @@ int a_error(const char* fmt, ...) {
 	return n;
 }
 
+/**
+ * @brief Prints a warning message with ANSI styling.
+ * @param fmt The format string.
+ * @param ... The variable arguments.
+ * @return int The number of characters printed.
+ */
 int a_warning(const char* fmt, ...) {
 	char* buf;
 	va_list args;
@@ -179,6 +223,12 @@ int a_warning(const char* fmt, ...) {
 	return n;
 }
 
+/**
+ * @brief Prints a success message with ANSI styling.
+ * @param fmt The format string.
+ * @param ... The variable arguments.
+ * @return int The number of characters printed.
+ */
 int a_success(const char* fmt, ...) {
 	char* buf;
 	va_list args;

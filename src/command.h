@@ -1,6 +1,11 @@
 #ifndef _COMMAND_H
 #define _COMMAND_H
 
+/**
+ * @file command.h
+ * @brief bash-like Command-line parsing
+ */
+ 
 #ifdef __cplusplus
 extern "C" {
 #endif

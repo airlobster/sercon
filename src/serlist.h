@@ -1,6 +1,11 @@
 #ifndef _SERLIST_H_
 #define _SERLIST_H_
 
+/**
+ * @file serlist.h
+ * @brief Header file for enumerating serial ports.
+ */
+ 
 #ifdef __cplusplus
 extern "C" {
 #endif

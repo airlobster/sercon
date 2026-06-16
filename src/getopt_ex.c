@@ -10,11 +10,20 @@
 
 static int processing = 0;
 
-// for use with __attribute__((cleanup)) to free memory automatically
+/**
+ * @brief Frees memory automatically when used with __attribute__((cleanup))
+ * @param ptr Pointer to the memory to be freed
+ * @note This function is intended to be used with the 'autoptr' macro defined in utils.h
+ */
 static void free_(void* ptr) {
 	if( ptr ) free(*(void**)ptr);
 }
 
+/**
+ * @brief Validates the given array of getopt_ex_option_t structures.
+ * @param options Pointer to the array of options to validate.
+ * @note This function checks for invalid characters, reserved characters, and duplicate option characters.
+ */
 static void validate_options(const getopt_ex_option_t* options) {
 	uint8_t charset[256] = {0};
 
@@ -45,6 +54,12 @@ static void validate_options(const getopt_ex_option_t* options) {
 	} // end for
 }
 
+/**
+ * @brief Prints the help information for the command-line options.
+ * @param appname The name of the application.
+ * @param options Pointer to the array of getopt_ex_option_t structures.
+ * @param description The description of the application.
+ */
 static void print_help(const char* appname, const getopt_ex_option_t* options, const char* description) {
 	static const char* indent = "  ";
 
@@ -79,6 +94,12 @@ static void print_help(const char* appname, const getopt_ex_option_t* options, c
 	}
 }
 
+/**
+ * @brief qsort callback to sort options by their option character (case-insensitive)
+ * @param a Pointer to the first option
+ * @param b Pointer to the second option
+ * @return int Negative if a < b, zero if a == b, positive if a > b
+ */
 // qsort callback to sort options by their option character (case-insensitive)
 static int qsortCallback(const void* a, const void* b) {
 	const getopt_ex_option_t* optA = (const getopt_ex_option_t*)a;
@@ -86,6 +107,15 @@ static int qsortCallback(const void* a, const void* b) {
 	return tolower(optA->opt.val) - tolower(optB->opt.val);
 }
 
+/**
+ * @brief Get the opt ex object
+ * 
+ * @param argc The number of command-line arguments
+ * @param argv The array of command-line arguments
+ * @param long_options Pointer to the array of getopt_ex_option_t structures
+ * @param description The description of the application
+ * @param callback The callback function to handle each option and positional argument
+ */
 void getopt_ex(
 	int argc,
 	char* const *argv,
