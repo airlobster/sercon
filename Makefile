@@ -26,8 +26,8 @@ LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lserialport -lreadline
 ARTIFACTS_ROOT_DIR ?= .
-BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
-DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
+BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/$(GIT_COMMIT_HASH)/build
+DIST_DIR := $(ARTIFACTS_ROOT_DIR)/$(GIT_COMMIT_HASH)/dist
 SUPPORTED_TARGETS := all clean cleanall help install uninstall package man vars readme test run
 
 BUILD ?= debug
@@ -40,6 +40,12 @@ MAN_SECTION = 1
 MAN_DIR = $(PREFIX)/share/man/man$(MAN_SECTION)
 MAN_PAGE = $(TARGET).$(MAN_SECTION)
 README = README.md
+
+# protect against accidentally setting ARTIFACTS_ROOT_DIR to the root directory, which could
+# lead to disastrous consequences if the Makefile is run with a 'cleanall' target.
+ifeq ($(ARTIFACTS_ROOT_DIR),/)
+$(error ARTIFACTS_ROOT_DIR cannot be set to the root directory (/)!)
+endif
 
 # set the appropriate opener command based on the platform
 ifeq ($(PLATFORM), darwin)
@@ -137,7 +143,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 cleanall: clean
-	rm -rf $(BUILD_ROOT) $(DIST_DIR)
+	rm -rf $(ARTIFACTS_ROOT_DIR)
 
 help:
 	@printf "$(COLOR_BOLD)Usage: make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
