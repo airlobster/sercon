@@ -26,8 +26,8 @@ LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lserialport -lreadline
 ARTIFACTS_ROOT_DIR ?= .
-BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/$(GIT_COMMIT_HASH)/build
-DIST_DIR := $(ARTIFACTS_ROOT_DIR)/$(GIT_COMMIT_HASH)/dist
+BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
+DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
 SUPPORTED_TARGETS := all clean cleanall help install uninstall package man vars readme test run
 
 BUILD ?= debug
