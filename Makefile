@@ -26,7 +26,6 @@ LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lserialport -lreadline
 ARTIFACTS_ROOT_DIR ?= .
-DOXYGEN_ROOT_DIR := .doxygen
 BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
 SUPPORTED_TARGETS := all clean cleanall help install uninstall package man vars readme test run
@@ -84,7 +83,7 @@ endif
 OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(src)))
 
 # default entry point
-all: config_error vars $(TARGET) doxygen
+all: config_error vars $(TARGET)
 
 # LINK
 $(TARGET): $(OBJS)
@@ -134,16 +133,11 @@ uninstall:
 	rm -f $(MAN_DIR)/$(MAN_PAGE)
 	@printf "$(COLOR_SUCCESS)** Uninstalled $(TARGET) and its man page from $(PREFIX)$(COLOR_RESET)\n"
 
-doxygen:
-	rm -rf $(DOXYGEN_ROOT_DIR)/html $(DOXYGEN_ROOT_DIR)/latex
-	doxygen Doxyfile
-	@printf "$(COLOR_SUCCESS)** Documentation generated successfully: $(DOXYGEN_ROOT_DIR)/html/index.html$(COLOR_RESET)\n"
-
 clean:
 	rm -rf $(BUILD_DIR)
 
 cleanall: clean
-	rm -rf $(BUILD_ROOT) $(DIST_DIR) $(DOXYGEN_ROOT_DIR)/html $(DOXYGEN_ROOT_DIR)/latex
+	rm -rf $(BUILD_ROOT) $(DIST_DIR)
 
 help:
 	@printf "$(COLOR_BOLD)Usage: make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
