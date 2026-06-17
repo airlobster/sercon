@@ -102,3 +102,11 @@ readline_ex is a wrapper around the GNU readline library that provides some addi
 + Support for persisting command history to a file and loading it on startup,
 	with optional context-based history files.
 *	Full shell-like history management support.
+
+#### getopt_ex.h, getopt_ex.c
+
+Allows declaring command-line arguments with automatic help information generation.
+
+#### command.h, command.c
+
+Shell-like command-line parser - translate a raw string into argc/argv duo.
