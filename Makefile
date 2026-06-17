@@ -28,7 +28,7 @@ LIBS := -lserialport -lreadline
 ARTIFACTS_ROOT_DIR ?= .
 BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
-SUPPORTED_TARGETS := all clean cleanall help install uninstall package man vars readme test run
+SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
 
 BUILD ?= debug
 ARCH ?= $(shell uname -m | tr '[:upper:]' '[:lower:]')
@@ -53,7 +53,7 @@ ifeq ($(PLATFORM), darwin)
 else ifeq ($(PLATFORM), linux)
 	OPENER := xdg-open
 else
-	CONFIG_ERROR := "Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'."
+$(error Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'.)
 endif
 
 # add readline includes and libs based on architecture
@@ -64,7 +64,7 @@ else ifeq ($(ARCH), x86_64)
 	INCLUDE_DIRS += -I/usr/local/opt/readline/include
 	LIB_DIRS += -L/usr/local/opt/readline/lib
 else
-	CONFIG_ERROR := "Invalid architecture: $(ARCH). Use \'arm64\' or \'x86_64\'."
+$(error Invalid architecture: $(ARCH). Use \'arm64\' or \'x86_64\'.)
 endif
 
 # after we've established the platform and architecture, we can define the
@@ -82,7 +82,7 @@ else ifeq ($(BUILD), release)
 	CFLAGS += -O3 -DNDEBUG
 	BUILD_DIR := $(BUILD_PLAT_ROOT_DIR)/release
 else
-	CONFIG_ERROR := "Invalid build type: $(BUILD). Use \'debug\' or \'release\'."
+$(error Invalid build type: $(BUILD). Use \'debug\' or \'release\'.)
 endif
 
 # compose a list of object files based on source files
@@ -189,14 +189,7 @@ vars:
 	@printf "* $(COLOR_BOLD)Target$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)/$(TARGET)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Run arguments$(COLOR_RESET): $(COLOR_INFO)$(RUN_ARGS)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Full version$(COLOR_RESET): $(COLOR_INFO)$(FULL_VERSION)$(COLOR_RESET)\n"
-
-# check for non-empty CONFIG_ERROR variable and print it if set, then exit with an error code.
-# this is used to catch configuration errors early and provide clear feedback to the user.
-config_error:
-ifneq ($(CONFIG_ERROR),)
-	@printf "$(COLOR_ERROR)Error: $(CONFIG_ERROR)$(COLOR_RESET)\n" >&2
-	@exit 1;
-endif
+	@printf "* $(COLOR_BOLD)Makefile targets$(COLOR_RESET): $(COLOR_INFO)$(SUPPORTED_TARGETS)$(COLOR_RESET)\n"
 
 # fall-back for all unknown targets to allow passing arguments to the 'run' target without causing make to fail.
 %:
@@ -204,4 +197,4 @@ endif
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 
-.PHONY: all clean cleanall help install uninstall package man vars readme test config_error run doxygen
+.PHONY: all clean cleanall help install uninstall package man vars readme test run doxygen
