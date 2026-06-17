@@ -30,9 +30,9 @@ List available serial ports:
 
 Connect to a port at default baud (9600):
 
-    ./sercon --port cu.usbmodem1101
+    ./sercon --port /dev/cu.usbmodem1101
 
-Connect with explicit baud:
+Connect with explicit baud rate:
 
     ./sercon --port cu.usbmodem1101 --baud 115200
 
@@ -40,7 +40,7 @@ Baud values below 9600 are clamped to 9600.
 
 Disable timestamp prefix on incoming lines:
 
-    ./sercon --port cu.usbmodem1101 --no-timestamps
+    ./sercon --port /dev/cu.usbmodem1101 --no-timestamps
 
 Print version and exit:
 
@@ -61,6 +61,17 @@ Short flags are also available:
 - -w for --eof-wait
 - -H for --non-persistent-history
 - -e for --max-history
+
+## Installation
+
+After cloning this repository, just enter the repository's root directory and run
+
+	./INSTALL
+
+This will build the project and install it. To test for installation correctness, run
+
+	make test
+
 
 ## Behavior notes
 
