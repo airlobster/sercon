@@ -16,15 +16,15 @@
 int parse_command_line(const char* line, int* argc, char*** argv) {
 	typedef enum {
 		PS_START,
-		PS_IN_UNQUOTED,
-		PS_IN_QUOTED,
+		PS_UNQUOTED,
+		PS_QUOTED,
 		PS_ESCAPE,
 		PS_END,
 	} parse_state_t;
 
 	parse_state_t state[32] = {0}; // state stack
 	int statePos = 0; // current position in the state stack
-	char quote = 0; // current quote character when in PS_IN_QUOTED state
+	char quote = 0; // current quote character when in PS_QUOTED state
 	size_t tokenCount = 0; // number of tokens parsed so far
 	char** tokens = 0; // array of token strings, will be realloc'd as we add tokens
 	char token[256] = {0}; // buffer for the current token
@@ -46,16 +46,19 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				*pTokenWr = '\0';
 				// select next state based on token type (quoted or unquoted)
 				if( *p == '"' || *p == '\'' ) {
+					// beginning of a quoted token, save the quote character and enter PS_QUOTED state
 					quote = *p; // save the quote character to look for when we exit the quoted state
-					state[statePos++] = PS_IN_QUOTED;
+					state[statePos++] = PS_QUOTED;
 				} else {
-					--p;
-					state[statePos++] = PS_IN_UNQUOTED;
+					// beginning of an unquoted token, enter PS_UNQUOTED state
+					--p; // pass this character to the PS_UNQUOTED state for processing
+					state[statePos++] = PS_UNQUOTED;
 				}
 				break;
 			}
-			case PS_IN_UNQUOTED: {
+			case PS_UNQUOTED: {
 				if( isspace(*p) ) {
+					// end of this token, push PS_END state to flush the token and prepare for the next one
 					--statePos; // end of this state, pop back to previous state
 					--p; // reprocess this character in the new state
 					state[statePos++] = PS_END;
@@ -65,10 +68,12 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				}
 				break;
 			}
-			case PS_IN_QUOTED: {
+			case PS_QUOTED: {
 				if( *p == '\\' && quote == '"' ) {
+					// handle escaped characters only inside double quotes, push PS_ESCAPE state to process the next character
 					state[statePos++] = PS_ESCAPE;
 				} else if( *p == quote ) {
+					// end of this quoted token, push PS_END state to flush the token and prepare for the next one
 					--statePos;
 					state[statePos++] = PS_END;
 				} else {
