@@ -59,6 +59,8 @@ Short flags are also available:
 - -v for --version
 - -r for --retry-delay
 - -w for --eof-wait
+- -H for --non-persistent-history
+- -e for --max-history
 
 ## Behavior notes
 
@@ -68,4 +70,4 @@ history management.
 - The app uses polling to handle both terminal input and serial input.
 - Prompt text defaults to the selected port name (or the executable name if no port basename is available).
 - Prompt and cursor UI are shown only in interactive mode.
-- Carriage returns are ignored, linefeeds drive line/timestamp boundaries.
+- Carriage returns (\r) are ignored, linefeeds drive line/timestamp boundaries.
