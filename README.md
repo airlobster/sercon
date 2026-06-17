@@ -82,3 +82,23 @@ history management.
 - Prompt text defaults to the selected port name (or the executable name if no port basename is available).
 - Prompt and cursor UI are shown only in interactive mode.
 - Carriage returns (\r) are ignored, linefeeds drive line/timestamp boundaries.
+
+## Appendix
+
+### Reussable modules
+
+#### readline_ex.h, readline_ex.c
+
+readline_ex is a wrapper around the GNU readline library that provides some additional features, such as:
++ Simpler API
++ Support for registering commands with associated handlers and descriptions,
+	and processing user input to execute those commands.
++ Support for auto-completion.
++ Default auto-completion vocabulary that can include both registered commands
+	and command history entries, with options to configure this to your needs.
++	Ability to set a custom auto-completion vocabulary.
++ Support for pausing and resuming readline to allow printing output from other
+	file-descriptors without interfering with the user's current input.
++ Support for persisting command history to a file and loading it on startup,
+	with optional context-based history files.
+*	Full shell-like history management support.
