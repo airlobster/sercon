@@ -7,9 +7,11 @@
 #include <libgen.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <assert.h>
 #include "readline_ex.h"
-#include "utils.h"
 #include "command.h"
+
+#define ASSERT(x) assert(x)
 
 // registered command linked list node type
 typedef struct _rlx_command_node_t {
