@@ -95,6 +95,11 @@ static void on_sigint(int signum) {
 }
 
 static void on_exit_app(void) {
+	if( rlx ) {
+		// free RLX resources and commit history to disk if persistent history is enabled
+		rlx_end(rlx);
+		rlx = 0;
+	}
 	if( port ) {
 		free(port);
 		port = 0;
@@ -106,11 +111,6 @@ static void on_exit_app(void) {
 	if( prompt ) {
 		free(prompt);
 		prompt = 0;
-	}
-	if( rlx ) {
-		// free RLX resources and commit history to disk if persistent history is enabled
-		rlx_end(rlx);
-		rlx = 0;
 	}
 }
 
@@ -183,7 +183,7 @@ static void termCmdCallback(
 			break;
 		}
 		case 'q': {
-			raise(SIGINT);
+			raise(SIGINT); // exit the program
 			break;
 		}
 		case 'i': {

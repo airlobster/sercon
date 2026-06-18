@@ -303,25 +303,26 @@ void rlx_end(rlx_t h) {
 	rlx_commit_history(h);
 
 	free(rlx->historyFilePath);
+	rlx->historyFilePath = 0;
+
 	if( rlx->savedLineBuffer ) {
 		free(rlx->savedLineBuffer);
+		rlx->savedLineBuffer = 0;
 	}
 
-	free(rlx->historyFilePath);
-	if( rlx->savedLineBuffer ) {
-		free(rlx->savedLineBuffer);
-	}
 	// free the registered commands linked list
 	for(rlx_command_node_t* cmd = rlx->commands; cmd; ) {
 		rlx_command_node_t* next = cmd->next;
 		free(cmd);
 		cmd = next;
 	}
-	// free autocomplete vocabulary
+
+	// free auto-complete vocabulary
 	if( rlx->ownsCompletionVocabulary ) {
 		rlx_free_completion_vocabulary(rlx->completionVocabulary);
 		rlx->completionVocabulary = 0;
 	}
+
 	// reset the readline context to its initial state
 	memset(rlx, 0, sizeof(*rlx));
 }
