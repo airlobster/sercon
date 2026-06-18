@@ -219,9 +219,12 @@ void rlx_callback(rlx_t h, char* line) {
 	}
 	char *start=0, *end=0;
 	// check if the line is a registered command and process it, otherwise forward it to the serial port
-	if( strnetcontent(line, &start, &end) && ! rlx_process_command(rlx, start, 0) ) {
-		write(fdPort, start, end - start);
-		write(fdPort, "\n", 1);
+	if( strnetcontent(line, &start, &end) ) {
+		*end = '\0'; // null terminate the command string
+		if( ! rlx_process_command(rlx, start, 0) ) {
+			write(fdPort, start, end - start);
+			write(fdPort, "\n", 1);
+		}
 	}
 	// (RLX will free the line buffer for us)
 }
