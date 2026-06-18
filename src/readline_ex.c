@@ -350,7 +350,7 @@ void rlx_print_registered_commands(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	int i = 0;
 
-	if( ! rlx ) return;
+	ASSERT(rlx);
 	if( ! rlx->commands || ! rlx->commands->cmd.command ) return;
 
 	// count the number of registered commands
