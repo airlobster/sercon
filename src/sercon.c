@@ -218,9 +218,10 @@ void rlx_callback(rlx_t h, char* line) {
 		return;
 	}
 	char *start=0, *end=0;
-	// check if the line is a registered command and process it, otherwise forward it to the serial port
+	// find net content boundaries (without leading and trailing spaces)
 	if( strnetcontent(line, &start, &end) ) {
 		*end = '\0'; // null terminate the command string
+		// check if the line is a registered command and process it, otherwise forward it to the serial port
 		if( ! rlx_process_command(rlx, start, 0) ) {
 			write(fdPort, start, end - start);
 			write(fdPort, "\n", 1);
