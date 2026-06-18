@@ -215,9 +215,7 @@ void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
 const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	ASSERT(rlx);
-	ASSERT(command);
-	while( isspace(*command) ) command++; // skip leading whitespace
-	if( ! *command ) return 0; // empty command string
+	ASSERT(command && *command);
 	for(const rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
 		if( strcmp(cmd->cmd.command, command) == 0 ) {
 			return &cmd->cmd;
