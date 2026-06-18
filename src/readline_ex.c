@@ -154,7 +154,8 @@ rlx_t rlx_begin(
 */
 void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx || ! commands ) return;
+	ASSERT(rlx);
+	ASSERT(commands);
 	for( const rlx_registered_command_t* rc = commands; rc && rc->command && rc->handler; rc++ ) {
 		if( rlx_get_command(h, rc->command) ) continue;
 		rlx_command_node_t* cmd = malloc(sizeof(rlx_command_node_t));
@@ -172,7 +173,8 @@ void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
 */
 const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx || ! command ) return 0;
+	ASSERT(rlx);
+	if( ! command || ! *command ) return 0;
 	for(const rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
 		if( strcmp(cmd->cmd.command, command) == 0 ) {
 			return &cmd->cmd;
@@ -194,7 +196,8 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 	int argc=0;
 	char** argv=0;
 
-	if( ! rlx || ! line || ! *line ) return false;
+	ASSERT(rlx);
+	if( ! line || ! *line ) return false;
 
 	int expansionResult = history_expand(line, &expanded);
 	if( expansionResult < 0 || expansionResult == 2 ) {
@@ -227,7 +230,7 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 */
 void rlx_pause(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx ) return;
+	ASSERT(rlx);
 	if( rlx->isPaused ) return; // if we're already paused, no need to do anything
 	rlx->savedLineBuffer = strdup(rl_line_buffer); // save the current readline input so we can restore it after printing serial output
 	rl_save_prompt(); // save the current prompt in case it gets overwritten by serial output
@@ -243,7 +246,8 @@ void rlx_pause(rlx_t h) {
 */
 void rlx_resume(rlx_t h, bool redisplayPrompt) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx || ! rlx->isPaused ) return; // if we're not currently paused, no need to do anything
+	ASSERT(rlx);
+	if( ! rlx->isPaused ) return; // if we're not currently paused, no need to do anything
 	rl_restore_prompt(); // restore the prompt that was saved before we paused readline for printing serial output
 	rl_replace_line(rlx->savedLineBuffer, 0); // restore the saved input line so the user can continue editing it after we print serial output
 	if( redisplayPrompt ) {
@@ -261,7 +265,8 @@ void rlx_resume(rlx_t h, bool redisplayPrompt) {
 */
 static void rlx_add_history_entry(rlx_t h, const char* line) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx || ! line ) return;
+	ASSERT(rlx);
+	if( ! line ) return;
 	while( isspace(*line) ) line++; // skip leading whitespace
 	if( ! *line ) return; // don't add empty or whitespace-only lines to history
 	add_history(line);
@@ -273,7 +278,7 @@ static void rlx_add_history_entry(rlx_t h, const char* line) {
 */
 void rlx_process_input(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx ) return;
+	ASSERT(rlx);
 	// this will trigger readline to read the input and call our readline_callback function
 	rl_callback_read_char();
 }
@@ -320,7 +325,7 @@ void rlx_end(rlx_t h) {
 */
 void rlx_reset_history(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx ) return;
+	ASSERT(rlx);
 	rl_clear_history();
 }
 
@@ -330,7 +335,7 @@ void rlx_reset_history(rlx_t h) {
 */
 void rlx_print_history(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx ) return;
+	ASSERT(rlx);
 	int index = history_base;
 	for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
 		printf("%d: %s\n", index++, (*entry)->line);
@@ -387,7 +392,7 @@ void rlx_print_registered_commands(rlx_t h) {
 */
 static char** rlx_build_completion_vocabulary(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx ) return 0;
+	ASSERT(rlx);
 
 	char** vocab = 0;
 	size_t vocabSize = 0;
@@ -487,7 +492,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 */
 void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	if( ! rlx ) return;
+	ASSERT(rlx);
 	if( rlx->ownsCompletionVocabulary ) {
 		// dispose of the old vocabulary if we own it before replacing it with the new one
 		rlx_free_completion_vocabulary(rlx->completionVocabulary);
