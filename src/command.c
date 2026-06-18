@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 #include "command.h"
+
+#define ASSERT(x) assert(x)
 
 /**
  * @brief Parses a command line into an argument vector, similar to how a shell would parse command line input.
@@ -10,7 +13,7 @@
  * @param line The command line string to parse.
  * @param argc Pointer to an integer to store the number of arguments.
  * @param argv Pointer to an array of strings to store the arguments.
- * @return int The number of arguments parsed.
+ * @return int The number of arguments parsed, or -1 on error (e.g., memory allocation failure or buffer overflow).
  * @note The caller is responsible for freeing the memory allocated for argv and its contents using free_command_args.
  */
 int parse_command_line(const char* line, int* argc, char*** argv) {
@@ -30,14 +33,22 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	char token[256] = {0}; // buffer for the current token
 	char* pTokenWr = token; // pointer to the current position in the token buffer
 
+	ASSERT(argc && argv && line);
+
+	*argc = 0;
+	*argv = 0;
+
 	state[statePos++] = PS_START;
 
 	for(const char* p = line; p && *p ; p++) {
+		// token buffer overflow check
 		if( pTokenWr - token >= (long)sizeof(token) - 1 ) {
 			// FATAL: token buffer overflow
-			fprintf(stderr, "Token buffer overflow!!\n");
-			exit(1);
+			free_command_args(tokenCount, tokens);
+			return -1;
 		}
+		// state stack overflow check
+		ASSERT(statePos > 0 && statePos < (int)(sizeof(state)/sizeof(state[0])));
 		switch( state[statePos - 1] ) {
 			case PS_START: {
 				if( isspace(*p) ) break;
@@ -99,7 +110,13 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 			}
 			case PS_END: {
 				// add this token to the argv array
-				tokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
+				char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
+				if( ! newTokens ) {
+					// FATAL: memory allocation failure
+					free_command_args(tokenCount, tokens);
+					return -1;
+				}
+				tokens = newTokens;
 				tokens[tokenCount++] = strdup(token);
 				// reset token buffer for the next token
 				pTokenWr = token;
@@ -115,6 +132,11 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	if( *token ) {
 		// add the last token if there is one after processing the whole line
 		tokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
+		if( ! tokens ) {
+			// FATAL: memory allocation failure
+			free_command_args(tokenCount, tokens);
+			return -1;
+		}
 		tokens[tokenCount++] = strdup(token);
 	}
 
