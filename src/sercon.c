@@ -205,7 +205,7 @@ static void setupTerminalCommands() {
 	rlx_register_commands(rlx, commands);
 }
 
-void readline_callback(rlx_t h, char* line) {
+void rlx_callback(rlx_t h, char* line) {
 	(void)h;
 	if( ! line ) {
 		if( isatty(fileno(stdin)) ) {
@@ -264,7 +264,7 @@ static void console() {
 	};
 
 	// initialize readline for handling user input and command history
-	rlx = rlx_begin(appname, prompt, readline_callback, maxHistoryEntries, 0,
+	rlx = rlx_begin(appname, prompt, rlx_callback, maxHistoryEntries, 0,
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0) | RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY);
 	if( ! rlx ) {
 		a_error("Error initializing RLX session\n");
@@ -286,7 +286,7 @@ static void console() {
 
 		// Check if user input is available
 		if( fds[1].revents & POLLIN ) {
-			rlx_process_input(rlx); // this will trigger readline to read the input and call our readline_callback function
+			rlx_process_input(rlx); // this will trigger readline to read the input and call our RLX callback function
 		} // end stdin handling
 
 		// Check if data is available from the serial port
