@@ -156,14 +156,14 @@ static int printTimestamp(FILE* stream) {
 }
 
 static void termCmdCallback(
-		const rlx_registered_command_t* cmd, int argc, const char* argv[], void* userData) {
+		rlx_t h, const rlx_registered_command_t* cmd, int argc, const char* argv[], void* userData) {
 	(void)userData;
 	switch( cmd->id ) {
 		case 'h': {
 			if( argc > 1 ) {
 				// get help for specific commands
 				for(int i=1; i<argc; i++) {
-					const rlx_registered_command_t* cmd = rlx_get_command(rlx, argv[i]);
+					const rlx_registered_command_t* cmd = rlx_get_command(h, argv[i]);
 					if( cmd ) {
 						afprintf(stdout, "%s - %s\n", cmd->command, cmd->description);
 					} else {
@@ -173,12 +173,12 @@ static void termCmdCallback(
 			} else {
 				// overall help message
 				afprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available commands:\n");
-				rlx_print_registered_commands(rlx);
+				rlx_print_registered_commands(h);
 			}
 			break;
 		}
 		case 'c': {
-			rlx_reset_history(rlx);
+			rlx_reset_history(h);
 			a_success("History cleared\n");
 			break;
 		}
@@ -187,7 +187,7 @@ static void termCmdCallback(
 			break;
 		}
 		case 'i': {
-			rlx_print_history(rlx);
+			rlx_print_history(h);
 			break;
 		}
 	}

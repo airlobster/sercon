@@ -34,7 +34,7 @@ typedef struct _rlx_registered_command_t {
 	int id;
 	const char* command;
 	const char* description;
-	void(*handler)(const struct _rlx_registered_command_t* cmd, int argc, const char *argv[], void* userData);
+	void(*handler)(rlx_t h, const struct _rlx_registered_command_t* cmd, int argc, const char *argv[], void* userData);
 } rlx_registered_command_t;
 
 typedef enum {

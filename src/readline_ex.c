@@ -174,7 +174,9 @@ void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
 const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	ASSERT(rlx);
-	if( ! command || ! *command ) return 0;
+	ASSERT(command);
+	while( isspace(*command) ) command++; // skip leading whitespace
+	if( ! *command ) return 0; // empty command string
 	for(const rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
 		if( strcmp(cmd->cmd.command, command) == 0 ) {
 			return &cmd->cmd;
@@ -213,7 +215,7 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 	parse_command_line(line, &argc, &argv);
 	const rlx_registered_command_t* cmd = rlx_get_command(h, argv[0]);
 	if( cmd ) {
-		cmd->handler(cmd, argc, (const char**)argv, userData);
+		cmd->handler(h, cmd, argc, (const char**)argv, userData);
 	}
 	free_command_args(argc, argv);
 
