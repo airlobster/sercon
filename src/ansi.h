@@ -5,7 +5,7 @@
  * @file ansi.h
  * @brief Header file for ANSI escape codes and related functions.
  */
- 
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdarg.h>

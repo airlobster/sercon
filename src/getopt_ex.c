@@ -109,7 +109,7 @@ static int qsortCallback(const void* a, const void* b) {
 
 /**
  * @brief Get the opt ex object
- * 
+ *
  * @param argc The number of command-line arguments
  * @param argv The array of command-line arguments
  * @param long_options Pointer to the array of getopt_ex_option_t structures

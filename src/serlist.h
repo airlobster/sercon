@@ -5,7 +5,7 @@
  * @file serlist.h
  * @brief Header file for enumerating serial ports.
  */
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif

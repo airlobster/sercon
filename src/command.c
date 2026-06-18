@@ -9,7 +9,7 @@
 
 /**
  * @brief Parses a command line into an argument vector, similar to how a shell would parse command line input.
- * 
+ *
  * @param line The command line string to parse.
  * @param argc Pointer to an integer to store the number of arguments.
  * @param argv Pointer to an array of strings to store the arguments.
