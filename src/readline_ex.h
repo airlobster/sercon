@@ -75,7 +75,6 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData);
 // history management
 void rlx_reset_history(rlx_t h);
 void rlx_print_history(rlx_t h);
-void rlx_commit_history(rlx_t h);
 
 // vocabulary management
 void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab);

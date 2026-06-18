@@ -41,6 +41,8 @@ static void rlx_free_completion_vocabulary(char** vocab);
 static char** rlx_custom_completion(const char* text, int start, int end);
 static char* rlx_custom_completion_generator(const char* text, int state);
 static void rlx_add_history_entry(rlx_t h, const char* line);
+static void rlx_commit_history(rlx_t h);
+
 
 /**
 	@brief Create the file path for the history file.
@@ -336,7 +338,7 @@ void rlx_reset_history(rlx_t h) {
 	@brief Commit the command history for the readline_ex session.
 	@param h The readline_ex session handle.
 */
-void rlx_commit_history(rlx_t h) {
+static void rlx_commit_history(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	ASSERT(rlx);
 	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
