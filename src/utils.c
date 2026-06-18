@@ -29,13 +29,21 @@ const char* getHomeDir() {
 }
 
 int strnetcontent(char* s, char** start, char** end) {
-	char *p1, *p2;
+	ASSERT(start && end);
 	if( ! s ) return 0;
-	for(p1 = s; isspace(*p1); p1++)
-		; // skip leading whitespace
-	for(p2 = s + strlen(s) - 1; p2 >= p1 && isspace(*p2); p2--)
-		; // move end pointer back over trailing whitespace
-	if( start ) *start = p1;
-	if( end ) *end = ++p2;
-	return p2 - p1; // return length of the non-whitespace content
+	char *p = s;
+	// skip over leading whitespace
+	while( isspace(*p) ) {
+		++p;
+	}
+	*start = *end = p;
+	// find the last non-whitespace character
+	while( *p ) {
+		if( ! isspace(*p) ) {
+			*end = p + 1;
+		}
+		++p;
+	}
+	ASSERT(*end >= *start);
+	return *end - *start;
 }

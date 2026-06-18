@@ -1,4 +1,5 @@
 #include <string.h>
+#include "utils.h"
 #include "serlist.h"
 
 // https://github.com/sigrokproject/libserialport/releases/download/libserialport-0.1.2/libserialport-0.1.2.tar.gz
@@ -11,6 +12,7 @@
  * @return int The number of available serial ports.
  */
 int enumSerialPorts(void(*callback)(const char* port, void* userData), void* userData) {
+	ASSERT(callback);
 	struct sp_port **ports;
 	int n = 0;
 	sp_list_ports(&ports);

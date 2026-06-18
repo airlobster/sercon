@@ -4,10 +4,13 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdio.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ASSERT(cond) assert(cond)
 
 #define autoptr(f) __attribute__((cleanup(f)))
 #define array_size(arr) (sizeof(arr) / sizeof((arr)[0]))

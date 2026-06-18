@@ -133,6 +133,7 @@ static void parse_args(int argc, char *argv[])
 		{{"non-persistent-history", no_argument, 0, 'H'}, "Disable persistent history (history will not be saved to a file)", 0},
 		GETOPT_EX_OPTIONS_END
 	};
+	ASSERT(options[array_size(options)-1].opt.name == 0); // ensure the last option is the end marker
 	getopt_ex(argc, argv, options, description, parse_option_callback);
 }
 
@@ -199,6 +200,8 @@ static void setupTerminalCommands() {
 		{'q', "quit", "Exit the program", termCmdCallback},
 		{0, 0, 0, 0} // end marker
 	};
+	ASSERT(rlx);
+	ASSERT(commands[array_size(commands)-1].command == 0); // ensure the last command is the end marker
 	rlx_register_commands(rlx, commands);
 }
 
@@ -214,14 +217,14 @@ void readline_callback(char* line) {
 		return;
 	}
 	char *start=0, *end=0;
-	strnetcontent(line, &start, &end);
-	if( end > start ) {
+	// extract the command from the line, ignoring leading and trailing whitespace
+	if( strnetcontent(line, &start, &end) ) {
 		// Let RLX handle the command while considering its registered commands and history expansion.
 		// If the command is not recognized there, fall back to forwarding it to the serial port.
 		// history will be updated internally by this call.
 		if( ! rlx_process_command(rlx, start, 0) ) {
 			// forward the command to the serial port followed by a newline
-			write(fdPort, start, end - start + 1);
+			write(fdPort, start, end - start);
 			write(fdPort, "\n", 1);
 		}
 	}
