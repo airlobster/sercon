@@ -270,8 +270,8 @@ void rlx_resume(rlx_t h, bool redisplayPrompt) {
 	@param line The line to add to the history.
 */
 static void rlx_add_history_entry(rlx_t h, const char* line) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	ASSERT(rlx);
+	(void)h;
+	ASSERT(h);
 	if( ! line ) return;
 	while( isspace(*line) ) line++; // skip leading whitespace
 	if( ! *line ) return; // don't add empty or whitespace-only lines to history
@@ -283,8 +283,8 @@ static void rlx_add_history_entry(rlx_t h, const char* line) {
 	@param h The readline_ex session handle.
 */
 void rlx_process_input(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	ASSERT(rlx);
+	(void)h;
+	ASSERT(h);
 	// this will trigger readline to read the input and call our readline_callback function
 	rl_callback_read_char();
 }
@@ -340,8 +340,8 @@ void rlx_end(rlx_t h) {
 	@param h The readline_ex session handle.
 */
 void rlx_reset_history(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	ASSERT(rlx);
+	(void)h;
+	ASSERT(h);
 	rl_clear_history();
 }
 
@@ -363,8 +363,8 @@ static void rlx_commit_history(rlx_t h) {
 	@param h The readline_ex session handle.
 */
 void rlx_print_history(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	ASSERT(rlx);
+	(void)h;
+	ASSERT(h);
 	int index = history_base;
 	for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
 		printf("%d: %s\n", index++, (*entry)->line);
