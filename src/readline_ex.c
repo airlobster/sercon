@@ -296,10 +296,11 @@ void rlx_end(rlx_t h) {
 
 	rl_callback_handler_remove();
 
-	// commit current history
-	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
-		write_history(rlx->historyFilePath);
-		history_truncate_file(rlx->historyFilePath, rlx->maxHistoryEntries);
+	rlx_commit_history(h);
+
+	free(rlx->historyFilePath);
+	if( rlx->savedLineBuffer ) {
+		free(rlx->savedLineBuffer);
 	}
 
 	free(rlx->historyFilePath);
@@ -329,6 +330,19 @@ void rlx_reset_history(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	ASSERT(rlx);
 	rl_clear_history();
+}
+
+/**
+	@brief Commit the command history for the readline_ex session.
+	@param h The readline_ex session handle.
+*/
+void rlx_commit_history(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	ASSERT(rlx);
+	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
+		write_history(rlx->historyFilePath);
+		history_truncate_file(rlx->historyFilePath, rlx->maxHistoryEntries);
+	}
 }
 
 /**
