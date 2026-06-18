@@ -31,7 +31,7 @@ const char* getHomeDir() {
 int strnetcontent(char* s, char** start, char** end) {
 	ASSERT(start && end);
 	if( ! s ) return 0;
-	char *p = s;
+	register char *p = s;
 	// skip over leading whitespace
 	while( isspace(*p) ) {
 		++p;
