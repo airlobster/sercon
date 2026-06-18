@@ -19,6 +19,9 @@
 
 	(GNU readline Library: https://tiswww.case.edu/php/chet/readline/rltop.html)
 	(GNU history library: https://tiswww.case.edu/php/chet/readline/history.html)
+
+	Author: Adi Degani (adid172@gmail.com)
+	Copyright (c) 2026 Adi Degani. All rights reserved.
 */
 
 #include <stdlib.h>
