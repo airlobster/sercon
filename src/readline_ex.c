@@ -296,6 +296,9 @@ void rlx_process_input(rlx_t h) {
 void rlx_end(rlx_t h) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 
+	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
+
 	if( ! rlx || ! rlx->isInitialized ) return;
 
 	rl_callback_handler_remove();
@@ -324,7 +327,12 @@ void rlx_end(rlx_t h) {
 	}
 
 	// reset the readline context to its initial state
+#ifdef NDEBUG
 	memset(rlx, 0, sizeof(*rlx));
+#else
+	memset(rlx, -1, sizeof(*rlx));
+#endif
+	rlx->isInitialized = false;
 }
 
 /**

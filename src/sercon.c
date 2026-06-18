@@ -183,7 +183,7 @@ static void termCmdCallback(
 			break;
 		}
 		case 'q': {
-			raise(SIGINT); // exit the program
+			exit(0);
 			break;
 		}
 		case 'i': {
