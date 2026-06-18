@@ -44,11 +44,12 @@ typedef struct _rlx_registered_command_t {
 } rlx_registered_command_t;
 
 typedef enum {
-	RLX_OPT_AUTOCOMPLETE_HISTORY = 1U << 0, // include history entries in the autocomplete vocabulary
-	RLX_OPT_AUTOCOMPLETE_COMMANDS = 1U << 1, // include registered commands in the autocomplete vocabulary
-	RLX_OPT_AUTOCOMPLETE_FILES = 1U << 2, // default GNU readline file autocompletion (ignoring any custom vocabulary)
+	RLX_OPT_AUTOCOMPLETE_HISTORY = 1UL << 0, // include history entries in the autocomplete vocabulary
+	RLX_OPT_AUTOCOMPLETE_COMMANDS = 1UL << 1, // include registered commands in the autocomplete vocabulary
+	RLX_OPT_AUTOCOMPLETE_FILES = 1UL << 2, // default GNU readline file autocompletion (ignoring any custom vocabulary)
 	RLX_OPT_AUTOCOMPLETE_MASK = RLX_OPT_AUTOCOMPLETE_HISTORY | RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_FILES,
-	RLX_OPT_PERSIST_HISTORY = 1U << 3, // save history to file and load it on startup
+	RLX_OPT_PERSIST_HISTORY = 1UL << 3, // save history to file and load it on startup
+	RLX_OPT_TRIM_LINE = 1UL << 4, // trim leading and trailing whitespace from input lines before processing
 } rlx_options_t;
 
 // RLX session management
