@@ -34,7 +34,6 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	char* pTokenWr = token; // pointer to the current position in the token buffer
 
 	ASSERT(argc && argv && line);
-
 	*argc = 0;
 	*argv = 0;
 
@@ -87,6 +86,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 					// end of this quoted token, push PS_END state to flush the token and prepare for the next one
 					--statePos;
 					state[statePos++] = PS_END;
+					quote = 0;
 				} else {
 					*pTokenWr++ = *p;
 					*pTokenWr = '\0';
@@ -131,12 +131,13 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	// if there's still a pending un-terminated token, flush it out as well
 	if( *token ) {
 		// add the last token if there is one after processing the whole line
-		tokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
-		if( ! tokens ) {
+		char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
+		if( ! newTokens ) {
 			// FATAL: memory allocation failure
 			free_command_args(tokenCount, tokens);
 			return -1;
 		}
+		tokens = newTokens;
 		tokens[tokenCount++] = strdup(token);
 	}
 
