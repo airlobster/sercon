@@ -22,7 +22,7 @@ typedef struct _rlx_command_node_t {
 // internal readline context structure type
 typedef struct {
 	bool isInitialized;
-	void (*callback)(rlx_t h, char*);
+	void (*callback)(rlx_t h, char*, size_t);
 	unsigned long options;
 	const char* prompt;
 	char* historyFilePath;
@@ -45,6 +45,32 @@ static char* rlx_custom_completion_generator(const char* text, int state);
 static void rlx_add_history_entry(rlx_t h, const char* line);
 static void rlx_commit_history(rlx_t h);
 
+/**
+	@brief Find the start and end of the non-whitespace content in a string.
+	@param s The input string.
+	@param start Pointer to store the start of the content.
+	@param end Pointer to store the end of the content.
+	@return The length of the content.
+*/
+static int strnetcontent(char* s, char** start, char** end) {
+	ASSERT(start && end);
+	if( ! s ) return 0;
+	register char *p = s;
+	// skip over leading whitespace
+	while( isspace(*p) ) {
+		++p;
+	}
+	*start = *end = p;
+	// find the last non-whitespace character
+	while( *p ) {
+		if( ! isspace(*p) ) {
+			*end = p + 1;
+		}
+		++p;
+	}
+	ASSERT(*end >= *start);
+	return *end - *start;
+}
 
 /**
 	@brief Create the file path for the history file.
@@ -81,8 +107,19 @@ static void readline_callback_wrapper(char* line) {
 	rlx_internal_t* rlx = &rlxStatic;
 	ASSERT(rlx->isInitialized);
 	ASSERT(rlx->callback);
-	rlx->callback((rlx_t)rlx, line);
-	if( line ) free(line);
+	if( line ) {
+		char *start, *end;
+		if( strnetcontent(line, &start, &end) ) {
+			*end = '\0'; // null-terminate the line at the end of the content
+			rlx->callback((rlx_t)rlx, start, end - start);
+		} else {
+			// ignore empty lines (only whitespace)
+		}
+		free(line); // free the line buffer after processing to avoid memory leaks
+	} else {
+		// EOF received (e.g., Ctrl+D). notify the callback with a NULL line
+		rlx->callback((rlx_t)rlx, 0, 0);
+	}
 }
 
 /**
@@ -98,7 +135,7 @@ static void readline_callback_wrapper(char* line) {
 rlx_t rlx_begin(
 	const char* appname,
 	const char* prompt,
-	void (*callback)(rlx_t h, char*),
+	void (*callback)(rlx_t h, char*, size_t),
 	size_t maxHistoryEntries,
 	const char* historyContext,
 	unsigned long options
@@ -201,6 +238,7 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 	char* expanded = 0;
 	int argc=0;
 	char** argv=0;
+	const rlx_registered_command_t* cmd = 0;
 
 	ASSERT(rlx);
 	if( ! line || ! *line ) return false;
@@ -216,12 +254,13 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 
 	rlx_add_history_entry((rlx_t)rlx, line);
 
-	parse_command_line(line, &argc, &argv);
-	const rlx_registered_command_t* cmd = rlx_get_command(h, argv[0]);
-	if( cmd ) {
-		cmd->handler(h, cmd, argc, (const char**)argv, userData);
+	if( parse_command_line(line, &argc, &argv) > 0 ) {
+		cmd = rlx_get_command(h, argv[0]);
+		if( cmd ) {
+			cmd->handler(h, cmd, argc, (const char**)argv, userData);
+		}
+		free_command_args(argc, argv);
 	}
-	free_command_args(argc, argv);
 
 	if( expanded ) {
 		free(expanded);
@@ -272,9 +311,7 @@ void rlx_resume(rlx_t h, bool redisplayPrompt) {
 static void rlx_add_history_entry(rlx_t h, const char* line) {
 	(void)h;
 	ASSERT(h);
-	if( ! line ) return;
-	while( isspace(*line) ) line++; // skip leading whitespace
-	if( ! *line ) return; // don't add empty or whitespace-only lines to history
+	if( ! line || ! *line ) return;
 	add_history(line);
 }
 

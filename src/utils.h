@@ -28,9 +28,6 @@ typedef struct {
 } cal_time_t;
 int now(cal_time_t* t);
 
-// return boundaries of a string's net content (minus leading and trailing whitespace)
-int strnetcontent(char* s, char** start, char** end);
-
 #ifdef __cplusplus
 } // extern "C"
 #endif

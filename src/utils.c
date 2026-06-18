@@ -27,23 +27,3 @@ const char* getHomeDir() {
 	}
 	return homeDir;
 }
-
-int strnetcontent(char* s, char** start, char** end) {
-	ASSERT(start && end);
-	if( ! s ) return 0;
-	register char *p = s;
-	// skip over leading whitespace
-	while( isspace(*p) ) {
-		++p;
-	}
-	*start = *end = p;
-	// find the last non-whitespace character
-	while( *p ) {
-		if( ! isspace(*p) ) {
-			*end = p + 1;
-		}
-		++p;
-	}
-	ASSERT(*end >= *start);
-	return *end - *start;
-}

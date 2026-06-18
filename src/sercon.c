@@ -205,7 +205,7 @@ static void setupTerminalCommands() {
 	rlx_register_commands(rlx, commands);
 }
 
-void rlx_callback(rlx_t h, char* line) {
+void rlx_callback(rlx_t h, char* line, size_t length) {
 	(void)h;
 	if( ! line ) {
 		if( isatty(fileno(stdin)) ) {
@@ -217,15 +217,9 @@ void rlx_callback(rlx_t h, char* line) {
 		}
 		return;
 	}
-	char *start=0, *end=0;
-	// find net content boundaries (without leading and trailing spaces)
-	if( strnetcontent(line, &start, &end) ) {
-		*end = '\0'; // null terminate the command string
-		// check if the line is a registered command and process it, otherwise forward it to the serial port
-		if( ! rlx_process_command(rlx, start, 0) ) {
-			write(fdPort, start, end - start);
-			write(fdPort, "\n", 1);
-		}
+	if( ! rlx_process_command(rlx, line, 0) ) {
+		write(fdPort, line, length);
+		write(fdPort, "\n", 1);
 	}
 	// (RLX will free the line buffer for us)
 }

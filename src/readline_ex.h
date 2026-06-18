@@ -55,7 +55,7 @@ typedef enum {
 rlx_t rlx_begin(
 	const char* appname,
 	const char* prompt,
-	void (*callback)(rlx_t h, char*),
+	void (*callback)(rlx_t h, char*, size_t),
 	size_t maxHistoryEntries,
 	const char* historyContext,
 	unsigned long options
