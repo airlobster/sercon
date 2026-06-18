@@ -205,7 +205,8 @@ static void setupTerminalCommands() {
 	rlx_register_commands(rlx, commands);
 }
 
-void readline_callback(char* line) {
+void readline_callback(rlx_t h, char* line) {
+	(void)h;
 	if( ! line ) {
 		if( isatty(fileno(stdin)) ) {
 			// interactive mode - exit immediately

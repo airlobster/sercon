@@ -20,7 +20,7 @@ typedef struct _rlx_command_node_t {
 // internal readline context structure type
 typedef struct {
 	bool isInitialized;
-	void (*readline_callback)(char*);
+	void (*readline_callback)(rlx_t h, char*);
 	unsigned long options;
 	const char* prompt;
 	char* historyFilePath;
@@ -77,7 +77,7 @@ static void readline_callback_wrapper(char* line) {
 	rlx_internal_t* rlx = &rlxStatic;
 	ASSERT(rlx->isInitialized);
 	ASSERT(rlx->readline_callback);
-	rlx->readline_callback(line);
+	rlx->readline_callback((rlx_t)rlx, line);
 	if( line ) free(line);
 }
 
@@ -94,7 +94,7 @@ static void readline_callback_wrapper(char* line) {
 rlx_t rlx_begin(
 	const char* appname,
 	const char* prompt,
-	void (*readline_callback)(char*),
+	void (*readline_callback)(rlx_t h, char*),
 	size_t maxHistoryEntries,
 	const char* historyContext,
 	unsigned long options
