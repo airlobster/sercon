@@ -89,7 +89,7 @@ endif
 OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(src)))
 
 # default entry point
-all: config_error vars $(TARGET)
+all: config_error $(TARGET)
 
 # LINK
 $(TARGET): $(OBJS)
