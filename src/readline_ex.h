@@ -64,7 +64,7 @@ void rlx_end(rlx_t h);
 void rlx_pause(rlx_t h);
 void rlx_resume(rlx_t h, bool redisplayPrompt);
 
-// called whenever content is available for reading from stdin,
+// should be called whenever content is available for reading from stdin,
 // typically from an event loop or select/poll/epoll callback
 void rlx_process_input(rlx_t h);
 
@@ -75,7 +75,8 @@ void rlx_print_registered_commands(rlx_t h);
 
 // processes a line of input, executing the corresponding command handler if a
 // registered command is found, otherwise returns false to indicate that the
-// line was not recognized as a command and can be processed as regular input by the caller
+// line was not recognized as a command and can be processed as regular input by the caller.
+// typically called from the RLX callback function provided to rlx_begin().
 bool rlx_process_command(rlx_t h, const char* line, void* userData);
 
 // history management
