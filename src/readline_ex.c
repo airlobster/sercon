@@ -20,7 +20,7 @@ typedef struct _rlx_command_node_t {
 // internal readline context structure type
 typedef struct {
 	bool isInitialized;
-	void (*readline_callback)(rlx_t h, char*);
+	void (*callback)(rlx_t h, char*);
 	unsigned long options;
 	const char* prompt;
 	char* historyFilePath;
@@ -76,8 +76,8 @@ static char* makeHistoryFilePath(const char* appname, const char* historyContext
 static void readline_callback_wrapper(char* line) {
 	rlx_internal_t* rlx = &rlxStatic;
 	ASSERT(rlx->isInitialized);
-	ASSERT(rlx->readline_callback);
-	rlx->readline_callback((rlx_t)rlx, line);
+	ASSERT(rlx->callback);
+	rlx->callback((rlx_t)rlx, line);
 	if( line ) free(line);
 }
 
@@ -85,7 +85,7 @@ static void readline_callback_wrapper(char* line) {
 	@brief Begin a readline_ex session.
 	@param appname The name of the application.
 	@param prompt The prompt string to display.
-	@param readline_callback The callback function to handle input lines.
+	@param callback The callback function to handle input lines.
 	@param maxHistoryEntries The maximum number of history entries to keep.
 	@param historyContext The context for the history file (optional).
 	@param options Options for configuring the readline_ex session.
@@ -94,7 +94,7 @@ static void readline_callback_wrapper(char* line) {
 rlx_t rlx_begin(
 	const char* appname,
 	const char* prompt,
-	void (*readline_callback)(rlx_t h, char*),
+	void (*callback)(rlx_t h, char*),
 	size_t maxHistoryEntries,
 	const char* historyContext,
 	unsigned long options
@@ -102,13 +102,13 @@ rlx_t rlx_begin(
 	rlx_internal_t* rlx = &rlxStatic;
 
 	ASSERT(appname && *appname);
-	ASSERT(readline_callback);
+	ASSERT(callback);
 
 	// allow only a single readline context since readline uses global state !!!
 	if( rlx->isInitialized ) return 0;
 
 	rlx->isInitialized = true;
-	rlx->readline_callback = readline_callback;
+	rlx->callback = callback;
 	rlx->options = options;
 	rlx->prompt = prompt;
 	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
