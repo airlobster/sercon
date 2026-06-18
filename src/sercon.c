@@ -217,18 +217,12 @@ void readline_callback(char* line) {
 		return;
 	}
 	char *start=0, *end=0;
-	// extract the command from the line, ignoring leading and trailing whitespace
-	if( strnetcontent(line, &start, &end) ) {
-		// Let RLX handle the command while considering its registered commands and history expansion.
-		// If the command is not recognized there, fall back to forwarding it to the serial port.
-		// history will be updated internally by this call.
-		if( ! rlx_process_command(rlx, start, 0) ) {
-			// forward the command to the serial port followed by a newline
-			write(fdPort, start, end - start);
-			write(fdPort, "\n", 1);
-		}
+	// check if the line is a registered command and process it, otherwise forward it to the serial port
+	if( strnetcontent(line, &start, &end) && ! rlx_process_command(rlx, start, 0) ) {
+		write(fdPort, start, end - start);
+		write(fdPort, "\n", 1);
 	}
-	free((void*)line);
+	// (RLX will free the line buffer for us)
 }
 
 // Main console loop to concurrently handle input from both the serial port and user input

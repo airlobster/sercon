@@ -8,6 +8,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "readline_ex.h"
+#include "utils.h"
 #include "command.h"
 
 // registered command linked list node type
@@ -19,6 +20,7 @@ typedef struct _rlx_command_node_t {
 // internal readline context structure type
 typedef struct {
 	bool isInitialized;
+	void (*readline_callback)(char*);
 	unsigned long options;
 	const char* prompt;
 	char* historyFilePath;
@@ -70,6 +72,15 @@ static char* makeHistoryFilePath(const char* appname, const char* historyContext
 	return path;
 }
 
+// readline callback wrapper to handle freeing the line buffer after processing
+static void readline_callback_wrapper(char* line) {
+	rlx_internal_t* rlx = &rlxStatic;
+	ASSERT(rlx->isInitialized);
+	ASSERT(rlx->readline_callback);
+	rlx->readline_callback(line);
+	if( line ) free(line);
+}
+
 /**
 	@brief Begin a readline_ex session.
 	@param appname The name of the application.
@@ -90,15 +101,14 @@ rlx_t rlx_begin(
 ) {
 	rlx_internal_t* rlx = &rlxStatic;
 
-	if( ! appname || ! *appname || ! readline_callback ) {
-		fprintf(stderr, "rlx_begin: appname and readline_callback are required parameters\n");
-		return 0;
-	}
+	ASSERT(appname && *appname);
+	ASSERT(readline_callback);
 
 	// allow only a single readline context since readline uses global state !!!
 	if( rlx->isInitialized ) return 0;
 
 	rlx->isInitialized = true;
+	rlx->readline_callback = readline_callback;
 	rlx->options = options;
 	rlx->prompt = prompt;
 	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
@@ -114,7 +124,7 @@ rlx_t rlx_begin(
 		read_history(rlx->historyFilePath);
 	}
 
-	rl_callback_handler_install(rlx->prompt, readline_callback);
+	rl_callback_handler_install(rlx->prompt, readline_callback_wrapper);
 
 	// setup auto-complete
 	// (RLX_OPT_AUTOCOMPLETE_COMMANDS and RLX_OPT_AUTOCOMPLETE_HISTORY takes priority
