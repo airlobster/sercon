@@ -31,11 +31,17 @@ bool bPersistentHistory = true;
 // global state variables
 char* appname = 0;
 volatile int shouldAbort = 0;
-volatile int pollTimeout = -1;
 bool atFirstRetryCycle = true;
 int fdPort = -1;
 rlx_t rlx = 0;
 char* prompt = 0;
+
+// a pointer to the type below will be passed to the RLX callback function as userData,
+// allowing us to maintain state across calls
+typedef struct {
+	struct pollfd fds[2];
+	int pollTimeout;
+} terminal_context_t;
 
 static void print_port_callback(const char* portName, void* userData) {
 	(void)userData;
@@ -157,7 +163,8 @@ static int printTimestamp(FILE* stream) {
 
 static void termCmdCallback(
 		rlx_t h, const rlx_registered_command_t* cmd, int argc, const char* argv[], void* userData) {
-	(void)userData;
+	terminal_context_t* termContext = (terminal_context_t*)userData;
+	(void)termContext; // currently unused, but could be useful for future enhancements
 	switch( cmd->id ) {
 		case 'h': {
 			if( argc > 1 ) {
@@ -213,14 +220,15 @@ static void setupTerminalCommands() {
 // RLX callback function to handle user input from the console
 void rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 	(void)h;
-	(void)userData;
+	terminal_context_t* termContext = (terminal_context_t*)userData;
 	if( ! line ) {
+		termContext->fds[1].fd = -1; // ignore stdin from now on
 		if( isatty(fileno(stdin)) ) {
 			// interactive mode - exit immediately
 			raise(SIGINT);
 		} else {
 			// allow some time for a response from the device before exiting
-			pollTimeout = waitOnEOFSeconds * 1000;
+			termContext->pollTimeout = waitOnEOFSeconds * 1000;
 		}
 		return;
 	}
@@ -263,9 +271,12 @@ static void console() {
 	cfsetspeed(&t, baud);
 	tcsetattr(fdPort, TCSANOW, &t);
 
-	struct pollfd fds[] = {
-		{ .fd = fdPort, .events = POLLIN },
-		{ .fd = fdStdin, .events = POLLIN },
+	terminal_context_t termContext = {
+		.fds = {
+			{ .fd = fdPort, .events = POLLIN },
+			{ .fd = fdStdin, .events = POLLIN },
+		},
+		.pollTimeout = -1
 	};
 
 	// initialize readline for handling user input and command history
@@ -273,7 +284,7 @@ static void console() {
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0)
 		| (RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY)
 		;
-	rlx = rlx_begin(appname, prompt, rlx_callback, maxHistoryEntries, 0, opt, 0);
+	rlx = rlx_begin(appname, prompt, rlx_callback, maxHistoryEntries, 0, opt, &termContext);
 	if( ! rlx ) {
 		a_error("Error initializing RLX session\n");
 		exit(1);
@@ -285,7 +296,7 @@ static void console() {
 		// wait for input from either stdin (fds[1]) or the serial port (fds[0]).
 		// if stdin is at EOF while in non-interactive mode, we will ignore stdin
 		// and set a final timeout to allow any pending serial output to be printed before we exit.
-		int ret = poll(fds, array_size(fds) - (pollTimeout >= 0 ? 1 : 0), pollTimeout);
+		int ret = poll(termContext.fds, array_size(termContext.fds), termContext.pollTimeout);
 
 		// Check for poll errors
 		if( ret <= 0 ) {
@@ -293,12 +304,12 @@ static void console() {
 		}
 
 		// Check if user input is available
-		if( fds[1].revents & POLLIN ) {
+		if( termContext.fds[1].revents & POLLIN ) {
 			rlx_process_input(rlx); // this will trigger readline to read the input and call our RLX callback function
 		} // end stdin handling
 
 		// Check if data is available from the serial port
-		if( fds[0].revents & POLLIN ) {
+		if( termContext.fds[0].revents & POLLIN ) {
 			ssize_t bytesRead = read(fdPort, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
 				break;
