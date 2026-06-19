@@ -186,6 +186,10 @@ static void termCmdCallback(
 			exit(0);
 			break;
 		}
+		case 'v': {
+			afprintf(stdout, "%s\n", VERSION);
+			break;
+		}
 		case 'i': {
 			rlx_print_history(h);
 			break;
@@ -198,6 +202,7 @@ static void setupTerminalCommands() {
 		{'c', "clear", "Clear history", termCmdCallback},
 		{'h', "help", "Show this help message", termCmdCallback},
 		{'q', "quit", "Exit the program", termCmdCallback},
+		{'v', "version", "Show version information", termCmdCallback},
 		{0, 0, 0, 0} // end marker
 	};
 	ASSERT(rlx);
