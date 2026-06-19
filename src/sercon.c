@@ -205,7 +205,8 @@ static void setupTerminalCommands() {
 	rlx_register_commands(rlx, commands);
 }
 
-void rlx_callback(rlx_t h, char* line, size_t length) {
+// RLX callback function to handle user input from the console
+void rlx_callback(rlx_t h, const char* line, size_t length) {
 	(void)h;
 	if( ! line ) {
 		if( isatty(fileno(stdin)) ) {
@@ -213,7 +214,7 @@ void rlx_callback(rlx_t h, char* line, size_t length) {
 			raise(SIGINT);
 		} else {
 			// allow some time for a response from the device before exiting
-			pollTimeout = waitOnEOFSeconds * 1000; // set a timeout to allow any pending serial output to be printed before we exit
+			pollTimeout = waitOnEOFSeconds * 1000;
 		}
 		return;
 	}
@@ -221,7 +222,6 @@ void rlx_callback(rlx_t h, char* line, size_t length) {
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
 	}
-	// (RLX will free the line buffer for us)
 }
 
 // Main console loop to concurrently handle input from both the serial port and user input

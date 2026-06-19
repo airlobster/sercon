@@ -52,11 +52,13 @@ typedef enum {
 	RLX_OPT_NO_TRIM_LINE = 1UL << 4, // do not trim leading and trailing whitespace from input lines before processing
 } rlx_options_t;
 
+typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length);
+
 // RLX session management
 rlx_t rlx_begin(
 	const char* appname,
 	const char* prompt,
-	void (*callback)(rlx_t h, char*, size_t),
+	rlx_callback_t callback,
 	size_t maxHistoryEntries,
 	const char* historyContext,
 	unsigned long options
