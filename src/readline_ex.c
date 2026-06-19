@@ -454,7 +454,7 @@ void rlx_print_registered_commands(rlx_t h) {
 	// print sorted array of commands with their descriptions
 	for(i=0; i < nCommands; i++) {
 		const rlx_registered_command_t* cmd = commands[i];
-		printf("  %s - %s\n",
+		printf("  %-10s - %s\n",
 			cmd->command,
 			cmd->description ? cmd->description : "(no description)");
 	}
