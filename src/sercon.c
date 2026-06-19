@@ -218,6 +218,7 @@ void rlx_callback(rlx_t h, const char* line, size_t length) {
 		}
 		return;
 	}
+	// if the line is not a recognized command, forward it to the serial port
 	if( ! rlx_process_command(rlx, line, 0) ) {
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
