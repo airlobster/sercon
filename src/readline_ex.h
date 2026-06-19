@@ -49,7 +49,7 @@ typedef enum {
 	RLX_OPT_AUTOCOMPLETE_FILES = 1UL << 2, // default GNU readline file autocompletion (ignoring any custom vocabulary)
 	RLX_OPT_AUTOCOMPLETE_MASK = RLX_OPT_AUTOCOMPLETE_HISTORY | RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_FILES,
 	RLX_OPT_PERSIST_HISTORY = 1UL << 3, // save history to file and load it on startup
-	RLX_OPT_TRIM_LINE = 1UL << 4, // trim leading and trailing whitespace from input lines before processing
+	RLX_OPT_NO_TRIM_LINE = 1UL << 4, // do not trim leading and trailing whitespace from input lines before processing
 } rlx_options_t;
 
 // RLX session management

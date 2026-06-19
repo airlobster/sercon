@@ -54,6 +54,7 @@ static void rlx_commit_history(rlx_t h);
 */
 static int strnetcontent(char* s, char** start, char** end) {
 	ASSERT(start && end);
+	*start = *end = 0;
 	if( ! s ) return 0;
 	register char *p = s;
 	// skip over leading whitespace
@@ -102,18 +103,31 @@ static char* makeHistoryFilePath(const char* appname, const char* historyContext
 	return path;
 }
 
-// readline callback wrapper to handle freeing the line buffer after processing
+/**
+ * @brief Wrapper for the readline callback for boilerplate handling.
+ * @details This function is called by readline when the user inputs a line.
+ * ## Cleans up the input line from leading and trailing whitespace
+ * ## checks if it's not empty, and then calls the user-provided callback with the cleaned line content.
+ * ## calls the user-provided callback with the cleaned line content.
+ * ## Free the line buffer
+ * ## notifying the callback about EOF conditions.
+ * @param line The input line from readline.
+ */
 static void readline_callback_wrapper(char* line) {
 	rlx_internal_t* rlx = &rlxStatic;
 	ASSERT(rlx->isInitialized);
 	ASSERT(rlx->callback);
 	if( line ) {
-		char *start, *end;
-		if( strnetcontent(line, &start, &end) ) {
-			*end = '\0'; // null-terminate the line at the end of the content
-			rlx->callback((rlx_t)rlx, start, end - start);
+		if( ! (rlx->options & RLX_OPT_NO_TRIM_LINE) ) {
+			char *start, *end;
+			if( strnetcontent(line, &start, &end) ) {
+				*end = '\0'; // null-terminate the line at the end of the net content
+				rlx->callback((rlx_t)rlx, start, end - start);
+			} else {
+				// ignore empty lines (only whitespace)
+			}
 		} else {
-			// ignore empty lines (only whitespace)
+			rlx->callback((rlx_t)rlx, line, strlen(line));
 		}
 		free(line); // free the line buffer after processing to avoid memory leaks
 	} else {

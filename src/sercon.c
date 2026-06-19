@@ -265,7 +265,6 @@ static void console() {
 	const unsigned long opt =
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0)
 		| (RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY)
-		| RLX_OPT_TRIM_LINE
 		;
 	rlx = rlx_begin(appname, prompt, rlx_callback, maxHistoryEntries, 0, opt);
 	if( ! rlx ) {
