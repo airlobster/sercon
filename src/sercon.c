@@ -211,8 +211,9 @@ static void setupTerminalCommands() {
 }
 
 // RLX callback function to handle user input from the console
-void rlx_callback(rlx_t h, const char* line, size_t length) {
+void rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 	(void)h;
+	(void)userData;
 	if( ! line ) {
 		if( isatty(fileno(stdin)) ) {
 			// interactive mode - exit immediately
@@ -224,7 +225,7 @@ void rlx_callback(rlx_t h, const char* line, size_t length) {
 		return;
 	}
 	// if the line is not a recognized command, forward it to the serial port
-	if( ! rlx_process_command(rlx, line, 0) ) {
+	if( ! rlx_process_command(rlx, line) ) {
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
 	}
@@ -272,7 +273,7 @@ static void console() {
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0)
 		| (RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY)
 		;
-	rlx = rlx_begin(appname, prompt, rlx_callback, maxHistoryEntries, 0, opt);
+	rlx = rlx_begin(appname, prompt, rlx_callback, maxHistoryEntries, 0, opt, 0);
 	if( ! rlx ) {
 		a_error("Error initializing RLX session\n");
 		exit(1);

@@ -23,6 +23,7 @@ typedef struct _rlx_command_node_t {
 typedef struct {
 	bool isInitialized;
 	rlx_callback_t callback;
+	void* userData;
 	unsigned long options;
 	const char* prompt;
 	char* historyFilePath;
@@ -122,17 +123,17 @@ static void readline_callback_wrapper(char* line) {
 			char *start, *end;
 			if( strnetcontent(line, &start, &end) ) {
 				*end = '\0'; // null-terminate the line at the end of the net content
-				rlx->callback((rlx_t)rlx, start, end - start);
+				rlx->callback((rlx_t)rlx, start, end - start, rlx->userData);
 			} else {
 				// ignore empty lines (only whitespace)
 			}
 		} else {
-			rlx->callback((rlx_t)rlx, line, strlen(line));
+			rlx->callback((rlx_t)rlx, line, strlen(line), rlx->userData);
 		}
 		free(line); // free the line buffer after processing to avoid memory leaks
 	} else {
 		// EOF received (e.g., Ctrl+D). notify the callback with a NULL line
-		rlx->callback((rlx_t)rlx, 0, 0);
+		rlx->callback((rlx_t)rlx, 0, 0, rlx->userData);
 	}
 }
 
@@ -144,6 +145,7 @@ static void readline_callback_wrapper(char* line) {
 	@param maxHistoryEntries The maximum number of history entries to keep.
 	@param historyContext The context for the history file (optional).
 	@param options Options for configuring the readline_ex session.
+	@param userData User data to pass to the callback function and registered command handlers.
 	@return A handle to the readline_ex session, or NULL on failure.
 */
 rlx_t rlx_begin(
@@ -152,7 +154,8 @@ rlx_t rlx_begin(
 	rlx_callback_t callback,
 	size_t maxHistoryEntries,
 	const char* historyContext,
-	unsigned long options
+	unsigned long options,
+	void* userData
 ) {
 	rlx_internal_t* rlx = &rlxStatic;
 
@@ -164,6 +167,7 @@ rlx_t rlx_begin(
 
 	rlx->isInitialized = true;
 	rlx->callback = callback;
+	rlx->userData = userData;
 	rlx->options = options;
 	rlx->prompt = prompt;
 	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
@@ -242,10 +246,9 @@ const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
 	@brief Process a command line, executing the corresponding command handler if a registered command is found.
 	@param h The readline_ex session handle.
 	@param line The command line to process.
-	@param userData User data to pass to the command handler.
 	@return true if a registered command was found and executed, false otherwise.
 */
-bool rlx_process_command(rlx_t h, const char* line, void* userData) {
+bool rlx_process_command(rlx_t h, const char* line) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	char* expanded = 0;
 	int argc=0;
@@ -266,10 +269,11 @@ bool rlx_process_command(rlx_t h, const char* line, void* userData) {
 
 	rlx_add_history_entry((rlx_t)rlx, line);
 
+	// we convert the command line into argc/argv format for easier parsing by command handlers,
+	// and then free the argv array after processing.
 	if( parse_command_line(line, &argc, &argv) > 0 ) {
-		cmd = rlx_get_command(h, argv[0]);
-		if( cmd ) {
-			cmd->handler(h, cmd, argc, (const char**)argv, userData);
+		if( (cmd = rlx_get_command(h, argv[0])) != 0 ) {
+			cmd->handler(h, cmd, argc, (const char**)argv, rlx->userData);
 		}
 		free_command_args(argc, argv);
 	}

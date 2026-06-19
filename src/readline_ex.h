@@ -52,7 +52,7 @@ typedef enum {
 	RLX_OPT_NO_TRIM_LINE = 1UL << 4, // do not trim leading and trailing whitespace from input lines before processing
 } rlx_options_t;
 
-typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length);
+typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length, void* userData);
 
 // RLX session management
 rlx_t rlx_begin(
@@ -61,7 +61,8 @@ rlx_t rlx_begin(
 	rlx_callback_t callback,
 	size_t maxHistoryEntries,
 	const char* historyContext,
-	unsigned long options
+	unsigned long options,
+	void* userData
 );
 void rlx_end(rlx_t h);
 void rlx_pause(rlx_t h);
@@ -80,7 +81,7 @@ void rlx_print_registered_commands(rlx_t h);
 // registered command is found, otherwise returns false to indicate that the
 // line was not recognized as a command and can be processed as regular input by the caller.
 // typically called from the RLX callback function provided to rlx_begin().
-bool rlx_process_command(rlx_t h, const char* line, void* userData);
+bool rlx_process_command(rlx_t h, const char* line);
 
 // history management
 void rlx_reset_history(rlx_t h);
