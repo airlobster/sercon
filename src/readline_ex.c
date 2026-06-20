@@ -359,7 +359,16 @@ bool rlx_process_command(rlx_t h, const char* line) {
 		free(expanded);
 	}
 
-	rlx_add_history_entry((rlx_t)rlx, line);
+	if( ! (rlx->options & RLX_OPT_HISTORY_ALLOW_DUPLICATES) ) {
+		// add history entry while avoiding duplications
+		using_history();
+		HIST_ENTRY* lastEntry = previous_history();
+		if( ! lastEntry || strcmp(lastEntry->line, line) != 0 ) {
+			rlx_add_history_entry((rlx_t)rlx, line);
+		}
+	} else {
+		rlx_add_history_entry((rlx_t)rlx, line);
+	}
 
 	return cmd != 0;
 }
@@ -408,6 +417,7 @@ static void rlx_add_history_entry(rlx_t h, const char* line) {
 	ASSERT(h);
 	if( ! line || ! *line ) return;
 	add_history(line);
+	using_history();
 }
 
 /**
