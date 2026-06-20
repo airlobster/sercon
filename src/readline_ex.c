@@ -662,18 +662,20 @@ void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab) {
  * @brief Add a new entry to the autocomplete vocabulary.
  * @param h The readline_ex session handle.
  * @param entry The entry to add to the autocomplete vocabulary.
+ * @return true if the entry was added successfully, false otherwise.
  */
-void rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry) {
+bool rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	ASSERT(rlx);
-	if( ! entry || ! *entry ) return;
+	if( ! entry || ! *entry ) return false;
 
 	// if we don't own the vocabulary, we cannot modify it
-	if( ! rlx->ownsCompletionVocabulary ) return;
+	if( ! rlx->ownsCompletionVocabulary ) return false;
 
 	// create a new vocabulary extension entry
 	rlx_vocabulary_extension_t* ext = malloc(sizeof(rlx_vocabulary_extension_t));
 	ext->entry = strdup(entry);
 	ext->next = rlx->vocabularyExtensions;
 	rlx->vocabularyExtensions = ext;
+	return true;
 }

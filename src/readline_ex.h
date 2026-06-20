@@ -91,7 +91,7 @@ void rlx_print_history(rlx_t h);
 
 // vocabulary management
 void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab);
-void rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry);
+bool rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry);
 
 #ifdef __cplusplus
 }
