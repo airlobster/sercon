@@ -35,6 +35,7 @@ int fdPort = -1;
 rlx_t rlx = 0;
 char *prompt = 0;
 struct termios originalTermios;
+volatile int shouldAbort = 0;
 
 // a pointer to the type below will be passed to the RLX callback function as userData,
 // allowing us to maintain state across calls
@@ -284,7 +285,7 @@ static void console() {
 		tcsetattr(fdStdin, TCSANOW, &newTermios);
 	}
 
-	for(;;) {
+	while( ! shouldAbort ) {
 		// wait for input from either stdin (fds[1]) or the serial port (fds[0]).
 		// if stdin is at EOF while in non-interactive mode, we will ignore stdin
 		// and set a final timeout to allow any pending serial output to be printed before we exit.
@@ -292,7 +293,9 @@ static void console() {
 
 		// Check for poll errors
 		if( ret < 0 ) {
-			a_error("Error during poll: %s\n", strerror(errno));
+			if( ! shouldAbort ) {
+				a_error("Error during poll: %s\n", strerror(errno));
+			}
 			break;
 		}
 
@@ -425,6 +428,11 @@ static void parse_cli_args(int argc, char *argv[])
 	getopt_ex(argc, argv, options, description, cli_args_callback);
 }
 
+static void on_signal(int signum) {
+	(void)signum;
+	shouldAbort = 1;
+}
+
 static void on_exit_app(void) {
 	if( rlx ) {
 		rlx_end(rlx);
@@ -454,6 +462,7 @@ int main(int argc, char *argv[])
 
 	begin_ansi(false);
 	atexit(on_exit_app);
+	signal(SIGINT, on_signal);
 
 	console();
 

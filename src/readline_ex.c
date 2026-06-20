@@ -214,6 +214,60 @@ rlx_t rlx_begin(
 }
 
 /**
+	@brief End the readline_ex session, cleaning up resources.
+	@param h The readline_ex session handle.
+*/
+void rlx_end(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+
+	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
+
+	if( ! rlx || ! rlx->isInitialized ) return;
+
+	rl_callback_handler_remove();
+
+	rlx_commit_history(h);
+
+	free(rlx->historyFilePath);
+	rlx->historyFilePath = 0;
+
+	if( rlx->savedLineBuffer ) {
+		free(rlx->savedLineBuffer);
+		rlx->savedLineBuffer = 0;
+	}
+
+	// free the registered commands linked list
+	for(rlx_command_node_t* cmd = rlx->commands; cmd; ) {
+		rlx_command_node_t* next = cmd->next;
+		free(cmd);
+		cmd = next;
+	}
+
+	// free auto-complete vocabulary
+	if( rlx->ownsCompletionVocabulary ) {
+		rlx_free_completion_vocabulary(rlx->completionVocabulary);
+		rlx->completionVocabulary = 0;
+	}
+
+	for(rlx_vocabulary_extension_t* ext = rlx->vocabularyExtensions; ext; ) {
+		rlx_vocabulary_extension_t* next = ext->next;
+		free(ext->entry);
+		free(ext);
+		ext = next;
+	}
+	rlx->vocabularyExtensions = 0;
+
+	// reset the readline context to its initial state
+#ifdef NDEBUG
+	memset(rlx, 0, sizeof(*rlx));
+#else
+	memset(rlx, -1, sizeof(*rlx));
+#endif
+	rlx->isInitialized = false;
+}
+
+/**
  * @brief Change the prompt string for the readline_ex session.
  * @param h The readline_ex session handle.
  * @param newPrompt The new prompt string to display.
@@ -365,62 +419,6 @@ void rlx_process_input(rlx_t h) {
 	ASSERT(h);
 	// this will trigger readline to read the input and call our readline_callback function
 	rl_callback_read_char();
-}
-
-/**
-	@brief End the readline_ex session, cleaning up resources.
-	@param h The readline_ex session handle.
-*/
-void rlx_end(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
-
-	ASSERT(rlx);
-	ASSERT(rlx->isInitialized);
-
-	if( ! rlx || ! rlx->isInitialized ) return;
-
-	rl_callback_handler_remove();
-
-	rlx_commit_history(h);
-
-	free(rlx->historyFilePath);
-	rlx->historyFilePath = 0;
-
-	if( rlx->savedLineBuffer ) {
-		free(rlx->savedLineBuffer);
-		rlx->savedLineBuffer = 0;
-	}
-
-	// free the registered commands linked list
-	for(rlx_command_node_t* cmd = rlx->commands; cmd; ) {
-		rlx_command_node_t* next = cmd->next;
-		free(cmd);
-		cmd = next;
-	}
-
-	// free auto-complete vocabulary
-	if( rlx->ownsCompletionVocabulary ) {
-		rlx_free_completion_vocabulary(rlx->completionVocabulary);
-		rlx->completionVocabulary = 0;
-	}
-
-	if( rlx->vocabularyExtensions ) {
-		for(rlx_vocabulary_extension_t* ext = rlx->vocabularyExtensions; ext; ) {
-			rlx_vocabulary_extension_t* next = ext->next;
-			free(ext->entry);
-			free(ext);
-			ext = next;
-		}
-		rlx->vocabularyExtensions = 0;
-	}
-
-	// reset the readline context to its initial state
-#ifdef NDEBUG
-	memset(rlx, 0, sizeof(*rlx));
-#else
-	memset(rlx, -1, sizeof(*rlx));
-#endif
-	rlx->isInitialized = false;
 }
 
 /**
