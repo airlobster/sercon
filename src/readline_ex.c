@@ -441,6 +441,7 @@ void rlx_reset_history(rlx_t h) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 	rl_clear_history();
+	using_history();
 }
 
 /**
@@ -482,9 +483,9 @@ void rlx_print_history(rlx_t h) {
 	(void)rlx;
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
+	using_history();
 	int n = rlx_get_history_length(h);
 	if( n <= 0 ) return;
-	using_history();
 	for(int i=0; i < n; i++) {
 		HIST_ENTRY* entry = history_get(history_base + i);
 		if( ! entry || ! entry->line ) continue;
@@ -506,6 +507,8 @@ void rlx_print_registered_commands(rlx_t h) {
 	int i = 0;
 
 	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
+
 	if( ! rlx->commands || ! rlx->commands->cmd.command ) return;
 
 	// count the number of registered commands
