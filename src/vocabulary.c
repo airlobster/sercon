@@ -183,7 +183,9 @@ char** vocab_get_words(vocabulary_t vocab) {
 		// null-terminate the array
 		words[vocab->size] = 0;
 		// refresh the cached words list
-		if( vocab->words_list ) free(vocab->words_list);
+		if( vocab->words_list ) {
+			free(vocab->words_list);
+		}
 		vocab->words_list = words;
 		vocab->dirty = false;
 	}
