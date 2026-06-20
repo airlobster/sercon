@@ -658,6 +658,11 @@ void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab) {
 	rlx->ownsCompletionVocabulary = vocab == 0;
 }
 
+/**
+ * @brief Add a new entry to the autocomplete vocabulary.
+ * @param h The readline_ex session handle.
+ * @param entry The entry to add to the autocomplete vocabulary.
+ */
 void rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry) {
 	rlx_internal_t* rlx = (rlx_internal_t*)h;
 	ASSERT(rlx);
