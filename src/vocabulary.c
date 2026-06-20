@@ -171,6 +171,7 @@ static int get_words_callback(vocabulary_t vocab, const char* word, void* user_d
  * @brief Gets all the words in the vocabulary.
  * @param vocab The vocabulary to get the words from.
  * @return char** A null-terminated array of words.
+ * @note The returned array is owned by the vocabulary and should not be freed by the caller.
  */
 char** vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
