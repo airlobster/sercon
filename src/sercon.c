@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/param.h>
+#include <sys/errno.h>
 #include <sys/poll.h>
 #include <string.h>
 #include <termios.h>
@@ -19,138 +20,61 @@
 #endif
 
 // global configuration variables
-char* port = 0;
+char *port = 0;
 int baud = 9600;
 bool printTimestamps = true;
 bool bPrintPortsList = false;
 int retrySeconds = 1;
-int waitOnEOFSeconds = 1;
 int maxHistoryEntries = 200;
 bool bPersistentHistory = true;
 
 // global state variables
-char* appname = 0;
-volatile int shouldAbort = 0;
+char *appname = 0;
 bool atFirstRetryCycle = true;
 int fdPort = -1;
 rlx_t rlx = 0;
-char* prompt = 0;
+char *prompt = 0;
+struct termios originalTermios;
 
 // a pointer to the type below will be passed to the RLX callback function as userData,
 // allowing us to maintain state across calls
 typedef struct {
 	struct pollfd fds[2];
-	int pollTimeout;
+	bool interactive;
 } terminal_context_t;
+
+static void add_ports_to_vocabulary_callback(const char* portName, void* userData) {
+	rlx_t h = (rlx_t)userData;
+	rlx_add_autocomplete_vocabulary_entry(h, portName);
+}
 
 static void print_port_callback(const char* portName, void* userData) {
 	(void)userData;
 	afprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 }
 
-static void parse_option_callback(int pos, int opt, const char* optarg) {
-	(void)pos; // unused for now, but could be useful for positional arguments in the future
-	switch( opt ) {
-		case 'l': {
-			bPrintPortsList = true;
-			break;
-		}
-		case 'p': {
-			if( port ) free(port);
-			port = strdup(optarg);
-			break;
-		}
-		case 'b': {
-			baud = MAX(atoi(optarg), 9600);
-			break;
-		}
-		case 'T': {
-			printTimestamps = false;
-			break;
-		}
-		case 'v': {
-			afprintf(stdout, "%s\n", VERSION);
-			exit(0);
-		}
-		case 'r': {
-			retrySeconds = MAX(atoi(optarg), 1);
-			break;
-		}
-		case 'w': {
-			waitOnEOFSeconds = MAX(atoi(optarg), 0);
-			break;
-		}
-		case 'e': {
-			maxHistoryEntries = MAX(atoi(optarg), 10);
-			break;
-		}
-		case 'H': {
-			bPersistentHistory = false;
-			break;
-		}
-		case 0: {
-			a_error("Unexpected positional argument: %s\n", optarg);
-			exit(1);
-		}
-	} // end switch
-}
-
-static void on_sigint(int signum) {
-	(void)signum;
-	shouldAbort = 1;
-}
-
-static void on_exit_app(void) {
-	if( rlx ) {
-		// free RLX resources and commit history to disk if persistent history is enabled
-		rlx_end(rlx);
-		rlx = 0;
+static void print_ports_list() {
+	afprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
+	int n = enumSerialPorts(print_port_callback, 0);
+	if( ! n ) {
+		afprintf(stdout, ANSI_ITALIC "  No serial ports found\n");
 	}
-	if( port ) {
-		free(port);
-		port = 0;
-	}
-	if( fdPort >= 0 ) {
-		close(fdPort);
-		fdPort = -1;
-	}
-	if( prompt ) {
-		free(prompt);
-		prompt = 0;
-	}
-}
-
-// Parse command-line arguments
-static void parse_args(int argc, char *argv[])
-{
-	static const char* description = "sercon - A simple serial console for Arduino development\n\n"
-		"This tool allows you to connect to a serial port and interact with it in real-time.\n"
-		"You can specify the port and baud rate, and it will display incoming data with optional\n"
-		"timestamps. Use the --list option to see available serial ports on your system.";
-	static const getopt_ex_option_t options[] = {
-		{{"list", no_argument, 0, 'l'}, "List available serial ports", 0},
-		{{"port", required_argument, 0, 'p'}, "Specify the serial port", "PORT"},
-		{{"baud", required_argument, 0, 'b'}, "Specify the baud rate (default: 9600)", "BAUD-RATE"},
-		{{"no-timestamps", no_argument, 0, 'T'}, "Disable timestamps", 0},
-		{{"version", no_argument, 0, 'v'}, "Show version information", 0},
-		{{"retry-delay", required_argument, 0, 'r'}, "Seconds to wait before retrying connection (default: 1)", "SECONDS"},
-		{{"eof-wait", required_argument, 0, 'w'}, "Seconds to wait after EOF on stdin before exiting (default: 1)", "SECONDS"},
-		{{"max-history", required_argument, 0, 'e'}, "Maximum number of history entries to keep (default: 200)", "NUMBER"},
-		{{"non-persistent-history", no_argument, 0, 'H'}, "Disable persistent history (history will not be saved to a file)", 0},
-		GETOPT_EX_OPTIONS_END
-	};
-	ASSERT(options[array_size(options)-1].opt.name == 0); // ensure the last option is the end marker
-	getopt_ex(argc, argv, options, description, parse_option_callback);
 }
 
 static char* makePrompt() {
 	if( ! isatty(fileno(stdin)) ) return 0; // no prompt if stdin is redirected!!
 	char* p = 0;
 	bool connected = fdPort >= 0;
-	const char* portNoPath = strrchr(port, '/') + 1;
-	// set the prompt to the app name if not connected to a serial port yet,
-	// otherwise use the port name (without any leading path) as the prompt
-	asprintf(&p, ANSI_BLUE ANSI_ITALIC "%s> " ANSI_RESET, connected ? portNoPath : appname);
+	if( port ) {
+		const char* portNoPath = strrchr(port, '/') + 1;
+		if( connected ) {
+			asprintf(&p, ANSI_BLUE ANSI_ITALIC "%s:%d> " ANSI_RESET, portNoPath, baud);
+		} else {
+			asprintf(&p, ANSI_RED ANSI_ITALIC "%s...> " ANSI_RESET, portNoPath);
+		}
+	} else {
+		asprintf(&p, ANSI_BLUE ANSI_DIM ANSI_ITALIC "%s> " ANSI_RESET, "no-port");
+	}
 	return p;
 }
 
@@ -161,7 +85,65 @@ static int printTimestamp(FILE* stream) {
 		t.hours, t.minutes, t.seconds, t.milliseconds);
 }
 
-static void termCmdCallback(
+static void disconnect(terminal_context_t* termContext) {
+	if( fdPort >= 0 ) {
+		close(fdPort);
+		fdPort = -1;
+		if( termContext )	termContext->fds[0].fd = -1;
+	}
+	if( port ) {
+		free(port);
+		port = 0;
+	}
+	// update prompt
+	if( prompt ) free(prompt);
+	prompt = makePrompt();
+	if( rlx ) {
+		rlx_change_prompt(rlx, prompt);
+	}
+}
+
+static bool connect(terminal_context_t* termContext, const char* portName, int baudRate) {
+	// disconnect(termContext);
+	ASSERT(fdPort < 0); // should only call connect() when not currently connected
+	if( fdPort > 0 ) {
+		a_error("Already connected to a port. Please disconnect first.\n");
+		return false;
+	}
+	fdPort = open(portName, O_RDWR | O_NOCTTY);
+	if( fdPort < 0 ) {
+		a_error("Error opening serial port " ANSI_BOLD "%s" ANSI_POP ": %s\n", portName, strerror(errno));
+		return false;
+	}
+	if( termContext ) termContext->fds[0].fd = fdPort;
+	port = strdup(portName);
+	baud = baudRate;
+	// set baud rate
+	struct termios t;
+	tcgetattr(fdPort, &t);
+	cfsetspeed(&t, baudRate);
+	tcsetattr(fdPort, TCSANOW, &t);
+	// update prompt
+	if( prompt ) free(prompt);
+	prompt = makePrompt();
+	if( rlx ) {
+		rlx_change_prompt(rlx, prompt);
+	}
+	return true;
+}
+
+static bool applyConnectionString(terminal_context_t* termContext, const char *connectionString) {
+	char portName[256];
+	int baudRate = 9600;
+	int n = sscanf(connectionString, "%[^:]:%d", portName, &baudRate);
+	if( n < 1 ) {
+		a_error("Invalid port specification: %s\n", connectionString);
+		return false;
+	}
+	return connect(termContext, portName, MAX(baudRate, 9600));
+}
+
+static void registered_commands_callback(
 		rlx_t h, const rlx_registered_command_t* cmd, int argc, const char* argv[], void* userData) {
 	terminal_context_t* termContext = (terminal_context_t*)userData;
 	(void)termContext; // currently unused, but could be useful for future enhancements
@@ -184,6 +166,10 @@ static void termCmdCallback(
 			}
 			break;
 		}
+		case 'p': {
+			print_ports_list();
+			break;
+		}
 		case 'c': {
 			rlx_reset_history(h);
 			a_success("History cleared\n");
@@ -201,15 +187,37 @@ static void termCmdCallback(
 			rlx_print_history(h);
 			break;
 		}
+		case 'C': {
+			if( argc < 2 ) {
+				a_error("Usage: connect PORT{:BAUD}\n");
+				break;
+			}
+			applyConnectionString(termContext, argv[1]);
+			break;
+		}
+		case 'D': {
+			disconnect(termContext);
+			// if( fdPort > 0 ) {
+			// 	close(fdPort);
+			// 	fdPort = -1;
+			// 	if( termContext ) termContext->fds[0].fd = -1;
+			// }
+			// if( prompt ) free(prompt);
+			// rlx_change_prompt(rlx, prompt = makePrompt());
+			break;
+		}
 	}
 }
 static void setupTerminalCommands() {
 	static const rlx_registered_command_t commands[] = {
-		{'i', "history", "Show command history", termCmdCallback},
-		{'c', "clear", "Clear history", termCmdCallback},
-		{'h', "help", "Show this help message", termCmdCallback},
-		{'q', "quit", "Exit the program", termCmdCallback},
-		{'v', "version", "Show version information", termCmdCallback},
+		{'i', "history", "Show command history", registered_commands_callback},
+		{'c', "clear", "Clear history", registered_commands_callback},
+		{'h', "help", "Show this help message", registered_commands_callback},
+		{'q', "quit", "Exit the program", registered_commands_callback},
+		{'v', "version", "Show version information", registered_commands_callback},
+		{'p', "ports", "List available serial ports", registered_commands_callback},
+		{'C', "connect", "Connect to a serial port (usage: connect PORT)", registered_commands_callback},
+		{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
 		{0, 0, 0, 0} // end marker
 	};
 	ASSERT(rlx);
@@ -222,18 +230,11 @@ void rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 	(void)h;
 	terminal_context_t* termContext = (terminal_context_t*)userData;
 	if( ! line ) {
-		termContext->fds[1].fd = -1; // ignore stdin from now on
-		if( isatty(fileno(stdin)) ) {
-			// interactive mode - exit immediately
-			raise(SIGINT);
-		} else {
-			// allow some time for a response from the device before exiting
-			termContext->pollTimeout = waitOnEOFSeconds * 1000;
-		}
+		termContext->fds[1].fd = -1; // tell poll we're done reading from stdin (EOF)
 		return;
 	}
 	// if the line is not a recognized command, forward it to the serial port
-	if( ! rlx_process_command(rlx, line) ) {
+	if( ! rlx_process_command(rlx, line) && fdPort > 0 ) {
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
 	}
@@ -246,45 +247,24 @@ static void console() {
 	bool atNewLine = true; // used to track if the next character is at the start of a new line (for timestamping)
 	bool interactive = isatty(fdStdin) && isatty(fileno(stdout));
 
-	// Open the serial port
-	fdPort = open(port, O_RDWR | O_NOCTTY);
-	if( fdPort < 0 ) {
-		if( atFirstRetryCycle ) {
-			a_error("Error opening serial port " ANSI_BOLD "%s" ANSI_POP ". Retrying...\n", port);
-			atFirstRetryCycle = false;
-		}
-		return;
-	}
-	// connection successful, reset retry flag so that we will print an error message
-	// if the connection is lost later
-	atFirstRetryCycle = true;
-
-	if( interactive ) {
-		a_info("Connected to " ANSI_BOLD "%s" ANSI_POP " at %d baud\n", port, baud);
-		a_info("(Press Ctrl+C to exit)\n");
-		prompt = makePrompt();
-	}
-
-	// set baud rate for the serial port
-	struct termios t;
-	tcgetattr(fdPort, &t);
-	cfsetspeed(&t, baud);
-	tcsetattr(fdPort, TCSANOW, &t);
-
 	terminal_context_t termContext = {
 		.fds = {
 			{ .fd = fdPort, .events = POLLIN },
 			{ .fd = fdStdin, .events = POLLIN },
 		},
-		.pollTimeout = -1
+		.interactive = interactive
 	};
+
+	if( ! prompt ) {
+		prompt = makePrompt();
+	}
 
 	// initialize readline for handling user input and command history
 	const unsigned long opt =
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0)
 		| (RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY)
 		;
-	rlx = rlx_begin(appname, prompt, rlx_callback, maxHistoryEntries, 0, opt, &termContext);
+	rlx = rlx_begin(appname, interactive ? prompt : 0, rlx_callback, maxHistoryEntries, 0, opt, &termContext);
 	if( ! rlx ) {
 		a_error("Error initializing RLX session\n");
 		exit(1);
@@ -292,27 +272,57 @@ static void console() {
 
 	setupTerminalCommands();
 
-	while( ! shouldAbort ) {
+	// add available ports to the autocomplete vocabulary for convenience
+	// (we do this after initializing RLX so that the readline state is properly set up for handling dynamic vocabulary updates)
+	enumSerialPorts(add_ports_to_vocabulary_callback, rlx);
+
+	// disable echo and canonical mode for non-interactive input
+	if( ! interactive ) {
+		struct termios newTermios;
+		tcgetattr(fdStdin, &newTermios);
+		newTermios.c_lflag &= ~(ECHO);
+		tcsetattr(fdStdin, TCSANOW, &newTermios);
+	}
+
+	for(;;) {
 		// wait for input from either stdin (fds[1]) or the serial port (fds[0]).
 		// if stdin is at EOF while in non-interactive mode, we will ignore stdin
 		// and set a final timeout to allow any pending serial output to be printed before we exit.
-		int ret = poll(termContext.fds, array_size(termContext.fds), termContext.pollTimeout);
+		int ret = poll(termContext.fds, array_size(termContext.fds), retrySeconds * 1000);
 
 		// Check for poll errors
-		if( ret <= 0 ) {
+		if( ret < 0 ) {
+			a_error("Error during poll: %s\n", strerror(errno));
 			break;
+		}
+
+		// check for timeout
+		if( ret == 0 ) {
+			if( termContext.fds[1].fd < 0 ) {
+				// STDIN was closed (EOF)
+				break;
+			}
+			// if we have a port specified but are not currently connected,
+			// it means we have lost the connection. retry to connect.
+			if( port && fdPort < 0 ) {
+				connect(&termContext, port, baud);
+			}
+			continue;
 		}
 
 		// Check if user input is available
 		if( termContext.fds[1].revents & POLLIN ) {
-			rlx_process_input(rlx); // this will trigger readline to read the input and call our RLX callback function
+			// trigger readline to read the input and call our RLX callback function
+			rlx_process_input(rlx); 
 		} // end stdin handling
 
 		// Check if data is available from the serial port
 		if( termContext.fds[0].revents & POLLIN ) {
-			ssize_t bytesRead = read(fdPort, buffer, sizeof(buffer) - 1);
+			ssize_t bytesRead = read(termContext.fds[0].fd, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
-				break;
+				a_error("Error reading from serial port: %s\n", strerror(errno));
+				disconnect(&termContext);
+				continue;
 			}
 
 			rlx_pause(rlx);
@@ -351,37 +361,101 @@ static void console() {
 	prompt = 0;
 }
 
+static void cli_args_callback(int pos, int opt, const char* optarg) {
+	(void)pos; // unused for now, but could be useful for positional arguments in the future
+	switch( opt ) {
+		case 'l': {
+			bPrintPortsList = true;
+			break;
+		}
+		case 'p': {
+			if( ! applyConnectionString(0, optarg) ) {
+				exit(1);
+			}
+			break;
+		}
+		case 'b': {
+			baud = MAX(atoi(optarg), 9600);
+			break;
+		}
+		case 'T': {
+			printTimestamps = false;
+			break;
+		}
+		case 'v': {
+			afprintf(stdout, "%s\n", VERSION);
+			exit(0);
+		}
+		case 'r': {
+			retrySeconds = MAX(atoi(optarg), 1);
+			break;
+		}
+		case 'e': {
+			maxHistoryEntries = MAX(atoi(optarg), 10);
+			break;
+		}
+		case 'H': {
+			bPersistentHistory = false;
+			break;
+		}
+		case 0: {
+			a_error("Unexpected positional argument: %s\n", optarg);
+			exit(1);
+		}
+	} // end switch
+}
+
+static void parse_cli_args(int argc, char *argv[])
+{
+	static const char* description = "sercon - A simple serial console for Arduino development\n\n"
+		"This tool allows you to connect to a serial port and interact with it in real-time.\n"
+		"You can specify the port and baud rate, and it will display incoming data with optional\n"
+		"timestamps. Use the --list option to see available serial ports on your system.";
+	static const getopt_ex_option_t options[] = {
+		{{"list", no_argument, 0, 'l'}, "List available serial ports", 0},
+		{{"port", required_argument, 0, 'p'}, "Specify the serial port", "PORT{:BAUD}"},
+		{{"no-timestamps", no_argument, 0, 'T'}, "Disable timestamps", 0},
+		{{"version", no_argument, 0, 'v'}, "Show version information", 0},
+		{{"retry-delay", required_argument, 0, 'r'}, "Seconds to wait before retrying connection (default: 1)", "SECONDS"},
+		{{"max-history", required_argument, 0, 'e'}, "Maximum number of history entries to keep (default: 200)", "NUMBER"},
+		{{"non-persistent-history", no_argument, 0, 'H'}, "Disable persistent history (history will not be saved to a file)", 0},
+		GETOPT_EX_OPTIONS_END
+	};
+	ASSERT(options[array_size(options)-1].opt.name == 0); // ensure the last option is the end marker
+	getopt_ex(argc, argv, options, description, cli_args_callback);
+}
+
+static void on_exit_app(void) {
+	if( rlx ) {
+		rlx_end(rlx);
+		rlx = 0;
+	}
+	disconnect(0);
+	if( prompt ) {
+		free(prompt);
+		prompt = 0;
+	}
+	// restore old terminal settings (in case we changed them)
+	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
+}
+
 int main(int argc, char *argv[])
 {
 	appname = basename(argv[0]);
 
 	// process command-line arguments
-	parse_args(argc, argv);
+	parse_cli_args(argc, argv);
 	if( bPrintPortsList ) {
-		afprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
-		int n = enumSerialPorts(print_port_callback, 0);
-		if( ! n ) {
-			afprintf(stdout, ANSI_ITALIC "  No serial ports found\n");
-		}
+		print_ports_list();
 		exit(0);
 	}
-	if( ! port ) {
-		a_error("Error: Serial port not specified\n");
-		exit(1);
-	}
+
+	tcgetattr(fileno(stdin), &originalTermios);
 
 	begin_ansi(false);
 	atexit(on_exit_app);
-	signal(SIGINT, on_sigint);
 
-	// Main console loop
-	for(;;) {
-		console();
-		if( shouldAbort || ! isatty(fileno(stdin)) ) {
-			break;
-		}
-		sleep(retrySeconds);
-	}
+	console();
 
 	return 0;
 }

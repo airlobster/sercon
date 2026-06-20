@@ -25,7 +25,7 @@ INCLUDE_DIRS :=
 LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lserialport -lreadline
-ARTIFACTS_ROOT_DIR ?= .
+ARTIFACTS_ROOT_DIR ?= $(shell pwd)
 BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
 SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
@@ -59,7 +59,7 @@ endif
 # add readline includes and libs based on architecture
 ifneq (,$(filter $(ARCH), arm64 aarch64))
 	INCLUDE_DIRS += -I/opt/homebrew/opt/readline/include
-	LIB_DIRS += -L/opt/homebrew/opt/readline/lib
+	LIB_DIRS += -L/opt/homebrew/opt/readline/lib -L/opt/homebrew/lib
 else ifeq ($(ARCH), x86_64)
 	INCLUDE_DIRS += -I/usr/local/opt/readline/include
 	LIB_DIRS += -L/usr/local/opt/readline/lib
@@ -89,7 +89,7 @@ endif
 OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(src)))
 
 # default entry point
-all: config_error $(TARGET)
+all: vars $(TARGET)
 
 # LINK
 $(TARGET): $(OBJS)

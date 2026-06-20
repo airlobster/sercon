@@ -67,6 +67,7 @@ rlx_t rlx_begin(
 void rlx_end(rlx_t h);
 void rlx_pause(rlx_t h);
 void rlx_resume(rlx_t h, bool redisplayPrompt);
+void rlx_change_prompt(rlx_t h, const char* newPrompt);
 
 // should be called whenever content is available for reading from stdin,
 // typically from an event loop or select/poll/epoll callback
@@ -84,11 +85,13 @@ void rlx_print_registered_commands(rlx_t h);
 bool rlx_process_command(rlx_t h, const char* line);
 
 // history management
+int rlx_get_history_length(rlx_t h);
 void rlx_reset_history(rlx_t h);
 void rlx_print_history(rlx_t h);
 
 // vocabulary management
 void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab);
+void rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry);
 
 #ifdef __cplusplus
 }

@@ -19,6 +19,11 @@ typedef struct _rlx_command_node_t {
 	rlx_registered_command_t cmd;
 } rlx_command_node_t;
 
+typedef struct _rlx_vocabulary_extension_t {
+	struct _rlx_vocabulary_extension_t* next;
+	char *entry;
+} rlx_vocabulary_extension_t;
+
 // internal readline context structure type
 typedef struct {
 	bool isInitialized;
@@ -32,6 +37,7 @@ typedef struct {
 	rlx_command_node_t* commands;
 	char** completionVocabulary;
 	bool ownsCompletionVocabulary;
+	rlx_vocabulary_extension_t* vocabularyExtensions;
 	bool isPaused;
 } rlx_internal_t;
 
@@ -176,6 +182,7 @@ rlx_t rlx_begin(
 	rlx->commands = 0;
 	rlx->completionVocabulary = 0;
 	rlx->ownsCompletionVocabulary = true;
+	rlx->vocabularyExtensions = 0;
 	rlx->isPaused = false;
 
 	// if the option to persist history is enabled, we will load the history from the file on startup
@@ -204,6 +211,24 @@ rlx_t rlx_begin(
 	}
 
 	return (rlx_t)rlx;
+}
+
+/**
+ * @brief Change the prompt string for the readline_ex session.
+ * @param h The readline_ex session handle.
+ * @param newPrompt The new prompt string to display.
+ * @note: previous prompt string will not be freed because it is owned and managed
+ * by the application itself.
+ */
+void rlx_change_prompt(rlx_t h, const char* newPrompt) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
+	ASSERT(newPrompt);
+	rlx->prompt = newPrompt;
+	fputc('\r', stdout); // move cursor to the beginning of the line
+	rl_replace_line("", 0); // clear any partial input from the user while waiting for serial input
+	rl_callback_handler_install(rlx->prompt, readline_callback_wrapper);
 }
 
 /**
@@ -267,8 +292,6 @@ bool rlx_process_command(rlx_t h, const char* line) {
 		line = expanded;
 	}
 
-	rlx_add_history_entry((rlx_t)rlx, line);
-
 	// we convert the command line into argc/argv format for easier parsing by command handlers,
 	// and then free the argv array after processing.
 	if( parse_command_line(line, &argc, &argv) > 0 ) {
@@ -281,6 +304,8 @@ bool rlx_process_command(rlx_t h, const char* line) {
 	if( expanded ) {
 		free(expanded);
 	}
+
+	rlx_add_history_entry((rlx_t)rlx, line);
 
 	return cmd != 0;
 }
@@ -379,6 +404,16 @@ void rlx_end(rlx_t h) {
 		rlx->completionVocabulary = 0;
 	}
 
+	if( rlx->vocabularyExtensions ) {
+		for(rlx_vocabulary_extension_t* ext = rlx->vocabularyExtensions; ext; ) {
+			rlx_vocabulary_extension_t* next = ext->next;
+			free(ext->entry);
+			free(ext);
+			ext = next;
+		}
+		rlx->vocabularyExtensions = 0;
+	}
+
 	// reset the readline context to its initial state
 #ifdef NDEBUG
 	memset(rlx, 0, sizeof(*rlx));
@@ -393,9 +428,28 @@ void rlx_end(rlx_t h) {
 	@param h The readline_ex session handle.
 */
 void rlx_reset_history(rlx_t h) {
-	(void)h;
-	ASSERT(h);
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	(void)rlx;
+	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
 	rl_clear_history();
+}
+
+/**
+ * @brief Get the number of entries in the command history for the readline_ex session.
+ * @param h The readline_ex session handle.
+ * @return int The number of entries in the command history.
+ */
+int rlx_get_history_length(rlx_t h) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
+	if( ! rlx->isInitialized ) return 0;
+	using_history();
+	HISTORY_STATE* historyState = history_get_history_state();
+	int length = historyState ? historyState->length : 0;
+	free(historyState);
+	return length;
 }
 
 /**
@@ -416,11 +470,17 @@ static void rlx_commit_history(rlx_t h) {
 	@param h The readline_ex session handle.
 */
 void rlx_print_history(rlx_t h) {
-	(void)h;
-	ASSERT(h);
-	int index = history_base;
-	for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
-		printf("%d: %s\n", index++, (*entry)->line);
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	(void)rlx;
+	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
+	int n = rlx_get_history_length(h);
+	if( n <= 0 ) return;
+	using_history();
+	for(int i=0; i < n; i++) {
+		HIST_ENTRY* entry = history_get(history_base + i);
+		if( ! entry || ! entry->line ) continue;
+		printf("%d: %s\n", history_base + i, entry->line);
 	}
 }
 
@@ -490,9 +550,18 @@ static char** rlx_build_completion_vocabulary(rlx_t h) {
 	if( rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY ) {
 		// add the count of history entries to the vocabulary size
 		// since we also want to include those in the completion vocabulary
-		for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
-			vocabSize++;
+		int n = rlx_get_history_length(h);
+		using_history();
+		for(int j = 0; j < n; j++) {
+			HIST_ENTRY* entry = history_get(history_base + j);
+			if( entry && entry->line && *entry->line ) {
+				vocabSize++;
+			}
 		}
+	}
+	// count vocabulary extensions
+	for(rlx_vocabulary_extension_t* ext = rlx->vocabularyExtensions; ext; ext = ext->next) {
+		vocabSize++;
 	}
 	// add one for the NULL terminator
 	vocabSize++;
@@ -507,9 +576,16 @@ static char** rlx_build_completion_vocabulary(rlx_t h) {
 	}
 	if( rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY ) {
 		// history entries
-		for(HIST_ENTRY** entry = history_list(); entry && *entry; entry++) {
-			vocab[i++] = strdup((*entry)->line);
+		using_history();
+		int n = rlx_get_history_length(h);
+		for(int j = 0; j < n; j++) {
+			HIST_ENTRY* entry = history_get(history_base + j);
+			if( ! entry || ! entry->line || ! *entry->line ) continue;
+			vocab[i++] = strdup(entry->line);
 		}
+	}
+	for(rlx_vocabulary_extension_t* ext = rlx->vocabularyExtensions; ext; ext = ext->next) {
+		vocab[i++] = strdup(ext->entry);
 	}
 	vocab[i] = 0; // NULL terminate the vocabulary array
 
@@ -582,4 +658,19 @@ void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab) {
 	}
 	rlx->completionVocabulary = vocab;
 	rlx->ownsCompletionVocabulary = vocab == 0;
+}
+
+void rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry) {
+	rlx_internal_t* rlx = (rlx_internal_t*)h;
+	ASSERT(rlx);
+	if( ! entry || ! *entry ) return;
+
+	// if we don't own the vocabulary, we cannot modify it
+	if( ! rlx->ownsCompletionVocabulary ) return;
+
+	// create a new vocabulary extension entry
+	rlx_vocabulary_extension_t* ext = malloc(sizeof(rlx_vocabulary_extension_t));
+	ext->entry = strdup(entry);
+	ext->next = rlx->vocabularyExtensions;
+	rlx->vocabularyExtensions = ext;
 }
