@@ -313,7 +313,7 @@ static void console() {
 		// Check if user input is available
 		if( termContext.fds[1].revents & POLLIN ) {
 			// trigger readline to read the input and call our RLX callback function
-			rlx_process_input(rlx); 
+			rlx_process_input(rlx);
 		} // end stdin handling
 
 		// Check if data is available from the serial port
