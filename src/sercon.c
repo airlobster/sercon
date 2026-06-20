@@ -453,6 +453,7 @@ int main(int argc, char *argv[])
 	// process command-line arguments
 	parse_cli_args(argc, argv);
 
+	// save original terminal settings so we can restore them on exit
 	tcgetattr(fileno(stdin), &originalTermios);
 
 	begin_ansi(false);
