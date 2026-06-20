@@ -78,7 +78,7 @@ static vocabulary_node_t* add_word_node(vocabulary_t vocab, vocabulary_node_t** 
 static int vocab_enum(
 			vocabulary_t vocab,
 			const vocabulary_node_t* node,
-			int(*callback)(vocabulary_t vocab, const char*, void*),
+			int(*callback)(vocabulary_t, const char*, void*),
 			void* user_data
 		) {
 	int ret;
