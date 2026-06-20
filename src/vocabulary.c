@@ -75,14 +75,19 @@ static vocabulary_node_t* add_word_node(vocabulary_t vocab, vocabulary_node_t** 
  * @param callback The callback function to call for each word.
  * @param user_data User data to pass to the callback function.
  */
-static int vocab_enum(vocabulary_t vocab, const vocabulary_node_t* node, int(*callback)(const char*, void*), void* user_data) {
+static int vocab_enum(
+			vocabulary_t vocab,
+			const vocabulary_node_t* node,
+			int(*callback)(vocabulary_t vocab, const char*, void*),
+			void* user_data
+		) {
 	int ret;
 	ASSERT(vocab);
 	ASSERT(callback);
 	if( ! node ) return 0;
 	ASSERT(node->word && *node->word);
 	if( (ret = vocab_enum(vocab, node->left, callback, user_data)) != 0 ) return ret;
-	if( (ret = callback(node->word, user_data)) != 0 ) return ret;
+	if( (ret = callback(vocab, node->word, user_data)) != 0 ) return ret;
 	if( (ret = vocab_enum(vocab, node->right, callback, user_data)) != 0 ) return ret;
 	return 0;
 }
@@ -148,10 +153,12 @@ size_t vocab_size(vocabulary_t vocab) {
 
 /**
  * @brief Callback function to collect words into an array.
+ * @param vocab The vocabulary the word belongs to.
  * @param word The current word.
  * @param user_data Pointer to the array of words.
  */
-static int get_words_callback(const char* word, void* user_data) {
+static int get_words_callback(vocabulary_t vocab, const char* word, void* user_data) {
+	(void)vocab; // unused parameter
 	char*** words_ptr = (char***)user_data;
 	ASSERT(words_ptr && *words_ptr);
 	ASSERT(word && *word);
@@ -167,7 +174,6 @@ static int get_words_callback(const char* word, void* user_data) {
  */
 char** vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
-	if( ! vocab ) return 0;
 	if( vocab->dirty ) {
 		char** words = (char**)malloc(sizeof(char*) * (vocab->size+1));
 		if( ! words ) return 0; // allocation failed
