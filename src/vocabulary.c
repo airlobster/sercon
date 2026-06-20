@@ -34,6 +34,7 @@ static void destroy_node(vocabulary_node_t* node) {
 	if( ! node ) return;
 	destroy_node(node->left);
 	destroy_node(node->right);
+	ASSERT(node->word);
 	free(node->word);
 	free(node);
 }
@@ -47,8 +48,10 @@ static void destroy_node(vocabulary_node_t* node) {
  */
 static vocabulary_node_t* add_word_node(vocabulary_t vocab, vocabulary_node_t** node, const char* word) {
 	ASSERT(vocab && vocab->cmp);
+	ASSERT(word && *word);
 	if( ! *node ) {
 		*node = (vocabulary_node_t*)malloc(sizeof(vocabulary_node_t));
+		if( ! *node ) return 0; // allocation failed
 		(*node)->left = (*node)->right = 0;
 		(*node)->word = strdup(word);
 		(*node)->instances = 1;
