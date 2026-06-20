@@ -111,7 +111,6 @@ vocabulary_t vocab_create(unsigned long options) {
  */
 void vocab_destroy(vocabulary_t vocab) {
 	ASSERT(vocab);
-	if( ! vocab ) return;
 	if( vocab->words_list ) {
 		free(vocab->words_list);
 	}
@@ -129,7 +128,6 @@ void vocab_destroy(vocabulary_t vocab) {
 bool vocab_add_word(vocabulary_t vocab, const char* word) {
 	ASSERT(vocab);
 	ASSERT(word && *word);
-	if( ! vocab || ! word || ! *word ) return false;
 	if( add_word_node(vocab, &vocab->root, word) ) {
 		vocab->size++;
 		vocab->dirty = true;
@@ -145,7 +143,6 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
  */
 size_t vocab_size(vocabulary_t vocab) {
 	ASSERT(vocab);
-	if( ! vocab ) return 0;
 	return vocab->size;
 }
 
