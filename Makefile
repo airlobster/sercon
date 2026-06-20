@@ -177,7 +177,7 @@ test:
 vars:
 	@printf "* $(COLOR_BOLD)Platform$(COLOR_RESET): $(COLOR_INFO)$(PLATFORM)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Architecture$(COLOR_RESET): $(COLOR_INFO)$(ARCH)$(COLOR_RESET)\n"
-	@printf "* $(COLOR_BOLD)Version$(COLOR_RESET): $(COLOR_INFO)$(VERSION)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Full version$(COLOR_RESET): $(COLOR_INFO)$(FULL_VERSION)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Compiler flags$(COLOR_RESET): $(COLOR_INFO)$(CFLAGS)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Include directories$(COLOR_RESET): $(COLOR_INFO)$(INCLUDE_DIRS)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Library directories$(COLOR_RESET): $(COLOR_INFO)$(LIB_DIRS)$(COLOR_RESET)\n"
@@ -188,7 +188,6 @@ vars:
 	@printf "* $(COLOR_BOLD)Libraries$(COLOR_RESET): $(COLOR_INFO)$(LIBS)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Target$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)/$(TARGET)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Run arguments$(COLOR_RESET): $(COLOR_INFO)$(RUN_ARGS)$(COLOR_RESET)\n"
-	@printf "* $(COLOR_BOLD)Full version$(COLOR_RESET): $(COLOR_INFO)$(FULL_VERSION)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Makefile targets$(COLOR_RESET): $(COLOR_INFO)$(SUPPORTED_TARGETS)$(COLOR_RESET)\n"
 
 # fall-back for all unknown targets to allow passing arguments to the 'run' target without causing make to fail.
