@@ -23,7 +23,6 @@
 char *port = 0;
 int baud = 9600;
 bool printTimestamps = true;
-bool bPrintPortsList = false;
 int retrySeconds = 1;
 int maxHistoryEntries = 200;
 bool bPersistentHistory = true;
@@ -368,8 +367,8 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 	(void)pos; // unused for now, but could be useful for positional arguments in the future
 	switch( opt ) {
 		case 'l': {
-			bPrintPortsList = true;
-			break;
+			print_ports_list();
+			exit(0);
 		}
 		case 'p': {
 			if( ! applyConnectionString(0, optarg) ) {
@@ -453,10 +452,6 @@ int main(int argc, char *argv[])
 
 	// process command-line arguments
 	parse_cli_args(argc, argv);
-	if( bPrintPortsList ) {
-		print_ports_list();
-		exit(0);
-	}
 
 	tcgetattr(fileno(stdin), &originalTermios);
 
