@@ -173,7 +173,7 @@ rlx_t rlx_begin(
 	rlx->maxHistoryEntries = MAX(maxHistoryEntries, 10);
 	rlx->savedLineBuffer = 0;
 	rlx->commands = 0;
-	rlx->completionVocabulary = vocab_create(0);
+	rlx->completionVocabulary = vocab_create(0, 0);
 	rlx->ownsCompletionVocabulary = true;
 	rlx->isPaused = false;
 

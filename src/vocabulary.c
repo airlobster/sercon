@@ -24,6 +24,7 @@ typedef struct _vocabulary_internal_t {
 	int (*cmp)(const char *s1, const char *s2);
 	char** words_list;
 	bool dirty;
+	size_t max_capacity;
 } vocabulary_internal_t;
 
 /**
@@ -95,9 +96,10 @@ static int vocab_enum(
 /**
  * @brief Creates a new vocabulary.
  * @param options Options for the vocabulary (e.g., case-insensitive).
+ * @param max_capacity The maximum number of words the vocabulary can hold.
  * @return vocabulary_t The newly created vocabulary.
  */
-vocabulary_t vocab_create(unsigned long options) {
+vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	vocabulary_internal_t* vocab = (vocabulary_internal_t*)malloc(sizeof(vocabulary_internal_t));
 	ASSERT(vocab);
 	if( ! vocab ) return 0; // allocation failed
@@ -107,6 +109,7 @@ vocabulary_t vocab_create(unsigned long options) {
 	vocab->cmp = (options & VOCAB_OPT_CASE_INSENSITIVE) ? strcasecmp : strcmp;
 	vocab->dirty = true;
 	vocab->words_list = 0;
+	vocab->max_capacity = max_capacity;
 	return vocab;
 }
 

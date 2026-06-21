@@ -14,7 +14,7 @@ typedef enum {
 	VOCAB_OPT_CASE_INSENSITIVE = 1UL << 0,
 } vocabulary_option_t;
 
-vocabulary_t vocab_create(unsigned long options);
+vocabulary_t vocab_create(unsigned long options, size_t max_capacity);
 void vocab_destroy(vocabulary_t vocab);
 bool vocab_add_word(vocabulary_t vocab, const char* word);
 size_t vocab_size(vocabulary_t vocab);
