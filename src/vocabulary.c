@@ -157,7 +157,6 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
 #ifdef _DEBUG_
 		fprintf(stderr, "Failed to add word '%s': %s\n", word, sqlite3_errmsg(vocab->db));
 #endif
-		return false;
 	}
 	return false;
 }
