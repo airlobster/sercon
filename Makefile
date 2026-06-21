@@ -94,7 +94,7 @@ all: vars $(TARGET)
 # LINK
 $(TARGET): $(OBJS)
 	$(CC) $(LIB_DIRS) -o $(BUILD_DIR)/$@ $(OBJS) $(LIBS)
-	@printf "$(COLOR_SUCCESS)** Build successful: $(BUILD_DIR)/$@$(COLOR_RESET)\n"
+	@printf "$(COLOR_SUCCESS)** Build successful: $(BUILD_DIR)/$@ ($(shell wc -c < $(BUILD_DIR)/$@ | tr -d ' ') bytes)$(COLOR_RESET)\n"
 
 # COMPILE
 $(BUILD_DIR)/%.o: $(SRC_DIRS)/%.c | $(BUILD_DIR)
