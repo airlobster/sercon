@@ -1,96 +1,88 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <sqlite3.h>
 #include "vocabulary.h"
 
 #define ASSERT assert
-
-/**
- * @brief A node in the vocabulary tree.
- */
-typedef struct _vocabulary_node_t {
-	struct _vocabulary_node_t *left, *right;
-	char* word;
-	size_t instances;
-} vocabulary_node_t;
 
 /**
  * @brief The internal structure of a vocabulary.
  */
 typedef struct _vocabulary_internal_t {
 	unsigned long options;
-	vocabulary_node_t *root;
+	sqlite3* db;
 	size_t size;
-	int (*cmp)(const char *s1, const char *s2);
 	char** words_list;
 	bool dirty;
 	size_t max_capacity;
 } vocabulary_internal_t;
 
-/**
- * @brief Recursively destroys a vocabulary node and its children.
- * @param node The node to destroy.
- */
-static void destroy_node(vocabulary_node_t* node) {
-	if( ! node ) return;
-	destroy_node(node->left);
-	destroy_node(node->right);
-	ASSERT(node->word);
-	free(node->word);
-	free(node);
+static int init_db(vocabulary_internal_t* vocab) {
+	const char* sql =
+		"CREATE TABLE IF NOT EXISTS words ("
+		"word TEXT PRIMARY KEY,"
+		"timestamp DATETIME DEFAULT CURRENT_TIMESTAMP"
+		");";
+	int rc = sqlite3_exec(vocab->db, sql, 0, 0, 0);
+	if( rc != SQLITE_OK ) {
+#ifdef _DEBUG_
+		fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(vocab->db));
+#endif
+	}
+	return rc;
 }
 
 /**
- * @brief Recursively adds a word to the vocabulary tree.
- * @param vocab The vocabulary to add the word to.
- * @param node The current node in the tree.
- * @param word The word to add.
- * @return vocabulary_node_t* The newly added node, or NULL if the word already exists.
+ * @brief Removes the oldest words from the vocabulary if it exceeds the maximum capacity.
+ * @param vocab The vocabulary to remove words from.
+ * @return int SQLITE_OK on success, or an SQLite error code on failure.
  */
-static vocabulary_node_t* add_word_node(vocabulary_t vocab, vocabulary_node_t** node, const char* word) {
-	ASSERT(vocab && vocab->cmp);
-	ASSERT(word && *word);
-	if( ! *node ) {
-		*node = (vocabulary_node_t*)malloc(sizeof(vocabulary_node_t));
-		if( ! *node ) return 0; // allocation failed
-		(*node)->left = (*node)->right = 0;
-		(*node)->word = strdup(word);
-		(*node)->instances = 1;
-		return *node;
-	}
-	int cmp = vocab->cmp(word, (*node)->word);
-	if( cmp == 0 ) {
-		(*node)->instances++;
-		return 0; // word already exists
-	}
-	if( cmp < 0 ) {
-		return add_word_node(vocab, &((*node)->left), word);
-	}
-	return add_word_node(vocab, &((*node)->right), word);
-}
-
-/**
- * @brief Recursively enumerates the words in the vocabulary tree.
- * @param vocab The vocabulary to enumerate.
- * @param node The current node in the tree.
- * @param callback The callback function to call for each word.
- * @param user_data User data to pass to the callback function.
- */
-static int vocab_enum(
-			vocabulary_t vocab,
-			const vocabulary_node_t* node,
-			int(*callback)(vocabulary_t, const char*, void*),
-			void* user_data
-		) {
-	int ret;
+static int remove_oldest_words(vocabulary_internal_t* vocab) {
 	ASSERT(vocab);
-	ASSERT(callback);
-	if( ! node ) return 0;
-	ASSERT(node->word && *node->word);
-	if( (ret = vocab_enum(vocab, node->left, callback, user_data)) != 0 ) return ret;
-	if( (ret = callback(vocab, node->word, user_data)) != 0 ) return ret;
-	if( (ret = vocab_enum(vocab, node->right, callback, user_data)) != 0 ) return ret;
-	return 0;
+	ASSERT(vocab->db);
+	if( ! vocab->max_capacity || vocab->size <= vocab->max_capacity ) {
+		return SQLITE_OK;
+	}
+	const char* sql =
+		"DELETE FROM words WHERE word NOT IN "
+		"(SELECT word FROM words ORDER BY timestamp DESC LIMIT ?);"
+		;
+	sqlite3_stmt *stmt;
+	int rc = sqlite3_prepare_v2(vocab->db, sql, -1, &stmt, 0);
+	if( rc != SQLITE_OK ) {
+#ifdef _DEBUG_
+		fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(vocab->db));
+#endif
+		return rc;
+	}
+	sqlite3_bind_int(stmt, 1, (int)(vocab->max_capacity));
+	rc = sqlite3_step(stmt);
+	if( rc != SQLITE_DONE ) {
+#ifdef _DEBUG_
+		fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(vocab->db));
+#endif
+		sqlite3_finalize(stmt);
+		return rc;
+	}
+	sqlite3_finalize(stmt);
+	vocab->size = vocab->max_capacity;
+	return SQLITE_OK;
+}
+
+/**
+ * @brief Destroys the words-list cache.
+ * @param vocab The vocabulary whose words list is to be destroyed.
+ */
+static void destroy_words_list(vocabulary_internal_t* vocab) {
+	ASSERT(vocab);
+	if( ! vocab->words_list ) return;
+	for(char** w = vocab->words_list; *w; w++) {
+		free(*w);
+	}
+	free(vocab->words_list);
+	vocab->words_list = 0;
 }
 
 /**
@@ -103,13 +95,28 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	vocabulary_internal_t* vocab = (vocabulary_internal_t*)malloc(sizeof(vocabulary_internal_t));
 	ASSERT(vocab);
 	if( ! vocab ) return 0; // allocation failed
+
 	vocab->options = options;
-	vocab->root = 0;
 	vocab->size = 0;
-	vocab->cmp = (options & VOCAB_OPT_CASE_INSENSITIVE) ? strcasecmp : strcmp;
+	vocab->db = 0;
 	vocab->dirty = true;
 	vocab->words_list = 0;
 	vocab->max_capacity = max_capacity;
+
+	if( sqlite3_open(":memory:", &vocab->db) != SQLITE_OK ) {
+#ifdef _DEBUG_
+		fprintf(stderr, "Failed to open in-memory database: %s\n", sqlite3_errmsg(vocab->db));
+#endif
+		free(vocab);
+		return 0; // failed to open in-memory database
+	}
+
+	if( init_db(vocab) != SQLITE_OK ) {
+		vocab_destroy(vocab);
+		vocab = 0;
+		return 0; // failed to initialize database
+	}
+
 	return vocab;
 }
 
@@ -119,10 +126,10 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
  */
 void vocab_destroy(vocabulary_t vocab) {
 	ASSERT(vocab);
-	if( vocab->words_list ) {
-		free(vocab->words_list);
+	destroy_words_list(vocab);
+	if( vocab->db ) {
+		sqlite3_close(vocab->db);
 	}
-	destroy_node(vocab->root);
 	free(vocab);
 }
 
@@ -131,15 +138,26 @@ void vocab_destroy(vocabulary_t vocab) {
  * @param vocab The vocabulary to add the word to.
  * @param word The word to add.
  * @return bool True if the word was added, false if it already exists or if the input is invalid.
- * @note Assumes the word is a valid null-terminated trimmed string. Empty words are ignored.
+ * @note Assumes the given word is a valid null-terminated trimmed string. Empty words are ignored.
  */
 bool vocab_add_word(vocabulary_t vocab, const char* word) {
 	ASSERT(vocab);
 	ASSERT(word && *word);
-	if( add_word_node(vocab, &vocab->root, word) ) {
-		vocab->size++;
+	ASSERT(vocab->db);
+	sqlite3_stmt *stmt;
+	sqlite3_prepare_v2(vocab->db, "INSERT INTO words (word) VALUES (?);", -1, &stmt, 0);
+	sqlite3_bind_text(stmt, 1, word, -1, SQLITE_STATIC);
+	int rc = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+	if( rc == SQLITE_DONE ) {
 		vocab->dirty = true;
-		return true;
+		vocab->size++;
+		return remove_oldest_words(vocab) == SQLITE_OK;
+	} else if( rc != SQLITE_CONSTRAINT ) {
+#ifdef _DEBUG_
+		fprintf(stderr, "Failed to add word '%s': %s\n", word, sqlite3_errmsg(vocab->db));
+#endif
+		return false;
 	}
 	return false;
 }
@@ -155,18 +173,21 @@ size_t vocab_size(vocabulary_t vocab) {
 }
 
 /**
- * @brief Callback function to collect words into an array.
- * @param vocab The vocabulary the word belongs to.
- * @param word The current word.
- * @param user_data Pointer to the array of words.
+ * @brief Callback function for enumerating words in the database.
+ * @param user_data User data passed to the callback.
+ * @param argc The number of columns in the result.
+ * @param argv The values of the columns.
+ * @param azColName The names of the columns.
+ * @return int 0 to continue, non-zero to abort.
  */
-static int get_words_callback(vocabulary_t vocab, const char* word, void* user_data) {
-	(void)vocab; // unused parameter
-	char*** words_ptr = (char***)user_data;
-	ASSERT(words_ptr && *words_ptr);
-	ASSERT(word && *word);
-	**words_ptr = (char*)word;
-	(*words_ptr)++;
+static int enum_words_callback(void* user_data, int argc, char** argv, char** azColName) {
+	(void)azColName; // unused parameter
+	if( argc > 0 && argv[0] ) {
+		char*** words_ptr = (char***)user_data;
+		ASSERT(words_ptr && *words_ptr);
+		**words_ptr = strdup(argv[0]); // duplicate the word
+		(*words_ptr)++;
+	}
 	return 0; // (continue)
 }
 
@@ -178,36 +199,40 @@ static int get_words_callback(vocabulary_t vocab, const char* word, void* user_d
  */
 char** vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
-	if( vocab->dirty ) {
-		char** words = (char**)malloc(sizeof(char*) * (vocab->size+1));
-		if( ! words ) return 0; // allocation failed
-		// iterate tree and fill the array with the words
-		char** words_ptr = words;
-		vocab_enum(vocab, vocab->root, get_words_callback, &words_ptr);
-		ASSERT((size_t)(words_ptr - words) == vocab->size);
-		// null-terminate the array
-		words[vocab->size] = 0;
-		// refresh the cached words list
-		if( vocab->words_list ) {
-			free(vocab->words_list);
-		}
-		vocab->words_list = words;
-		vocab->dirty = false;
+	ASSERT(vocab->db);
+	if( ! vocab->dirty ) {
+		return vocab->words_list; // return cached list
 	}
+	// allocate memory for the words list
+	char** words = (char**)malloc(sizeof(char*) * (vocab->size+1));
+	if( ! words ) return 0; // allocation failed
+	char** words_ptr = words;
+	// fetch words from the database
+	int rc = sqlite3_exec(vocab->db,
+		"SELECT word FROM words ORDER BY word ASC;", enum_words_callback, &words_ptr, 0);
+	if( rc != SQLITE_OK ) {
+#ifdef _DEBUG_
+		fprintf(stderr, "Failed to enumerate words: %s\n", sqlite3_errmsg(vocab->db));
+#endif
+		free(words);
+		return 0; // error occurred
+	}
+	// null-terminate the array
+	words[vocab->size] = 0;
+	// replace the cached words list
+	destroy_words_list(vocab);
+	vocab->words_list = words;
+	vocab->dirty = false;
 	return vocab->words_list;
 }
 
 #ifdef _DEBUG_
-#include <stdio.h>
-static int print_word_callback(vocabulary_t vocab, const char* word, void* user_data) {
-	(void)vocab;
-	(void)user_data;
-	printf("  %s\n", word);
-	return 0; // (continue)
-}
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
 	printf("Vocabulary (size: %zu):\n", vocab->size);
-	vocab_enum(vocab, vocab->root, print_word_callback, 0);
+	char** words = vocab_get_words(vocab);
+	for(char** w = words; w && *w; w++) {
+		printf("%lu: %s\n", w - words + 1, *w);
+	}
 }
 #endif
