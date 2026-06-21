@@ -18,7 +18,7 @@ VERSION ?= 1.0.0
 FULL_VERSION := $(VERSION).$(GIT_COMMIT_HASH)
 
 CC := cc
-CFLAGS := -Wall -Wextra -MD -DVERSION=\"$(FULL_VERSION)\"
+CFLAGS := -Wall -Wextra -Wno-unused-result -MD -DVERSION=\"$(FULL_VERSION)\"
 TARGET := sercon
 SRC_DIRS := src
 INCLUDE_DIRS :=
