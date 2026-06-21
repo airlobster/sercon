@@ -56,16 +56,25 @@ else
 $(error Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'.)
 endif
 
-# add includes and libs based on architecture
-$(warning "TODO: selecting 3rd-party libraries directories should be be made more accurate")
+# select the appropriate include and library directories based on the platform and architecture.
+ifeq ($(PLATFORM), darwin)
 ifneq (,$(filter $(ARCH), arm64 aarch64))
+# darwin/arm64
 	INCLUDE_DIRS += -I/opt/homebrew/opt/readline/include -I/opt/homebrew/opt/sqlite/include
 	LIB_DIRS += -L/opt/homebrew/opt/readline/lib -L/opt/homebrew/lib -L/opt/homebrew/opt/sqlite/lib
 else ifeq ($(ARCH), x86_64)
+# darwin/x86_64
 	INCLUDE_DIRS += -I/usr/local/opt/readline/include -I/usr/local/opt/sqlite/include
 	LIB_DIRS += -L/usr/local/opt/readline/lib -L/usr/local/opt/sqlite/lib
 else
-$(error Invalid architecture: $(ARCH). Use \'arm64\' or \'x86_64\'.)
+$(error Invalid darwin architecture: $(ARCH). Use \'arm64\' or \'x86_64\'.)
+endif # darwin architecture check
+else ifeq ($(PLATFORM), linux)
+# linux/all architectures
+	INCLUDE_DIRS += -I/usr/local/opt/readline/include -I/usr/local/opt/sqlite/include
+	LIB_DIRS += -L/usr/local/opt/readline/lib -L/usr/local/opt/sqlite/lib
+else
+$(error Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'.)
 endif
 
 # after we've established the platform and architecture, we can define the
