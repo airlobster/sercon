@@ -181,6 +181,7 @@ char** vocab_get_words(vocabulary_t vocab) {
 		// iterate tree and fill the array with the words
 		char** words_ptr = words;
 		vocab_enum(vocab, vocab->root, get_words_callback, &words_ptr);
+		ASSERT((size_t)(words_ptr - words) == vocab->size);
 		// null-terminate the array
 		words[vocab->size] = 0;
 		// refresh the cached words list
