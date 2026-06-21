@@ -206,6 +206,12 @@ static void registered_commands_callback(
 			// rlx_change_prompt(rlx, prompt = makePrompt());
 			break;
 		}
+#ifdef _DEBUG_
+		case 'A': {
+			rlx_print_autocomplete_vocabulary(rlx);
+			break;
+		}
+#endif
 	}
 }
 static void setupTerminalCommands() {
@@ -218,6 +224,9 @@ static void setupTerminalCommands() {
 		{'p', "ports", "List available serial ports", registered_commands_callback},
 		{'C', "connect", "Connect to a serial port (usage: connect PORT)", registered_commands_callback},
 		{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
+#ifdef _DEBUG_
+		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
+#endif
 		{0, 0, 0, 0} // end marker
 	};
 	ASSERT(rlx);

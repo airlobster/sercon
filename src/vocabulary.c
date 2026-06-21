@@ -192,3 +192,18 @@ char** vocab_get_words(vocabulary_t vocab) {
 	}
 	return vocab->words_list;
 }
+
+#ifdef _DEBUG_
+#include <stdio.h>
+static int print_word_callback(vocabulary_t vocab, const char* word, void* user_data) {
+	(void)vocab;
+	(void)user_data;
+	printf("  %s\n", word);
+	return 0; // (continue)
+}
+void vocab_print(vocabulary_t vocab) {
+	ASSERT(vocab);
+	printf("Vocabulary (size: %zu):\n", vocab->size);
+	vocab_enum(vocab, vocab->root, print_word_callback, 0);
+}
+#endif

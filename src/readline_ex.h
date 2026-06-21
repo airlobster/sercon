@@ -29,6 +29,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "vocabulary.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,8 +92,11 @@ void rlx_reset_history(rlx_t h);
 void rlx_print_history(rlx_t h);
 
 // vocabulary management
-void rlx_set_autocomplete_vocabulary(rlx_t h, char** vocab);
+void rlx_set_autocomplete_vocabulary(rlx_t h, vocabulary_t vocab);
 bool rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry);
+#ifdef _DEBUG_
+void rlx_print_autocomplete_vocabulary(rlx_t h);
+#endif
 
 #ifdef __cplusplus
 }

@@ -20,6 +20,10 @@ bool vocab_add_word(vocabulary_t vocab, const char* word);
 size_t vocab_size(vocabulary_t vocab);
 char** vocab_get_words(vocabulary_t vocab);
 
+#ifdef _DEBUG_
+void vocab_print(vocabulary_t vocab);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
