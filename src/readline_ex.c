@@ -180,7 +180,11 @@ rlx_t rlx_begin(
 	// if the option to persist history is enabled, we will load the history from the file on startup
 	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
 		read_history(rlx->historyFilePath);
-		rlx_load_history_into_autocomplete(rlx);
+		if( rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY ) {
+			// if the option to autocomplete from history is enabled,
+			// we will load the history entries into the autocomplete vocabulary
+			rlx_load_history_into_autocomplete(rlx);
+		}
 	}
 
 	rl_callback_handler_install(rlx->prompt, readline_callback_wrapper);
