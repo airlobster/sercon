@@ -73,7 +73,7 @@ static char* makePrompt() {
 			asprintf(&p, ANSI_RED ANSI_ITALIC "%s...> " ANSI_RESET, portNoPath);
 		}
 	} else {
-		asprintf(&p, ANSI_BLUE ANSI_DIM ANSI_ITALIC "%s> " ANSI_RESET, "no-port");
+		asprintf(&p, ANSI_BLUE ANSI_DIM ANSI_ITALIC "%s> " ANSI_RESET, "not-connected");
 	}
 	return p;
 }
