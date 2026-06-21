@@ -113,8 +113,8 @@ run: all
 man:
 	@man ./$(MAN_PAGE)
 
-readme:
-	$(shell $(OPENER) $(README))
+github:
+	$(OPENER) "https://github.com/airlobster/sercon/tree/main"
 
 # override BUILD_DIR to ensure it builds the release version before packaging
 package: BUILD_DIR := $(BUILD_PLAT_ROOT_DIR)/release
@@ -156,7 +156,7 @@ help:
 	@printf "  $(COLOR_INFO)package$(COLOR_RESET)   - Create a tar.gz package of the build output\n"
 	@printf "  $(COLOR_INFO)run$(COLOR_RESET)       - Build and run the target executable with optional arguments (after --)\n"
 	@printf "  $(COLOR_INFO)man$(COLOR_RESET)       - Display the man page\n"
-	@printf "  $(COLOR_INFO)readme$(COLOR_RESET)    - Open the README.md file in the default viewer\n"
+	@printf "  $(COLOR_INFO)github$(COLOR_RESET)    - Open the GitHub repository in the default browser\n"
 	@printf "  $(COLOR_INFO)test$(COLOR_RESET)      - Run basic tests for proper installation\n"
 	@printf "  $(COLOR_INFO)vars$(COLOR_RESET)      - Display current variable settings\n"
 	@printf "$(COLOR_UNDERLINE)Build types:$(COLOR_RESET)\n"
@@ -196,4 +196,4 @@ vars:
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 
-.PHONY: all clean cleanall help install uninstall package man vars readme test run doxygen
+.PHONY: all clean cleanall help install uninstall package man vars test run doxygen github
