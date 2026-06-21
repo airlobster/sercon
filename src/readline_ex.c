@@ -329,7 +329,7 @@ bool rlx_process_command(rlx_t h, const char* line) {
 	ASSERT(rlx);
 	if( ! line || ! *line ) return false;
 
-	int expansionResult = history_expand(line, &expanded);
+	int expansionResult = history_expand((char*)line, &expanded);
 	if( expansionResult < 0 || expansionResult == 2 ) {
 		// history expansion failed, or should be ignored
 		free(expanded);

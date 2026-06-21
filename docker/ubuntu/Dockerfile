@@ -1,28 +1,29 @@
-FROM ubuntu
+FROM ubuntu:24.04
 
-RUN apt update -y
-
-RUN apt install -y \
-	software-properties-common \
-	unminimize \
-	man-db \
-	manpages \
-	manpages-dev \
-	manpages-posix-dev \
-	curl \
-	vim \
-	net-tools \
-	build-essential \
-	libreadline-dev \
-	libserialport-dev \
-	git \
-	doxygen \
-	graphviz \
-	xdg-utils
-
+RUN apt-get update -y && \
+    apt-get install -y \
+    software-properties-common \
+    unminimize \
+    man-db \
+    manpages \
+    manpages-dev \
+    manpages-posix-dev \
+    curl \
+    vim-tiny \
+    net-tools \
+    build-essential \
+    libreadline-dev \
+    libserialport-dev \
+    sqlite3 \
+    libsqlite3-dev \
+    git \
+    doxygen \
+    graphviz \
+    xdg-utils
+		
 RUN yes | unminimize
-
-RUN apt upgrade -y
+RUN apt-get upgrade -y
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN echo "alias ll='ls -la --color=auto'" >> /etc/bash.bashrc
 

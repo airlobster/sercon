@@ -24,7 +24,7 @@ SRC_DIRS := src
 INCLUDE_DIRS :=
 LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
-LIBS := -lserialport -lreadline
+LIBS := -lserialport -lreadline -lsqlite3
 ARTIFACTS_ROOT_DIR ?= $(shell pwd)
 BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
@@ -56,13 +56,14 @@ else
 $(error Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'.)
 endif
 
-# add readline includes and libs based on architecture
+# add includes and libs based on architecture
+$(warning "TODO: selecting 3rd-party libraries directories should be be made more accurate")
 ifneq (,$(filter $(ARCH), arm64 aarch64))
-	INCLUDE_DIRS += -I/opt/homebrew/opt/readline/include
-	LIB_DIRS += -L/opt/homebrew/opt/readline/lib -L/opt/homebrew/lib
+	INCLUDE_DIRS += -I/opt/homebrew/opt/readline/include -I/opt/homebrew/opt/sqlite/include
+	LIB_DIRS += -L/opt/homebrew/opt/readline/lib -L/opt/homebrew/lib -L/opt/homebrew/opt/sqlite/lib
 else ifeq ($(ARCH), x86_64)
-	INCLUDE_DIRS += -I/usr/local/opt/readline/include
-	LIB_DIRS += -L/usr/local/opt/readline/lib
+	INCLUDE_DIRS += -I/usr/local/opt/readline/include -I/usr/local/opt/sqlite/include
+	LIB_DIRS += -L/usr/local/opt/readline/lib -L/usr/local/opt/sqlite/lib
 else
 $(error Invalid architecture: $(ARCH). Use \'arm64\' or \'x86_64\'.)
 endif
