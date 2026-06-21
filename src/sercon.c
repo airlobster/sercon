@@ -196,6 +196,10 @@ static void registered_commands_callback(
 			break;
 		}
 		case 'D': {
+			if( fdPort < 0 ) {
+				a_error("Not currently connected to any port\n");
+				break;
+			}
 			disconnect(termContext);
 			// if( fdPort > 0 ) {
 			// 	close(fdPort);
@@ -271,7 +275,7 @@ static void console() {
 	// initialize readline for handling user input and command history
 	const unsigned long opt =
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0)
-		| (RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY)
+		| (RLX_OPT_AUTOCOMPLETE_COMMANDS /*| RLX_OPT_AUTOCOMPLETE_HISTORY*/)
 		;
 	rlx = rlx_begin(appname, interactive ? prompt : 0, rlx_callback, maxHistoryEntries, 0, opt, &termContext);
 	if( ! rlx ) {

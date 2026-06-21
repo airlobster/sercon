@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <pwd.h>
 #include <sys/param.h>
 #include <unistd.h>
@@ -485,7 +486,7 @@ void rlx_print_history(rlx_t h) {
 	for(int i=0; i < n; i++) {
 		HIST_ENTRY* entry = history_get(history_base + i);
 		if( ! entry || ! entry->line ) continue;
-		printf("%d: %s\n", history_base + i, entry->line);
+		printf("%*d: %s\n", (int)ceil(log10(history_base + n)), history_base + i, entry->line);
 	}
 }
 
