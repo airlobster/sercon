@@ -23,7 +23,7 @@
 char *port = 0;
 int baud = 9600;
 bool printTimestamps = true;
-int retrySeconds = 1;
+int pollTimeoutMs = 500;
 int maxHistoryEntries = 200;
 bool bPersistentHistory = true;
 
@@ -287,7 +287,7 @@ static void console() {
 		// wait for input from either stdin (fds[1]) or the serial port (fds[0]).
 		// if stdin is at EOF while in non-interactive mode, we will ignore stdin
 		// and set a final timeout to allow any pending serial output to be printed before we exit.
-		int ret = poll(termContext.fds, array_size(termContext.fds), retrySeconds * 1000);
+		int ret = poll(termContext.fds, array_size(termContext.fds), pollTimeoutMs);
 
 		// Check for poll errors
 		if( ret < 0 ) {
@@ -375,10 +375,6 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 			}
 			break;
 		}
-		case 'b': {
-			baud = MAX(atoi(optarg), 9600);
-			break;
-		}
 		case 'T': {
 			printTimestamps = false;
 			break;
@@ -386,10 +382,6 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 		case 'v': {
 			afprintf(stdout, "%s\n", VERSION);
 			exit(0);
-		}
-		case 'r': {
-			retrySeconds = MAX(atoi(optarg), 1);
-			break;
 		}
 		case 'e': {
 			maxHistoryEntries = MAX(atoi(optarg), 10);
