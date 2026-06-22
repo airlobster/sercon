@@ -92,12 +92,16 @@ endif
 OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(src)))
 
 # default entry point
-all: vars $(TARGET)
+all: vars $(TARGET) summary
 
 # LINK
 $(TARGET): $(OBJS)
 	$(CC) $(LIB_DIRS) -o $(BUILD_DIR)/$@ $(OBJS) $(LIBS)
-	@printf "$(COLOR_SUCCESS)** Build successful: $(BUILD_DIR)/$@ ($(shell wc -c < $(BUILD_DIR)/$@ | tr -d ' ') bytes)$(COLOR_RESET)\n"
+
+# print a summary of the build, including the size of the target executable.
+summary: SIZE = $(shell wc -c < $(BUILD_DIR)/$(TARGET) | tr -d ' ')
+summary:
+	@printf "$(COLOR_SUCCESS)** Build successful: $(BUILD_DIR)/$(TARGET) ($(SIZE) bytes)$(COLOR_RESET)\n"
 
 # COMPILE
 $(BUILD_DIR)/%.o: $(SRC_DIRS)/%.c | $(BUILD_DIR)
@@ -207,4 +211,4 @@ vars:
 
 -include $(wildcard $(BUILD_DIR)/*.d)
 
-.PHONY: all clean cleanall help install uninstall package man vars test run doxygen github readme
+.PHONY: all clean cleanall help install uninstall package man vars test run doxygen github readme summary
