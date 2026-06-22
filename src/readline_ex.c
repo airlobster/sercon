@@ -573,7 +573,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 	static const char** completionList = 0;
 	static size_t vocabIndex = 0;
 	static size_t textLen = 0;
-	
+
 	if( state == 0 ) {
 		ASSERT(rlxStatic.completionVocabulary);
 		// first call, build the completion words list
