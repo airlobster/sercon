@@ -201,13 +201,6 @@ static void registered_commands_callback(
 				break;
 			}
 			disconnect(termContext);
-			// if( fdPort > 0 ) {
-			// 	close(fdPort);
-			// 	fdPort = -1;
-			// 	if( termContext ) termContext->fds[0].fd = -1;
-			// }
-			// if( prompt ) free(prompt);
-			// rlx_change_prompt(rlx, prompt = makePrompt());
 			break;
 		}
 #ifdef _DEBUG_
@@ -242,12 +235,13 @@ static void setupTerminalCommands() {
 void rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 	(void)h;
 	terminal_context_t* termContext = (terminal_context_t*)userData;
+	ASSERT(termContext);
 	if( ! line ) {
 		termContext->fds[1].fd = -1; // tell poll we're done reading from stdin (EOF)
 		return;
 	}
 	// if the line is not a recognized command, forward it to the serial port
-	if( ! rlx_process_command(rlx, line) && fdPort > 0 ) {
+	if( ! rlx_process_command(rlx, line) && fdPort > 0 && length > 0 ) {
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
 	}
@@ -272,14 +266,14 @@ static void console() {
 		prompt = makePrompt();
 	}
 
-	// initialize readline for handling user input and command history
+	// create a readline_ex session for handling user input, command history and auto-completion
 	const unsigned long opt =
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0)
 		| (RLX_OPT_AUTOCOMPLETE_COMMANDS /*| RLX_OPT_AUTOCOMPLETE_HISTORY*/)
 		;
 	rlx = rlx_begin(appname, interactive ? prompt : 0, rlx_callback, maxHistoryEntries, 0, opt, &termContext);
 	if( ! rlx ) {
-		a_error("Error initializing RLX session\n");
+		a_error("Error initiating RLX session\n");
 		exit(1);
 	}
 
@@ -288,14 +282,6 @@ static void console() {
 	// add available ports to the autocomplete vocabulary for convenience
 	// (we do this after initializing RLX so that the readline state is properly set up for handling dynamic vocabulary updates)
 	enumSerialPorts(add_ports_to_vocabulary_callback, rlx);
-
-	// disable echo and canonical mode for non-interactive input
-	if( ! interactive ) {
-		struct termios newTermios;
-		tcgetattr(fdStdin, &newTermios);
-		newTermios.c_lflag &= ~(ECHO);
-		tcsetattr(fdStdin, TCSANOW, &newTermios);
-	}
 
 	while( ! shouldAbort ) {
 		// wait for input from either stdin (fds[1]) or the serial port (fds[0]).

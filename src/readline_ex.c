@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <pwd.h>
+#include <fcntl.h>
 #include <sys/param.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include <libgen.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <assert.h>
@@ -424,8 +424,24 @@ static void rlx_add_history_entry(rlx_t h, const char* line) {
 void rlx_process_input(rlx_t h) {
 	(void)h;
 	ASSERT(h);
-	// this will trigger readline to read the input and call our readline_callback function
-	rl_callback_read_char();
+	if( isatty(fileno(stdin)) ) {
+		// only process input if we're in interactive mode (e.g., not reading from a file or pipe)
+		rl_callback_read_char();
+	} else {
+		// in non-interactive mode, we override the readline's state-machine, read the content ourselves
+		// and call the callback directly for each line of input, until we reach EOF.
+		for(;;) {
+			char* line = 0;
+			size_t len = 0;
+			ssize_t read = getline(&line, &len, stdin);
+			if( read == -1 ) {
+				// EOF reached, notify the callback with a NULL line
+				readline_callback_wrapper(0);
+				break;
+			}
+			readline_callback_wrapper(line);
+		}
+	}
 }
 
 /**
