@@ -47,17 +47,9 @@ ifeq ($(ARTIFACTS_ROOT_DIR),/)
 $(error ARTIFACTS_ROOT_DIR cannot be set to the root directory (/)!)
 endif
 
-# set the appropriate opener command based on the platform
-ifeq ($(PLATFORM), darwin)
-	OPENER := open
-else ifeq ($(PLATFORM), linux)
-	OPENER := xdg-open
-else
-$(error Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'.)
-endif
-
 # select the appropriate include and library directories based on the platform and architecture.
 ifeq ($(PLATFORM), darwin)
+	OPENER := open
 ifneq (,$(filter $(ARCH), arm64 aarch64))
 # darwin/arm64
 	INCLUDE_DIRS += -I/opt/homebrew/opt/readline/include -I/opt/homebrew/opt/sqlite/include
@@ -73,6 +65,7 @@ else ifeq ($(PLATFORM), linux)
 # linux/all architectures
 	INCLUDE_DIRS += -I/usr/local/opt/readline/include -I/usr/local/opt/sqlite/include
 	LIB_DIRS += -L/usr/local/opt/readline/lib -L/usr/local/opt/sqlite/lib
+	OPENER := xdg-open
 else
 $(error Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'.)
 endif
@@ -158,8 +151,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 cleanall:
-	rm -rf $(BUILD_ROOT)
-	rm -rf $(DIST_DIR)
+	rm -rf $(BUILD_ROOT) $(DIST_DIR)
 
 help:
 	@printf "$(COLOR_BOLD)Usage: make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
