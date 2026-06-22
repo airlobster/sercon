@@ -18,6 +18,11 @@ typedef struct _vocabulary_internal_t {
 	size_t max_capacity;
 } vocabulary_internal_t;
 
+/**
+ * @brief Initializes the database for the vocabulary.
+ * @param vocab The vocabulary whose database is to be initialized.
+ * @return int SQLITE_OK on success, or an SQLite error code on failure.
+ */
 static int init_db(vocabulary_internal_t* vocab) {
 	const char* sql =
 		"CREATE TABLE IF NOT EXISTS words ("
@@ -167,6 +172,7 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
  */
 size_t vocab_size(vocabulary_t vocab) {
 	ASSERT(vocab);
+	ASSERT(vocab->db);
 	return vocab->size;
 }
 
@@ -225,6 +231,10 @@ char** vocab_get_words(vocabulary_t vocab) {
 }
 
 #ifdef _DEBUG_
+/**
+ * @brief Prints the vocabulary for debugging purposes.
+ * @param vocab The vocabulary to print.
+ */
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
 	printf("Auto-Complete Vocabulary (size: %zu):\n", vocab->size);
