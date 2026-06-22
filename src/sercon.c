@@ -29,7 +29,6 @@ bool bPersistentHistory = true;
 
 // global state variables
 char *appname = 0;
-bool atFirstRetryCycle = true;
 int fdPort = -1;
 rlx_t rlx = 0;
 char *prompt = 0;
