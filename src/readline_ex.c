@@ -11,8 +11,7 @@
 #include <assert.h>
 #include "readline_ex.h"
 #include "command.h"
-
-#define ASSERT(x) assert(x)
+#include "utils.h"
 
 // registered command linked list node type
 typedef struct _rlx_command_node_t {
@@ -503,7 +502,7 @@ void rlx_print_history(rlx_t h) {
 	for(int i=0; i < n; i++) {
 		HIST_ENTRY* entry = history_get(history_base + i);
 		if( ! entry || ! entry->line ) continue;
-		printf("%*d: %s\n", (int)ceil(log10(history_base + n)), history_base + i, entry->line);
+		printf("%*d: %s\n", numdigits(history_base + n), history_base + i, entry->line);
 	}
 }
 

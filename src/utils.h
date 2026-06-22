@@ -28,6 +28,8 @@ typedef struct {
 } cal_time_t;
 int now(cal_time_t* t);
 
+int numdigits(long long v);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

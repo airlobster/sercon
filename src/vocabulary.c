@@ -4,8 +4,7 @@
 #include <assert.h>
 #include <sqlite3.h>
 #include "vocabulary.h"
-
-#define ASSERT assert
+#include "utils.h"
 
 /**
  * @brief The internal structure of a vocabulary.
@@ -226,13 +225,12 @@ char** vocab_get_words(vocabulary_t vocab) {
 }
 
 #ifdef _DEBUG_
-#include <math.h>
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
 	printf("Auto-Complete Vocabulary (size: %zu):\n", vocab->size);
 	char** words = vocab_get_words(vocab);
 	for(char** w = words; w && *w; w++) {
-		printf("%*lu: %s\n", (int)ceil(log10(vocab->size)), w - words + 1, *w);
+		printf("%*ld: %s\n", numdigits(vocab->size), w - words + 1, *w);
 	}
 }
 #endif

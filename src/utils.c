@@ -3,6 +3,7 @@
 #include <time.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <math.h>
 #include "utils.h"
 
 int now(cal_time_t* t) {
@@ -26,4 +27,9 @@ const char* getHomeDir() {
 		homeDir = getpwuid(getuid())->pw_dir;
 	}
 	return homeDir;
+}
+
+int numdigits(long long v) {
+	if (v == 0) return 1;
+	return ceil(log10l(llabs(v)));
 }
