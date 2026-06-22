@@ -154,8 +154,10 @@ cleanall:
 	rm -rf $(BUILD_ROOT) $(DIST_DIR)
 
 help:
-	@printf "$(COLOR_BOLD)Usage: make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
-	@printf "$(COLOR_UNDERLINE)Targets:$(COLOR_RESET)\n"
+	@printf "$(COLOR_BOLD)Usage:$(COLOR_RESET)\n"
+	@printf "  $(COLOR_ITALIC)make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
+	@printf "\n"
+	@printf "$(COLOR_BOLD)Targets:$(COLOR_RESET)\n"
 	@printf "  $(COLOR_INFO)all$(COLOR_RESET)       - Build the project (default)\n"
 	@printf "  $(COLOR_INFO)clean$(COLOR_RESET)     - Remove build artifacts for the current build type\n"
 	@printf "  $(COLOR_INFO)cleanall$(COLOR_RESET)  - Remove all build artifacts and the target executable\n"
@@ -168,16 +170,20 @@ help:
 	@printf "  $(COLOR_INFO)readme$(COLOR_RESET)    - Display the README file\n"
 	@printf "  $(COLOR_INFO)test$(COLOR_RESET)      - Run basic tests for proper installation\n"
 	@printf "  $(COLOR_INFO)vars$(COLOR_RESET)      - Display current variable settings\n"
-	@printf "$(COLOR_UNDERLINE)Build types:$(COLOR_RESET)\n"
-	@printf "  $(COLOR_INFO)debug$(COLOR_RESET)      - Build with debug symbols and no optimizations (default)\n"
-	@printf "  $(COLOR_INFO)release$(COLOR_RESET)    - Build with optimizations and no debug symbols\n"
-	@printf "$(COLOR_UNDERLINE)Architectures:$(COLOR_RESET)\n"
-	@printf "  $(COLOR_INFO)arm64$(COLOR_RESET)      - Build for ARM64 architecture\n"
-	@printf "  $(COLOR_INFO)x86_64$(COLOR_RESET)     - Build for x86_64 architecture\n"
-	@printf "$(COLOR_UNDERLINE)Notes:$(COLOR_RESET)\n"
-	@printf "  * $(COLOR_ITALIC)Assign 'debug' or 'release' to BUILD to specify the build type. Default is 'debug'.$(COLOR_RESET)\n"
-	@printf "  * $(COLOR_ITALIC)Assign a new path to ARTIFACTS_ROOT_DIR to change where build and dist directories are created.$(COLOR_RESET)\n"
-	@printf "    $(COLOR_ITALIC)Default is current directory.$(COLOR_RESET)\n"
+	@printf "\n"
+	@printf "$(COLOR_BOLD)Build types:$(COLOR_RESET)\n"
+	@printf "  $(COLOR_INFO)debug$(COLOR_RESET)     - Build with debug symbols and no optimizations (default)\n"
+	@printf "  $(COLOR_INFO)release$(COLOR_RESET)   - Build with optimizations and no debug symbols\n"
+	@printf "\n"
+	@printf "$(COLOR_BOLD)Architectures:$(COLOR_RESET)\n"
+	@printf "  $(COLOR_INFO)arm64$(COLOR_RESET)     - Build for ARM64 architecture\n"
+	@printf "  $(COLOR_INFO)x86_64$(COLOR_RESET)    - Build for x86_64 architecture\n"
+	@printf "\n"
+	@printf "$(COLOR_BOLD)Notes:$(COLOR_RESET)\n"
+	@printf "  * Assign 'debug' or 'release' to BUILD to specify the build type. Default is 'debug'.$(COLOR_RESET)\n"
+	@printf "  * Assign a new path to ARTIFACTS_ROOT_DIR to change where build and dist directories are created.$(COLOR_RESET)\n"
+	@printf "    Default is current directory.$(COLOR_RESET)\n"
+	@printf "\n"
 
 test:
 	$(TARGET) --version
