@@ -233,7 +233,7 @@ static void setupTerminalCommands() {
 		{'p', "ports", "List available serial ports", registered_commands_callback},
 		{'C', "connect", "Connect to a serial port (usage: connect PORT)", registered_commands_callback},
 		{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
-		{'t', "timestamps", "Toggle timestamps on/off", registered_commands_callback},
+		{'t', "timestamps", "Set/show timestamps state (on|off)", registered_commands_callback},
 #ifdef _DEBUG_
 		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
 #endif
