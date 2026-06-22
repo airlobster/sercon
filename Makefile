@@ -158,7 +158,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 cleanall: clean
-	rm -rf $(ARTIFACTS_ROOT_DIR)
+	rm -rf $(BUILD_ROOT) $(DIST_DIR)
 
 help:
 	@printf "$(COLOR_BOLD)Usage: make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
