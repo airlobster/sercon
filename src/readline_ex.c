@@ -425,7 +425,7 @@ void rlx_process_input(rlx_t h) {
 	(void)h;
 	ASSERT(h);
 	if( isatty(fileno(stdin)) ) {
-		// only process input if we're in interactive mode (e.g., not reading from a file or pipe)
+		// interactive mode. let readline do its thing
 		rl_callback_read_char();
 	} else {
 		// in non-interactive mode, we override the readline's state-machine, read the content ourselves
