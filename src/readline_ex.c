@@ -488,7 +488,7 @@ void rlx_print_history(rlx_t rlx) {
 	for(int i=0; i < n; i++) {
 		HIST_ENTRY* entry = history_get(history_base + i);
 		if( ! entry || ! entry->line ) continue;
-		printf("%*d: %s\n", numdigits(history_base + n), history_base + i, entry->line);
+		printf("%*d: %s\n", numdigits(history_base + n, 0), history_base + i, entry->line);
 	}
 }
 

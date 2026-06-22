@@ -240,7 +240,7 @@ void vocab_print(vocabulary_t vocab) {
 	printf("Auto-Complete Vocabulary (size: %zu):\n", vocab->size);
 	char** words = vocab_get_words(vocab);
 	for(char** w = words; w && *w; w++) {
-		printf("%*ld: %s\n", numdigits(vocab->size), w - words + 1, *w);
+		printf("%*ld: %s\n", numdigits(vocab->size, 0), w - words + 1, *w);
 	}
 }
 #endif

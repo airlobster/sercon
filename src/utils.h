@@ -28,7 +28,7 @@ typedef struct {
 } cal_time_t;
 int now(cal_time_t* t);
 
-int numdigits(long long v);
+int numdigits(long long v, unsigned short base);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -6,6 +6,11 @@
 #include <math.h>
 #include "utils.h"
 
+/**
+ * @brief Get the current time.
+ * @param t The structure to store the current time.
+ * @return 0 on success, non-zero on failure.
+ */
 int now(cal_time_t* t) {
 	struct timespec ts;
 	struct tm tm;
@@ -21,6 +26,10 @@ int now(cal_time_t* t) {
 	return 0;
 }
 
+/**
+ * @brief Get the home directory of the current user.
+ * @return The path to the home directory.
+ */
 const char* getHomeDir() {
 	const char* homeDir = getenv("HOME");
 	if( ! homeDir ) {
@@ -29,7 +38,13 @@ const char* getHomeDir() {
 	return homeDir;
 }
 
-int numdigits(long long v) {
-	if (v == 0) return 1;
-	return ceil(log10l(llabs(v)));
+/**
+ * @brief Get the number of digits in an integer.
+ * @param v The integer.
+ * @param base The numerical base. (e.g., 10 for decimal, 16 for hexadecimal. If 0, defaults to 10.)
+ * @return The number of digits.
+ */
+int numdigits(long long v, unsigned short base) {
+	if( v == 0 ) return 1;
+	return ceil(logl(llabs(v)) / logl(base ? base : 10));
 }
