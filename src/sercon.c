@@ -39,7 +39,6 @@ volatile int shouldAbort = 0;
 // allowing us to maintain state across calls
 typedef struct {
 	struct pollfd fds[2];
-	bool interactive;
 } terminal_context_t;
 
 static void add_ports_to_vocabulary_callback(const char* portName, void* userData) {
@@ -202,6 +201,20 @@ static void registered_commands_callback(
 			disconnect(termContext);
 			break;
 		}
+		case 't': {
+			if( argc > 1 ) {
+				if( strcasecmp(argv[1], "on") == 0 ) {
+					printTimestamps = true;
+				} else if( strcasecmp(argv[1], "off") == 0 ) {
+					printTimestamps = false;
+				} else {
+					a_error("Usage: timestamp [on|off]\n");
+					break;
+				}
+			}
+			a_success("Timestamps %s\n", printTimestamps ? "on" : "off");
+			break;
+		}
 #ifdef _DEBUG_
 		case 'A': {
 			rlx_print_autocomplete_vocabulary(rlx);
@@ -220,6 +233,7 @@ static void setupTerminalCommands() {
 		{'p', "ports", "List available serial ports", registered_commands_callback},
 		{'C', "connect", "Connect to a serial port (usage: connect PORT)", registered_commands_callback},
 		{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
+		{'t', "timestamps", "Toggle timestamps on/off", registered_commands_callback},
 #ifdef _DEBUG_
 		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
 #endif
@@ -240,9 +254,13 @@ void rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 		return;
 	}
 	// if the line is not a recognized command, forward it to the serial port
-	if( ! rlx_process_command(rlx, line) && fdPort > 0 && length > 0 ) {
-		write(fdPort, line, length);
-		write(fdPort, "\n", 1);
+	if( ! rlx_process_command(rlx, line) && length > 0 ) {
+		if( fdPort > 0 ) {
+			write(fdPort, line, length);
+			write(fdPort, "\n", 1);
+		}	else {
+			a_error("Not connected to any serial port. Use the 'connect' command to connect.\n");
+		}
 	}
 }
 
@@ -258,7 +276,6 @@ static void console() {
 			{ .fd = fdPort, .events = POLLIN },
 			{ .fd = fdStdin, .events = POLLIN },
 		},
-		.interactive = interactive
 	};
 
 	if( ! prompt ) {
@@ -312,7 +329,7 @@ static void console() {
 
 		// Check if user input is available
 		if( termContext.fds[1].revents & POLLIN ) {
-			// trigger readline to read the input and call our RLX callback function
+  			// trigger readline_ex to read the input and call our RLX callback function
 			rlx_process_input(rlx);
 		} // end stdin handling
 
@@ -350,15 +367,6 @@ static void console() {
 			rlx_resume(rlx, atNewLine);
 		} // end serial port handling
 	} // end while
-
-	rlx_end(rlx);
-	rlx = 0;
-
-	close(fdPort);
-	fdPort = -1;
-
-	free(prompt);
-	prompt = 0;
 }
 
 static void cli_args_callback(int pos, int opt, const char* optarg) {
