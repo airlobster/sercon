@@ -48,3 +48,32 @@ int numdigits(long long v, unsigned short base) {
 	if( v == 0 ) return 1;
 	return ceil(logl(llabs(v)) / logl(base ? base : 10));
 }
+
+
+/**
+	@brief Find the start and end of the non-whitespace content in a string.
+	@param s The input string.
+	@param start Pointer to store the start of the content.
+	@param end Pointer to store the end of the content.
+	@return The length of the content.
+*/
+int strnetcontent(char* s, char** start, char** end) {
+	ASSERT(start && end);
+	*start = *end = 0;
+	if( ! s ) return 0;
+	register char *p = s;
+	// skip over leading whitespace
+	while( isspace(*p) ) {
+		++p;
+	}
+	*start = *end = p;
+	// find the last non-whitespace character
+	while( *p ) {
+		if( ! isspace(*p) ) {
+			*end = p + 1;
+		}
+		++p;
+	}
+	ASSERT(*end >= *start);
+	return *end - *start;
+}

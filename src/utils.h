@@ -30,6 +30,8 @@ int now(cal_time_t* t);
 
 int numdigits(long long v, unsigned short base);
 
+int strnetcontent(char* s, char** start, char** end);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -22,6 +22,8 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		PS_UNQUOTED,
 		PS_QUOTED,
 		PS_ESCAPE,
+		PS_ESCAPE_OCTAL,
+		PS_ESCAPE_HEX,
 		PS_END,
 	} parse_state_t;
 
@@ -32,6 +34,8 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	char** tokens = 0; // array of token strings, will be realloc'd as we add tokens
 	char token[256] = {0}; // buffer for the current token
 	char* pTokenWr = token; // pointer to the current position in the token buffer
+	unsigned int integerValue = 0; // used for parsing octal and hex escape sequences
+	int nExpectedDigits = 0; // number of expected digits for octal or hex escape sequences
 
 	ASSERT(argc && argv && line);
 	*argc = 0;
@@ -94,6 +98,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				break;
 			}
 			case PS_ESCAPE: {
+				--statePos;
 				switch( *p ) {
 					case 'n': *pTokenWr++ = '\n'; break;
 					case 'r': *pTokenWr++ = '\r'; break;
@@ -101,11 +106,67 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 					case 'b': *pTokenWr++ = '\b'; break;
 					case 'a': *pTokenWr++ = '\a'; break;
 					case 'f': *pTokenWr++ = '\f'; break;
-					case '0': break; // ignore escaped null characters
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7': {
+						// octal escape sequence, expect 3 octal digits maximum,
+						// but can be less if a non-octal digit is encountered
+						integerValue = 0;
+						nExpectedDigits = 3;
+						state[statePos++] = PS_ESCAPE_OCTAL;
+						--p; // reprocess this character in the new state
+						break;
+					}
+					case 'x': {
+						// hex escape sequence, expect 2 hex digits
+						integerValue = 0;
+						nExpectedDigits = 2;
+						state[statePos++] = PS_ESCAPE_HEX;
+						break;
+					}
 					default: *pTokenWr++ = *p; break;
 				}
 				*pTokenWr = '\0';
-				--statePos;
+				break;
+			}
+			case PS_ESCAPE_OCTAL: {
+				if( *p >= '0' && *p <= '7' ) {
+					integerValue = (integerValue << 3) | (*p - '0');
+					if( --nExpectedDigits == 0 ) {
+						ASSERT(integerValue <= 255);
+						*pTokenWr++ = (char)integerValue;
+						*pTokenWr = '\0';
+						--statePos; // exit PS_ESCAPE_OCTAL state
+					}
+				} else {
+					// invalid octal digit, terminate octal value and flush
+					ASSERT(integerValue <= 255);
+					*pTokenWr++ = (char)integerValue;
+					*pTokenWr = '\0';
+					--statePos;
+				}
+				break;
+			}
+			case PS_ESCAPE_HEX: {
+				if( isxdigit(*p) ) {
+					integerValue = (integerValue << 4) | (isdigit(*p) ? (*p - '0') : (tolower(*p) - 'a' + 10));
+					if( --nExpectedDigits == 0 ) {
+						ASSERT(integerValue <= 255);
+						*pTokenWr++ = (char)integerValue;
+						*pTokenWr = '\0';
+						--statePos; // exit PS_ESCAPE_HEX state
+					}
+				} else {
+					// invalid hex digit, treat as literal character and exit PS_ESCAPE_HEX state
+					*pTokenWr++ = *p;
+					*pTokenWr = '\0';
+					--statePos;
+				}
 				break;
 			}
 			case PS_END: {
