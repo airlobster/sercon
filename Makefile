@@ -121,7 +121,7 @@ run: all
 
 # show man page (pre-installation)
 man:
-	@man ./$(MAN_PAGE)
+	@$(OPENER) ./$(MAN_PAGE)
 
 # open the README file in the default browser
 readme:

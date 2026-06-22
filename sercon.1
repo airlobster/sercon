@@ -6,10 +6,9 @@ sercon \- interactive serial console for Arduino and UART devices
 .RI [ options ]
 .SH DESCRIPTION
 .B sercon
-connects your terminal to a serial device and forwards input/output in both directions.
-It can list available serial ports, set baud rate, print timestamps on incoming lines,
-and render ANSI styling when supported.
-.PP
+connects your terminal to a serial device and forwards input/output in both
+directions. It can list available serial ports, set baud rate, print timestamps
+on incoming lines, and render ANSI styling when supported.
 .SH OPTIONS
 .TP
 .BR -l , " --list"
@@ -18,24 +17,20 @@ List available serial ports and exit.
 .BR -h , " --help"
 Show help text and exit.
 .TP
-.BR -p , " --port " PORT
-Serial port to open
-.TP
-.BR -b , " --baud " BAUD
-Set baud rate. Minimum accepted value is 9600.
-Values below 9600 are clamped to 9600.
-.TP
-.BR -r , " --retry-delay"
-Delay in seconds between connection retries (default: 1).
+.BR -p , " --port " PORT{:BAUD}
+Serial port to open with optional baud-rate (default: 9600).
 .TP
 .BR -T , " --no-timestamps"
 Disable timestamp prefix on incoming lines.
 .TP
+.BR -H , " --non-persistent-history"
+Do not use history file.
+.TP
+.BR -e , " --max-history " MAX-ENTRIES
+Set maximum number of history entries. Default: 0 (unlimited).
+.TP
 .BR -v , " --version"
 Print version information and exit.
-.TP
-.BR -w , " --eof-wait"
-Seconds to wait after EOF on stdin before exiting (default: 1).
 .SH EXAMPLES
 List ports:
 .PP
@@ -55,12 +50,6 @@ Connect at 9600 baud:
 .B sercon --port cu.usbmodem1101
 .RE
 .PP
-Connect at 115200 baud:
-.PP
-.RS
-.B sercon -p cu.usbmodem1101 -b 115200
-.RE
-.PP
 Disable timestamps:
 .PP
 .RS
@@ -77,7 +66,6 @@ Print version:
 .B SIGINT
 Ctrl+C triggers graceful shutdown.
 .SH BEHAVIOR NOTES
-.PP
 Prompt text defaults to the selected port basename (or the executable name).
 .PP
 Prompt and cursor UI are shown only in interactive mode with ANSI enabled.

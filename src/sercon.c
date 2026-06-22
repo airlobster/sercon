@@ -417,7 +417,6 @@ static void parse_cli_args(int argc, char *argv[])
 		{{"port", required_argument, 0, 'p'}, "Specify the serial port", "PORT{:BAUD}"},
 		{{"no-timestamps", no_argument, 0, 'T'}, "Disable timestamps", 0},
 		{{"version", no_argument, 0, 'v'}, "Show version information", 0},
-		{{"retry-delay", required_argument, 0, 'r'}, "Seconds to wait before retrying connection (default: 1)", "SECONDS"},
 		{{"max-history", required_argument, 0, 'e'}, "Maximum number of history entries to keep (default: 200)", "NUMBER"},
 		{{"non-persistent-history", no_argument, 0, 'H'}, "Disable persistent history (history will not be saved to a file)", 0},
 		GETOPT_EX_OPTIONS_END
