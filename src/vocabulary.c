@@ -18,22 +18,31 @@ typedef struct _vocabulary_internal_t {
 	size_t max_capacity;
 } vocabulary_internal_t;
 
+#ifdef _DEBUG_
+static void print_db_error(vocabulary_internal_t* vocab, const char* file, int line) {
+	ASSERT(vocab);
+	ASSERT(vocab->db);
+	fprintf(stderr, "DB error: %s (%s:%d)\n", sqlite3_errmsg(vocab->db), file, line);
+}
+#define DB_ERROR(vocab) print_db_error(vocab, __FILE__, __LINE__)
+#else
+#define DB_ERROR(vocab) ((void)0)
+#endif
+
 /**
  * @brief Initializes the database for the vocabulary.
  * @param vocab The vocabulary whose database is to be initialized.
  * @return int SQLITE_OK on success, or an SQLite error code on failure.
  */
-static int init_db(vocabulary_internal_t* vocab) {
-	const char* sql =
+static int init_schema(vocabulary_internal_t* vocab) {
+	static const char sql[] =
 		"CREATE TABLE IF NOT EXISTS words ("
-		"word TEXT PRIMARY KEY,"
-		"timestamp DATETIME DEFAULT CURRENT_TIMESTAMP"
+		"word TEXT PRIMARY KEY NOT NULL,"
+		"timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
 		");";
 	int rc = sqlite3_exec(vocab->db, sql, 0, 0, 0);
 	if( rc != SQLITE_OK ) {
-#ifdef _DEBUG_
-		fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(vocab->db));
-#endif
+		DB_ERROR(vocab);
 	}
 	return rc;
 }
@@ -44,29 +53,25 @@ static int init_db(vocabulary_internal_t* vocab) {
  * @return int SQLITE_OK on success, or an SQLite error code on failure.
  */
 static int remove_oldest_words(vocabulary_internal_t* vocab) {
+	static const char sql[] =
+		"DELETE FROM words WHERE word NOT IN "
+		"(SELECT word FROM words ORDER BY timestamp DESC LIMIT ?);"
+		;
 	ASSERT(vocab);
 	ASSERT(vocab->db);
 	if( ! vocab->max_capacity || vocab->size <= vocab->max_capacity ) {
 		return SQLITE_OK;
 	}
-	const char* sql =
-		"DELETE FROM words WHERE word NOT IN "
-		"(SELECT word FROM words ORDER BY timestamp DESC LIMIT ?);"
-		;
 	sqlite3_stmt *stmt;
 	int rc = sqlite3_prepare_v2(vocab->db, sql, -1, &stmt, 0);
 	if( rc != SQLITE_OK ) {
-#ifdef _DEBUG_
-		fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(vocab->db));
-#endif
+		DB_ERROR(vocab);
 		return rc;
 	}
 	sqlite3_bind_int(stmt, 1, (int)(vocab->max_capacity));
 	rc = sqlite3_step(stmt);
 	if( rc != SQLITE_DONE ) {
-#ifdef _DEBUG_
-		fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(vocab->db));
-#endif
+		DB_ERROR(vocab);
 		sqlite3_finalize(stmt);
 		return rc;
 	}
@@ -108,14 +113,13 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	vocab->max_capacity = max_capacity;
 
 	if( sqlite3_open(":memory:", &vocab->db) != SQLITE_OK ) {
-#ifdef _DEBUG_
-		fprintf(stderr, "Failed to open in-memory database: %s\n", sqlite3_errmsg(vocab->db));
-#endif
+		DB_ERROR(vocab);
 		free(vocab);
 		return 0; // failed to open in-memory database
 	}
 
-	if( init_db(vocab) != SQLITE_OK ) {
+	if( init_schema(vocab) != SQLITE_OK ) {
+		DB_ERROR(vocab);
 		vocab_destroy(vocab);
 		vocab = 0;
 		return 0; // failed to initialize database
@@ -145,11 +149,15 @@ void vocab_destroy(vocabulary_t vocab) {
  * @note Assumes the given word is a valid null-terminated trimmed string. Empty words are ignored.
  */
 bool vocab_add_word(vocabulary_t vocab, const char* word) {
+	static const char sql[] =
+		"INSERT INTO words (word) VALUES (?) "
+		"ON CONFLICT(word) DO UPDATE SET timestamp = CURRENT_TIMESTAMP;"
+		;
 	ASSERT(vocab);
 	ASSERT(word && *word);
 	ASSERT(vocab->db);
 	sqlite3_stmt *stmt;
-	sqlite3_prepare_v2(vocab->db, "INSERT INTO words (word) VALUES (?);", -1, &stmt, 0);
+	sqlite3_prepare_v2(vocab->db, sql, -1, &stmt, 0);
 	sqlite3_bind_text(stmt, 1, word, -1, SQLITE_STATIC);
 	int rc = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
@@ -158,9 +166,7 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
 		vocab->size++;
 		return remove_oldest_words(vocab) == SQLITE_OK;
 	} else if( rc != SQLITE_CONSTRAINT ) {
-#ifdef _DEBUG_
-		fprintf(stderr, "Failed to add word '%s': %s\n", word, sqlite3_errmsg(vocab->db));
-#endif
+		DB_ERROR(vocab);
 	}
 	return false;
 }
@@ -202,6 +208,7 @@ static int enum_words_callback(void* user_data, int argc, char** argv, char** az
  * @note The returned array is owned by the vocabulary and should not be freed by the caller.
  */
 char** vocab_get_words(vocabulary_t vocab) {
+	static const char sql[] = "SELECT word FROM words ORDER BY word ASC;";
 	ASSERT(vocab);
 	ASSERT(vocab->db);
 	if( vocab->words_list && ! vocab->dirty ) {
@@ -212,12 +219,9 @@ char** vocab_get_words(vocabulary_t vocab) {
 	if( ! words ) return 0; // allocation failed
 	char** words_ptr = words;
 	// fetch words from the database
-	int rc = sqlite3_exec(vocab->db,
-		"SELECT word FROM words ORDER BY word ASC;", enum_words_callback, &words_ptr, 0);
+	int rc = sqlite3_exec(vocab->db, sql, enum_words_callback, &words_ptr, 0);
 	if( rc != SQLITE_OK ) {
-#ifdef _DEBUG_
-		fprintf(stderr, "Failed to enumerate words: %s\n", sqlite3_errmsg(vocab->db));
-#endif
+		DB_ERROR(vocab);
 		free(words);
 		return 0; // error occurred
 	}
