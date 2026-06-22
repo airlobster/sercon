@@ -433,13 +433,14 @@ void rlx_process_input(rlx_t h) {
 		for(;;) {
 			char* line = 0;
 			size_t len = 0;
-			ssize_t read = getline(&line, &len, stdin);
-			if( read == -1 ) {
-				// EOF reached, notify the callback with a NULL line
+			ssize_t read = 0;
+			if( (read = getline(&line, &len, stdin)) == -1 ) {
+				free(line); // !! getline allocates a buffer even on EOF !!
 				readline_callback_wrapper(0);
 				break;
 			}
 			readline_callback_wrapper(line);
+			// freeing the line buffer is handled by readline_callback_wrapper!!
 		}
 	}
 }
