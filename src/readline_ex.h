@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-typedef void* rlx_t;
+typedef struct _rlx_internal_t* rlx_t;
 
 typedef struct _rlx_registered_command_t {
 	int id;

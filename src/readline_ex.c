@@ -20,7 +20,7 @@ typedef struct _rlx_command_node_t {
 } rlx_command_node_t;
 
 // internal readline context structure type
-typedef struct {
+typedef struct _rlx_internal_t {
 	bool isInitialized;
 	rlx_callback_t callback;
 	void* userData;
@@ -212,11 +212,9 @@ rlx_t rlx_begin(
 
 /**
 	@brief End the readline_ex session, cleaning up resources.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 */
-void rlx_end(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
-
+void rlx_end(rlx_t rlx) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 
@@ -224,7 +222,7 @@ void rlx_end(rlx_t h) {
 
 	rl_callback_handler_remove();
 
-	rlx_commit_history(h);
+	rlx_commit_history(rlx);
 
 	free(rlx->historyFilePath);
 	rlx->historyFilePath = 0;
@@ -258,13 +256,12 @@ void rlx_end(rlx_t h) {
 
 /**
  * @brief Change the prompt string for the readline_ex session.
- * @param h The readline_ex session handle.
+ * @param rlx The readline_ex session handle.
  * @param newPrompt The new prompt string to display.
  * @note: previous prompt string will not be freed because it is owned and managed
  * by the application itself.
  */
-void rlx_change_prompt(rlx_t h, const char* newPrompt) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+void rlx_change_prompt(rlx_t rlx, const char* newPrompt) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 	ASSERT(newPrompt);
@@ -276,15 +273,14 @@ void rlx_change_prompt(rlx_t h, const char* newPrompt) {
 
 /**
 	@brief Register commands with the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 	@param commands An array of commands to register.
 */
-void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+void rlx_register_commands(rlx_t rlx, const rlx_registered_command_t* commands) {
 	ASSERT(rlx);
 	ASSERT(commands);
 	for( const rlx_registered_command_t* rc = commands; rc && rc->command && rc->handler; rc++ ) {
-		if( rlx_get_command(h, rc->command) ) continue;
+		if( rlx_get_command(rlx, rc->command) ) continue;
 		rlx_command_node_t* cmd = malloc(sizeof(rlx_command_node_t));
 		cmd->cmd = *rc;
 		cmd->next = rlx->commands;
@@ -297,12 +293,11 @@ void rlx_register_commands(rlx_t h, const rlx_registered_command_t* commands) {
 
 /**
 	@brief Get a registered command by its name.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 	@param command The name of the command to retrieve.
 	@return A pointer to the registered command, or NULL if not found.
 */
-const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+const rlx_registered_command_t* rlx_get_command(rlx_t rlx, const char* command) {
 	ASSERT(rlx);
 	ASSERT(command && *command);
 	for(const rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
@@ -315,12 +310,11 @@ const rlx_registered_command_t* rlx_get_command(rlx_t h, const char* command) {
 
 /**
 	@brief Process a command line, executing the corresponding command handler if a registered command is found.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 	@param line The command line to process.
 	@return true if a registered command was found and executed, false otherwise.
 */
-bool rlx_process_command(rlx_t h, const char* line) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+bool rlx_process_command(rlx_t rlx, const char* line) {
 	char* expanded = 0;
 	int argc=0;
 	char** argv=0;
@@ -341,8 +335,8 @@ bool rlx_process_command(rlx_t h, const char* line) {
 	// we convert the command line into argc/argv format for easier parsing by command handlers,
 	// and then free the argv array after processing.
 	if( parse_command_line(line, &argc, &argv) > 0 ) {
-		if( (cmd = rlx_get_command(h, argv[0])) != 0 ) {
-			cmd->handler(h, cmd, argc, (const char**)argv, rlx->userData);
+		if( (cmd = rlx_get_command(rlx, argv[0])) != 0 ) {
+			cmd->handler(rlx, cmd, argc, (const char**)argv, rlx->userData);
 		}
 		free_command_args(argc, argv);
 	}
@@ -356,10 +350,10 @@ bool rlx_process_command(rlx_t h, const char* line) {
 		using_history();
 		HIST_ENTRY* lastEntry = previous_history();
 		if( ! lastEntry || strcmp(lastEntry->line, line) != 0 ) {
-			rlx_add_history_entry((rlx_t)rlx, line);
+			rlx_add_history_entry(rlx, line);
 		}
 	} else {
-		rlx_add_history_entry((rlx_t)rlx, line);
+		rlx_add_history_entry(rlx, line);
 	}
 
 	return cmd != 0;
@@ -367,10 +361,9 @@ bool rlx_process_command(rlx_t h, const char* line) {
 
 /**
 	@brief Pause the readline_ex session, saving the current input line and prompt.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 */
-void rlx_pause(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+void rlx_pause(rlx_t rlx) {
 	ASSERT(rlx);
 	if( rlx->isPaused ) return; // if we're already paused, no need to do anything
 	rlx->savedLineBuffer = strdup(rl_line_buffer); // save the current readline input so we can restore it after printing serial output
@@ -382,11 +375,10 @@ void rlx_pause(rlx_t h) {
 
 /**
 	@brief Resume the readline_ex session, restoring the saved input line and prompt.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 	@param redisplayPrompt Whether to redisplay the prompt and input line.
 */
-void rlx_resume(rlx_t h, bool redisplayPrompt) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+void rlx_resume(rlx_t rlx, bool redisplayPrompt) {
 	ASSERT(rlx);
 	if( ! rlx->isPaused ) return; // if we're not currently paused, no need to do anything
 	rl_restore_prompt(); // restore the prompt that was saved before we paused readline for printing serial output
@@ -401,11 +393,10 @@ void rlx_resume(rlx_t h, bool redisplayPrompt) {
 
 /**
 	@brief Add a line to the command history for the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 	@param line The line to add to the history.
 */
-static void rlx_add_history_entry(rlx_t h, const char* line) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+static void rlx_add_history_entry(rlx_t rlx, const char* line) {
 	ASSERT(rlx);
 	if( ! line || ! *line ) return;
 	add_history(line);
@@ -420,9 +411,9 @@ static void rlx_add_history_entry(rlx_t h, const char* line) {
 	@brief Process input for the readline_ex session.
 	@param h The readline_ex session handle.
 */
-void rlx_process_input(rlx_t h) {
-	(void)h;
-	ASSERT(h);
+void rlx_process_input(rlx_t rlx) {
+	(void)rlx;
+	ASSERT(rlx);
 	if( isatty(fileno(stdin)) ) {
 		// interactive mode. let readline do its thing
 		rl_callback_read_char();
@@ -446,10 +437,9 @@ void rlx_process_input(rlx_t h) {
 
 /**
 	@brief Reset the command history for the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 */
-void rlx_reset_history(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+void rlx_reset_history(rlx_t rlx) {
 	(void)rlx;
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
@@ -459,11 +449,10 @@ void rlx_reset_history(rlx_t h) {
 
 /**
  * @brief Get the number of entries in the command history for the readline_ex session.
- * @param h The readline_ex session handle.
+ * @param rlx The readline_ex session handle.
  * @return int The number of entries in the command history.
  */
-int rlx_get_history_length(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+int rlx_get_history_length(rlx_t rlx) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 	if( ! rlx->isInitialized ) return 0;
@@ -476,10 +465,9 @@ int rlx_get_history_length(rlx_t h) {
 
 /**
 	@brief Commit the command history for the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 */
-static void rlx_commit_history(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+static void rlx_commit_history(rlx_t rlx) {
 	ASSERT(rlx);
 	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
 		write_history(rlx->historyFilePath);
@@ -491,13 +479,11 @@ static void rlx_commit_history(rlx_t h) {
 	@brief Print the command history for the readline_ex session.
 	@param h The readline_ex session handle.
 */
-void rlx_print_history(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
-	(void)rlx;
+void rlx_print_history(rlx_t rlx) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 	using_history();
-	int n = rlx_get_history_length(h);
+	int n = rlx_get_history_length(rlx);
 	if( n <= 0 ) return;
 	for(int i=0; i < n; i++) {
 		HIST_ENTRY* entry = history_get(history_base + i);
@@ -513,10 +499,9 @@ static int compare_commands(const void* a, const void* b) {
 }
 /**
 	@brief Print the registered commands for the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 */
-void rlx_print_registered_commands(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+void rlx_print_registered_commands(rlx_t rlx) {
 	int i = 0;
 	int maxLen = 0;
 
@@ -569,6 +554,12 @@ static char** rlx_custom_completion(const char* text, int start, int end) {
 	return rl_completion_matches(text, rlx_custom_completion_generator);
 }
 
+/**
+ * @brief Custom completion generator for readline_ex.
+ * @param text The text to complete.
+ * @param state The state of the completion.
+ * @return The next completion match.
+ */
 static char* rlx_custom_completion_generator(const char* text, int state) {
 	static const char** completionList = 0;
 	static size_t vocabIndex = 0;
@@ -596,11 +587,10 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 
 /**
 	@brief Set a custom autocomplete vocabulary for the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 	@param vocab The custom autocomplete vocabulary, or NULL to use the default vocabulary.
 */
-void rlx_set_autocomplete_vocabulary(rlx_t h, vocabulary_t vocab) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+void rlx_set_autocomplete_vocabulary(rlx_t rlx, vocabulary_t vocab) {
 	ASSERT(rlx);
 	if( rlx->ownsCompletionVocabulary ) {
 		// dispose of the old vocabulary if we own it before replacing it with the new one
@@ -613,12 +603,11 @@ void rlx_set_autocomplete_vocabulary(rlx_t h, vocabulary_t vocab) {
 
 /**
  * @brief Add a new entry to the autocomplete vocabulary.
- * @param h The readline_ex session handle.
+ * @param rlx The readline_ex session handle.
  * @param entry The entry to add to the autocomplete vocabulary.
  * @return true if the entry was added successfully, false otherwise.
  */
-bool rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+bool rlx_add_autocomplete_vocabulary_entry(rlx_t rlx, const char* entry) {
 	ASSERT(rlx);
 	ASSERT(entry && *entry);
 	if( ! entry || ! *entry ) return false;
@@ -629,12 +618,15 @@ bool rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry) {
 	return vocab_add_word(rlx->completionVocabulary, entry);
 }
 
-static void rlx_load_history_into_autocomplete(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+/**
+ * @brief Load the readline history into the autocomplete vocabulary.
+ * @param rlx The readline_ex session handle.
+ */
+static void rlx_load_history_into_autocomplete(rlx_t rlx) {
 	ASSERT(rlx);
 	ASSERT(rlx->completionVocabulary && rlx->ownsCompletionVocabulary);
 	using_history();
-	int n = rlx_get_history_length(h);
+	int n = rlx_get_history_length(rlx);
 	for(int j = 0; j < n; j++) {
 		HIST_ENTRY* entry = history_get(history_base + j);
 		if( ! entry || ! entry->line || ! *entry->line ) continue;
@@ -643,8 +635,11 @@ static void rlx_load_history_into_autocomplete(rlx_t h) {
 }
 
 #ifdef _DEBUG_
-void rlx_print_autocomplete_vocabulary(rlx_t h) {
-	rlx_internal_t* rlx = (rlx_internal_t*)h;
+/**
+ * @brief Print the autocomplete vocabulary.
+ * @param rlx The readline_ex session handle.
+ */
+void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
 	ASSERT(rlx);
 	if( rlx->completionVocabulary ) {
 		vocab_print(rlx->completionVocabulary);
