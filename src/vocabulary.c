@@ -204,7 +204,7 @@ static int enum_words_callback(void* user_data, int argc, char** argv, char** az
 char** vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
 	ASSERT(vocab->db);
-	if( ! vocab->dirty ) {
+	if( vocab->words_list && ! vocab->dirty ) {
 		return vocab->words_list; // return cached list
 	}
 	// allocate memory for the words list
