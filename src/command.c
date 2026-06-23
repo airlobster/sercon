@@ -37,13 +37,17 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	unsigned int integerValue = 0; // used for parsing octal and hex escape sequences
 	int nExpectedDigits = 0; // number of expected digits for octal or hex escape sequences
 
-	ASSERT(argc && argv && line);
+	ASSERT(argc && argv);
 	*argc = 0;
 	*argv = 0;
 
+	if( !line ) {
+		return 0;
+	}
+
 	state[statePos++] = PS_START;
 
-	for(const char* p = line; p && *p ; p++) {
+	for(const char* p = line; *p ; p++) {
 		// token buffer overflow check
 		if( pTokenWr - token >= (long)sizeof(token) - 1 ) {
 			// FATAL: token buffer overflow
@@ -58,6 +62,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				// reset token buffer and start writing the first token
 				pTokenWr = token;
 				*pTokenWr = '\0';
+				state[statePos++] = PS_END;
 				// select next state based on token type (quoted or unquoted)
 				if( *p == '"' || *p == '\'' ) {
 					// beginning of a quoted token, save the quote character and enter PS_QUOTED state
@@ -75,7 +80,6 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 					// end of this token, push PS_END state to flush the token and prepare for the next one
 					--statePos; // end of this state, pop back to previous state
 					--p; // reprocess this character in the new state
-					state[statePos++] = PS_END;
 				} else {
 					*pTokenWr++ = *p;
 					*pTokenWr = '\0';
@@ -89,7 +93,6 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				} else if( *p == quote ) {
 					// end of this quoted token, push PS_END state to flush the token and prepare for the next one
 					--statePos;
-					state[statePos++] = PS_END;
 					quote = 0;
 				} else {
 					*pTokenWr++ = *p;
