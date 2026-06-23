@@ -61,6 +61,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				// reset token buffer and start writing the first token
 				pTokenWr = token;
 				*pTokenWr = '\0';
+				// push token-completion state
 				state[statePos++] = PS_END;
 				// select next state based on token type (quoted or unquoted)
 				if( *p == '"' || *p == '\'' ) {
@@ -78,7 +79,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				if( isspace(*p) ) {
 					// end of this token, push PS_END state to flush the token and prepare for the next one
 					--statePos; // end of this state, pop back to previous state
-					--p; // reprocess this character in the new state
+					--p; // reprocess this character in the following state
 				} else {
 					*pTokenWr++ = *p;
 					*pTokenWr = '\0';
@@ -121,7 +122,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 						integerValue = 0;
 						nExpectedDigits = 3;
 						state[statePos++] = PS_ESCAPE_OCTAL;
-						--p; // reprocess this character in the new state
+						--p; // reprocess this character in the following state
 						break;
 					}
 					case 'x': {
@@ -176,6 +177,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
 				if( ! newTokens ) {
 					// FATAL: memory allocation failure
+					DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array at %s:%d");
 					free_command_args(tokenCount, tokens);
 					return -1;
 				}
@@ -185,7 +187,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				pTokenWr = token;
 				*pTokenWr = '\0';
 				--statePos;
-				--p; // reprocess this character in the new state
+				--p; // reprocess this character in the following state
 				break;
 			}
 		} // end state machine switch
@@ -197,6 +199,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
 		if( ! newTokens ) {
 			// FATAL: memory allocation failure
+			DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array at %s:%d");
 			free_command_args(tokenCount, tokens);
 			return -1;
 		}

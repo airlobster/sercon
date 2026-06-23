@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include <time.h>
 #include <pwd.h>
@@ -77,3 +78,14 @@ int strnetcontent(char* s, char** start, char** end) {
 	ASSERT(*end >= *start);
 	return *end - *start;
 }
+
+#ifdef _DEBUG_
+void debug_msg(const char* file, int line, const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	fprintf(stderr, "[DEBUG] ");
+	vfprintf(stderr, fmt, args);
+	fprintf(stderr, " at %s:%d\n", file, line);
+	va_end(args);
+}
+#endif

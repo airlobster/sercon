@@ -19,12 +19,7 @@ typedef struct _vocabulary_internal_t {
 } vocabulary_internal_t;
 
 #ifdef _DEBUG_
-static void print_db_error(vocabulary_internal_t* vocab, const char* file, int line) {
-	ASSERT(vocab);
-	ASSERT(vocab->db);
-	fprintf(stderr, "DB error: %s (%s:%d)\n", sqlite3_errmsg(vocab->db), file, line);
-}
-#define DB_ERROR(vocab) print_db_error(vocab, __FILE__, __LINE__)
+#define DB_ERROR(vocab) DEBUG_MSG("DB error: %s", sqlite3_errmsg(vocab->db))
 #else
 #define DB_ERROR(vocab) ((void)0)
 #endif

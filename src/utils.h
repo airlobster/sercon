@@ -10,7 +10,14 @@
 extern "C" {
 #endif
 
-#define ASSERT(cond) assert(cond)
+#ifdef _DEBUG_
+#define DEBUG_MSG(fmt, ...) debug_msg(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
+void debug_msg(const char* file, int line, const char* fmt, ...);
+#define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: %s", #cond); abort(); }
+#else
+#define DEBUG_MSG(fmt, ...) ((void)0)
+#define ASSERT(cond) ((void)0)
+#endif
 
 #define autoptr(f) __attribute__((cleanup(f)))
 #define array_size(arr) (sizeof(arr) / sizeof((arr)[0]))
