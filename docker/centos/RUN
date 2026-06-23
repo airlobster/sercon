@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cd $(dirname "$0")
+docker run --rm -it -v ~/sercon:/sercon --name sercon-centos dev-sercon-centos bash
