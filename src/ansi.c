@@ -31,11 +31,6 @@ static void terminate_ansi() {
  * @param bAltScreen Whether to enable the alternate screen buffer.
  */
 void begin_ansi(bool bAltScreen) {
-	// if( ! isatty(fileno(stdout)) || ! isatty(fileno(stderr)) ) {
-	//   a_error("STDOUT and STDERR are not allowed to be redirected!\n");
-	//   exit(1);
-	// }
-
 	bUseAltScreen = bAltScreen;
 
 	if( bUseAltScreen ) {
@@ -75,8 +70,6 @@ static int ansi_vwrite(FILE* stream, FILE* ref_stream, const char* fmt, va_list 
 	const bool bAnsiActive = isAnsiActive(ref_stream);
 	char *buffer;
 	const char *pAnsiStart = 0;
-	char *codesStack[256] = {0};
-	int codesStackPos = 0;
 	int n;
 
 	// format the string with ANSI codes intact (they will be filtered out later if ANSI is not active)
@@ -90,25 +83,9 @@ static int ansi_vwrite(FILE* stream, FILE* ref_stream, const char* fmt, va_list 
 				// end of ANSI escape sequence has been reached.
 				// commit it to the output if ANSI is active, otherwise discard it
 				if( bAnsiActive ) {
-					if( *p == 'Z' ) {
-						// custom sequence for popping last sequence from stack to un-apply it.
-						// (used for nested styles like "red bold red" where the second "red"
-						// should only reset the "bold" but not the first "red")
-						if( codesStackPos > 0 ) {
-							free(codesStack[--codesStackPos]);
-							// re-render any remaining active ANSI codes to ensure the correct styles are still applied after the reset
-							fputs(ANSI_RESET, stream);
-							for(int i = 0; i < codesStackPos; ++i ) {
-								fputs(codesStack[i], stream);
-							}
-						}
-					} else {
-						// push the ANSI code onto a stack so that we can auto-reset it at the end of the string if needed
-						codesStack[codesStackPos++] = strndup(pAnsiStart, p - pAnsiStart + 1);
-						// write out the entire last ANSI sequence
-						while( pAnsiStart <= p ) {
-							fputc(*pAnsiStart++, stream);
-						}
+					// write out the entire last ANSI sequence
+					while( pAnsiStart <= p ) {
+						fputc(*pAnsiStart++, stream);
 					}
 				}
 				pAnsiStart = 0; // reset to indicate we're no longer in an ANSI sequence
@@ -128,11 +105,6 @@ static int ansi_vwrite(FILE* stream, FILE* ref_stream, const char* fmt, va_list 
 	}
 
 	fflush(stream);
-
-	// cleanup
-	for( int i = 0; i < codesStackPos; ++i ) {
-		free(codesStack[i]);
-	}
 	free(buffer);
 
 	return n;
