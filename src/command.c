@@ -4,8 +4,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include "command.h"
-
-#define ASSERT(x) assert(x)
+#include "utils.h"
 
 /**
  * @brief Parses a command line into an argument vector, similar to how a shell would parse command line input.
