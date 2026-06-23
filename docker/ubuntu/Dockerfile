@@ -30,8 +30,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN echo "alias ll='ls -la --color=auto'" >> /etc/bash.bashrc
 
-# RUN groupadd -r appusers && useradd -r -g appusers -u 1001 appuser
-# USER appuser
+RUN groupadd -r appusers && useradd -r -g appusers -u 1001 appuser
+USER appuser
 
 WORKDIR /sercon
 ENV ARTIFACTS_ROOT_DIR=/tmp/sercon-artifacts

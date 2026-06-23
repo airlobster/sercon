@@ -202,6 +202,7 @@ vars:
 	@printf "* $(COLOR_BOLD)Build directory$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Source files$(COLOR_RESET): $(COLOR_INFO)$(SRCS)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Object files$(COLOR_RESET): $(COLOR_INFO)$(OBJS)$(COLOR_RESET)\n"
+	@printf "* $(COLOR_BOLD)Dependency files$(COLOR_RESET): $(COLOR_INFO)$(DEPS)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Libraries$(COLOR_RESET): $(COLOR_INFO)$(LIBS)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Target$(COLOR_RESET): $(COLOR_INFO)$(BUILD_DIR)/$(TARGET)$(COLOR_RESET)\n"
 	@printf "* $(COLOR_BOLD)Run arguments$(COLOR_RESET): $(COLOR_INFO)$(RUN_ARGS)$(COLOR_RESET)\n"
