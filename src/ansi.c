@@ -15,14 +15,14 @@ static bool bUseAltScreen = false;
  */
 static void terminate_ansi() {
 	if( bUseAltScreen ) {
-		afprintf(stdout, ANSI_END_ALT_SCREEN);
+		ansi_fprintf(stdout, ANSI_END_ALT_SCREEN);
 	}
 
 	if( isAnsiActive(stdout) ) {
-		afprintf(stdout, ANSI_RESET);
+		ansi_fprintf(stdout, ANSI_RESET);
 	}
 	if( isAnsiActive(stderr) ) {
-		afprintf(stderr, ANSI_RESET);
+		ansi_fprintf(stderr, ANSI_RESET);
 	}
 }
 
@@ -39,7 +39,7 @@ void begin_ansi(bool bAltScreen) {
 	bUseAltScreen = bAltScreen;
 
 	if( bUseAltScreen ) {
-		afprintf(stdout, ANSI_BEGIN_ALT_SCREEN ANSI_INIT_CURSOR_POS);
+		ansi_fprintf(stdout, ANSI_BEGIN_ALT_SCREEN ANSI_INIT_CURSOR_POS);
 	}
 
 	atexit(terminate_ansi);
@@ -64,15 +64,15 @@ bool isAnsiActive(FILE* stream) {
 }
 
 /**
- * @brief Prints formatted output to a stream, while respecting ANSI color codes.
- * @param stream The file stream to print to.
+ * @brief Internal function for writing formatted output with ANSI codes.
+ * @param stream The file stream to write to.
+ * @param ref_stream The reference stream to check for tty mode.
  * @param fmt The format string.
  * @param args The variable argument list.
- * @return int The number of characters printed.
- * @note ANSI color codes will only be printed if ANSI mode is active for the stream.
+ * @return int The number of characters written.
  */
-int afvprintf(FILE* stream, const char* fmt, va_list args) {
-	const bool bAnsiActive = isAnsiActive(stream);
+static int ansi_vwrite(FILE* stream, FILE* ref_stream, const char* fmt, va_list args) {
+	const bool bAnsiActive = isAnsiActive(ref_stream);
 	char *buffer;
 	const char *pAnsiStart = 0;
 	char *codesStack[256] = {0};
@@ -142,17 +142,51 @@ int afvprintf(FILE* stream, const char* fmt, va_list args) {
  * @brief Prints formatted output to a stream, while respecting ANSI color codes.
  * @param stream The file stream to print to.
  * @param fmt The format string.
+ * @param args The variable argument list.
+ * @return int The number of characters printed.
+ * @note ANSI color codes will only be printed if ANSI mode is active for the stream.
+ */
+int ansi_vfprintf(FILE* stream, const char* fmt, va_list args) {
+	return ansi_vwrite(stream, stream, fmt, args);
+}
+
+/**
+ * @brief Prints formatted output to a stream, while respecting ANSI color codes.
+ * @param stream The file stream to print to.
+ * @param fmt The format string.
  * @param ... The variable arguments.
  * @return int The number of characters printed.
  * @note ANSI color codes will only be printed if ANSI mode is active for the stream.
  */
-int afprintf(FILE* stream, const char* fmt, ...) {
+int ansi_fprintf(FILE* stream, const char* fmt, ...) {
 	va_list args;
 	int n;
 
 	va_start(args, fmt);
-	n = afvprintf(stream, fmt, args);
+	n = ansi_vwrite(stream, stream, fmt, args);
 	va_end(args);
+
+	return n;
+}
+
+int ansi_asprintf(char** out, const char* fmt, ...) {
+	va_list args;
+	int n;
+	char* buffer = 0;
+	size_t size = 0;
+
+	FILE* stream = open_memstream(&buffer, &size);
+	if( ! stream ) {
+		return -1;
+	}
+
+	va_start(args, fmt);
+	n = ansi_vwrite(stream, stdout, fmt, args);
+	va_end(args);
+	fflush(stream);
+	fclose(stream);
+
+	*out = buffer;
 
 	return n;
 }
@@ -171,7 +205,7 @@ int a_info(const char* fmt, ...) {
 	asprintf(&buf, ANSI_INFO "%s", fmt);
 
 	va_start(args, fmt);
-	n = afvprintf(stdout, buf, args);
+	n = ansi_vfprintf(stdout, buf, args);
 	va_end(args);
 
 	free(buf);
@@ -193,7 +227,7 @@ int a_error(const char* fmt, ...) {
 	asprintf(&buf, ANSI_ERROR "%s", fmt);
 
 	va_start(args, fmt);
-	n = afvprintf(stderr, buf, args);
+	n = ansi_vfprintf(stderr, buf, args);
 	va_end(args);
 
 	free(buf);
@@ -215,7 +249,7 @@ int a_warning(const char* fmt, ...) {
 	asprintf(&buf, ANSI_WARNING "%s", fmt);
 
 	va_start(args, fmt);
-	n = afvprintf(stderr, buf, args);
+	n = ansi_vfprintf(stderr, buf, args);
 	va_end(args);
 
 	free(buf);
@@ -237,7 +271,7 @@ int a_success(const char* fmt, ...) {
 	asprintf(&buf, ANSI_SUCCESS "%s", fmt);
 
 	va_start(args, fmt);
-	n = afvprintf(stdout, buf, args);
+	n = ansi_vfprintf(stdout, buf, args);
 	va_end(args);
 
 	free(buf);
@@ -245,3 +279,20 @@ int a_success(const char* fmt, ...) {
 	return n;
 }
 
+/**
+ * @brief Sets the ANSI mode.
+ * @param mode The ANSI mode ("auto", "always", "never").
+ * @return true if the mode was set successfully, false otherwise.
+ */
+bool set_ansi_mode(const char* mode) {
+	if( strcasecmp(mode, "auto") == 0 ) {
+		ANSI_mode = ANSI_MODE_AUTO;
+	} else if( strcasecmp(mode, "always") == 0 ) {
+		ANSI_mode = ANSI_MODE_ALWAYS;
+	} else if( strcasecmp(mode, "never") == 0 ) {
+		ANSI_mode = ANSI_MODE_NEVER;
+	} else {
+		return false;
+	}
+	return true;
+}

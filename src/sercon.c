@@ -48,14 +48,14 @@ static void add_ports_to_vocabulary_callback(const char* portName, void* userDat
 
 static void print_port_callback(const char* portName, void* userData) {
 	(void)userData;
-	afprintf(stdout, ANSI_ITALIC "  %s\n", portName);
+	ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 }
 
 static void print_ports_list() {
-	afprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
+	ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
 	int n = enumSerialPorts(print_port_callback, 0);
 	if( ! n ) {
-		afprintf(stdout, ANSI_ITALIC "  No serial ports found\n");
+		ansi_fprintf(stdout, ANSI_ITALIC "  No serial ports found\n");
 	}
 }
 
@@ -66,12 +66,12 @@ static char* makePrompt() {
 	if( port ) {
 		const char* portNoPath = strrchr(port, '/') + 1;
 		if( connected ) {
-			asprintf(&p, ANSI_BLUE ANSI_ITALIC "%s:%d> " ANSI_RESET, portNoPath, baud);
+			ansi_asprintf(&p, "\001" ANSI_BLUE ANSI_ITALIC "\002" "%s:%d> " "\001" ANSI_RESET "\002", portNoPath, baud);
 		} else {
-			asprintf(&p, ANSI_RED ANSI_ITALIC "%s...> " ANSI_RESET, portNoPath);
+			ansi_asprintf(&p, "\001" ANSI_RED ANSI_ITALIC "\002" "%s...> " "\001" ANSI_RESET "\002", portNoPath);
 		}
 	} else {
-		asprintf(&p, ANSI_BLUE ANSI_DIM ANSI_ITALIC "%s> " ANSI_RESET, "not-connected");
+		ansi_asprintf(&p, "\001" ANSI_BLUE ANSI_DIM ANSI_ITALIC "\002" "%s> " "\001" ANSI_RESET "\002", "not-connected");
 	}
 	return p;
 }
@@ -79,7 +79,7 @@ static char* makePrompt() {
 static int printTimestamp(FILE* stream) {
 	cal_time_t t;
 	now(&t);
-	return afprintf(stream, ANSI_CYAN "[%02d:%02d:%02d.%03d] ",
+	return ansi_fprintf(stream, ANSI_CYAN "[%02d:%02d:%02d.%03d] ",
 		t.hours, t.minutes, t.seconds, t.milliseconds);
 }
 
@@ -152,14 +152,14 @@ static void registered_commands_callback(
 				for(int i=1; i<argc; i++) {
 					const rlx_registered_command_t* cmd = rlx_get_command(h, argv[i]);
 					if( cmd ) {
-						afprintf(stdout, "%s - %s\n", cmd->command, cmd->description);
+						ansi_fprintf(stdout, "%s - %s\n", cmd->command, cmd->description);
 					} else {
 						a_error("No such command: %s\n", argv[i]);
 					}
 				}
 			} else {
 				// overall help message
-				afprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available commands:\n");
+				ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available commands:\n");
 				rlx_print_registered_commands(h);
 			}
 			break;
@@ -178,7 +178,7 @@ static void registered_commands_callback(
 			break;
 		}
 		case 'v': {
-			afprintf(stdout, "%s\n", VERSION);
+			ansi_fprintf(stdout, "%s\n", VERSION);
 			break;
 		}
 		case 'i': {
@@ -387,7 +387,7 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 			break;
 		}
 		case 'v': {
-			afprintf(stdout, "%s\n", VERSION);
+			ansi_fprintf(stdout, "%s\n", VERSION);
 			exit(0);
 		}
 		case 'e': {
@@ -396,6 +396,13 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 		}
 		case 'H': {
 			bPersistentHistory = false;
+			break;
+		}
+		case 'c': {
+			if( ! set_ansi_mode(optarg) ) {
+				a_error("Invalid color mode: '%s'\n", optarg);
+				exit(1);
+			}
 			break;
 		}
 		case 0: {
@@ -418,6 +425,7 @@ static void parse_cli_args(int argc, char *argv[])
 		{{"version", no_argument, 0, 'v'}, "Show version information", 0},
 		{{"max-history", required_argument, 0, 'e'}, "Maximum number of history entries to keep (default: 200)", "NUMBER"},
 		{{"non-persistent-history", no_argument, 0, 'H'}, "Disable persistent history (history will not be saved to a file)", 0},
+		{{"color", required_argument, 0, 'c'}, "Set ANSI color mode (auto|always|never)", "MODE"},
 		GETOPT_EX_OPTIONS_END
 	};
 	ASSERT(options[array_size(options)-1].opt.name == 0); // ensure the last option is the end marker
