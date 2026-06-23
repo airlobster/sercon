@@ -90,6 +90,8 @@ endif
 
 # compose a list of object files based on source files
 OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(src)))
+# compose a list of dependency files based on source files
+DEPS = $(OBJS:.o=.d)
 
 # default entry point
 all: vars $(TARGET) summary
@@ -209,6 +211,6 @@ vars:
 %:
 	@:
 
--include $(wildcard $(BUILD_DIR)/*.d)
-
 .PHONY: all clean cleanall help install uninstall package man vars test run doxygen github readme summary
+
+-include $(DEPS)
