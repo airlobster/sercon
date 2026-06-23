@@ -79,7 +79,7 @@ static char* makePrompt() {
 static int printTimestamp(FILE* stream) {
 	cal_time_t t;
 	now(&t);
-	return afprintf(stream, ANSI_CYAN"[%02d:%02d:%02d.%03d] ",
+	return afprintf(stream, ANSI_CYAN "[%02d:%02d:%02d.%03d] ",
 		t.hours, t.minutes, t.seconds, t.milliseconds);
 }
 
