@@ -47,6 +47,13 @@ ifeq ($(ARTIFACTS_ROOT_DIR),/)
 $(error ARTIFACTS_ROOT_DIR cannot be set to the root directory (/)!)
 endif
 
+# after we've established the platform and architecture, we can define the
+# build directory based on those variables. This allows us to have separate
+# build directories for different configurations, which is useful for managing
+# multiple builds without conflicts.
+# under this root directories we will have a separate debug and release directories.
+BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(PLATFORM)/$(ARCH)
+
 # select the appropriate include and library directories based on the platform and architecture.
 ifeq ($(PLATFORM), darwin)
 	OPENER := open
@@ -69,13 +76,6 @@ else ifeq ($(PLATFORM), linux)
 else
 $(error Unsupported platform: $(PLATFORM). Use \'darwin\' or \'linux\'.)
 endif
-
-# after we've established the platform and architecture, we can define the
-# build directory based on those variables. This allows us to have separate
-# build directories for different configurations, which is useful for managing
-# multiple builds without conflicts.
-# under this root directories we will have a separate debug and release directories.
-BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(PLATFORM)/$(ARCH)
 
 # debug/release adaptations
 ifeq ($(BUILD), debug)
