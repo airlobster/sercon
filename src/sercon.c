@@ -110,7 +110,7 @@ static bool connect(terminal_context_t* termContext, const char* portName, int b
 	}
 	fdPort = open(portName, O_RDWR | O_NOCTTY);
 	if( fdPort < 0 ) {
-		a_error("Error opening serial port " ANSI_BOLD "%s" ANSI_POP ": %s\n", portName, strerror(errno));
+		a_error("Error opening serial port '%s': %s\n", portName, strerror(errno));
 		return false;
 	}
 	if( termContext ) termContext->fds[0].fd = fdPort;

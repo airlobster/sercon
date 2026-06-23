@@ -41,10 +41,6 @@
 #define ANSI_BEGIN_ALT_SCREEN   ANSI_CSI "?1049h"
 #define ANSI_END_ALT_SCREEN     ANSI_CSI "?1049l"
 
-// custom sequence to pop the last ANSI code from the stack
-// (used for auto-resetting styles at the end of a string)
-#define ANSI_POP                ANSI_CSI "Z"
-
 // Convenience macros for common styles
 #define ANSI_INFO               ANSI_DIM ANSI_ITALIC
 #define ANSI_ERROR              ANSI_RED
