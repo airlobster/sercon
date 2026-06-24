@@ -159,6 +159,9 @@ clean:
 cleanall:
 	rm -rf $(BUILD_ROOT) $(DIST_DIR)
 
+test: all
+	@./tests/test_linuxes
+
 help:
 	@printf "$(COLOR_BOLD)Usage:$(COLOR_RESET)\n"
 	@printf "  $(COLOR_ITALIC)make [target] [BUILD=debug|release] [ARCH=arm64|x86_64] [VERSION=x.y.z]$(COLOR_RESET)\n"
@@ -175,6 +178,7 @@ help:
 	@printf "  $(COLOR_INFO)github$(COLOR_RESET)    - Open the GitHub repository in the default browser\n"
 	@printf "  $(COLOR_INFO)readme$(COLOR_RESET)    - Display the README file\n"
 	@printf "  $(COLOR_INFO)vars$(COLOR_RESET)      - Display current variable settings\n"
+	@printf "  $(COLOR_INFO)test$(COLOR_RESET)      - Run the test suite\n"
 	@printf "\n"
 	@printf "$(COLOR_BOLD)Build types:$(COLOR_RESET)\n"
 	@printf "  $(COLOR_INFO)debug$(COLOR_RESET)     - Build with debug symbols and no optimizations (default)\n"
