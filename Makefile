@@ -159,7 +159,7 @@ clean:
 cleanall:
 	rm -rf $(BUILD_ROOT) $(DIST_DIR)
 
-test: all
+test:
 	@./tests/test_linuxes
 
 help:

@@ -1,30 +1,35 @@
 #!/usr/bin/env bash
 
 function cleanup {
+	printf "\x1b[0m"
 	docker system prune -f >/dev/null 2>&1
 }
 
 function test_linux() {
 	local dir="$1"
 	local linux=$(basename "$dir")
-	local image_name="dev-sercon-${linux}"
+	local image_name="test-sercon-${linux}"
 	(
 		cd "$dir" || exit 1
 
-		printf "================================================\n"
-		printf "Building and running docker image for ${linux^^}\n"
-		printf "================================================\n"
+		printf "\x1b[33m================================================\x1b[0m\n"
+		printf "\x1b[33mBuilding and running docker image for ${linux^^}\x1b[0m\n"
+		printf "\x1b[33m================================================\x1b[0m\n"
 
+		printf "\x1b[2m"
 		docker build --progress=plain -t "$image_name" .
-		docker run --rm -it -v ~/sercon:/sercon "$image_name" bash -c "echo help | make run -- -H"
+		printf "\x1b[0m"
+
+		docker run --rm -it -v ~/sercon:/sercon "$image_name" \
+			bash -c "echo help | make run -- -H"
 	)
 	local status=$?
 	return $status
 }
 
-cd $(dirname "$0")/../docker
+cd $(dirname "$0")/..
 
-# Check if docker is installed
+# Check if docker service is running
 docker info >/dev/null 2>&1 || exit 1
 
 trap cleanup EXIT
@@ -33,7 +38,8 @@ declare -A results
 results=()
 shopt -s nullglob
 
-for d in * ; do
+# for each subdirectory, run the test_linux function and store the result
+for d in docker/* ; do
 	[ -d "$d" ] || continue
 	if test_linux "$d"; then
 		results["$d"]=ok
