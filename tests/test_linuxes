@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function cleanup {
-		docker system prune -f >/dev/null 2>&1
+	docker system prune -f >/dev/null 2>&1
 }
 
 function test_linux() {
