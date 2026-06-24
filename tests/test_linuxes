@@ -53,21 +53,13 @@ done
 
 # summary of results
 printf "\n--- Test Results ---\n"
-total=0
-successes=0
-failures=0
 for linux in "${!results[@]}"; do
 	printf "%s: " "${linux^}"
 	if [ "${results[$linux]}" = "ok" ]; then
 		printf "✅\n"
-		successes=$((successes + 1))
 	else
 		printf "❌\n"
-		failures=$((failures + 1))
 	fi
-	total=$((total + 1))
 done
-
-# printf "\nTotal: %d, Successes: %d, Failures: %d\n" "$total" "$successes" "$failures"
 
 [[ $failures -eq 0 ]] || exit 1
