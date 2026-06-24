@@ -5,23 +5,21 @@ function cleanup {
 }
 
 function test_linux() {
-		local dir="$1"
-		local linux=$(basename "$dir")
-		(
-			cd "$dir" || exit 1
+	local dir="$1"
+	local linux=$(basename "$dir")
+	local image_name="dev-sercon-${linux}"
+	(
+		cd "$dir" || exit 1
 
-			printf "================================================\n"
-			printf "Building and running docker image for $(echo $linux | tr '[:lower:]' '[:upper:]')\n"
-			printf "================================================\n"
+		printf "================================================\n"
+		printf "Building and running docker image for ${linux^^}\n"
+		printf "================================================\n"
 
-			local image_name="dev-sercon-${linux}"
-
-			docker build --progress=plain -t "$image_name" .
-			docker run --rm -it -v ~/sercon:/sercon "$image_name" \
-				bash -c "echo help | make run -- -H"
-		)
-		local status=$?
-		return $status
+		docker build --progress=plain -t "$image_name" .
+		docker run --rm -it -v ~/sercon:/sercon "$image_name" bash -c "echo help | make run -- -H"
+	)
+	local status=$?
+	return $status
 }
 
 cd $(dirname "$0")/../docker
@@ -50,15 +48,15 @@ total=0
 successes=0
 failures=0
 for linux in "${!results[@]}"; do
-		printf "%s: " "${linux^^}"
-		if [ "${results[$linux]}" = "ok" ]; then
-			printf "✅\n"
-			successes=$((successes + 1))
-		else
-			printf "❌\n"
-			failures=$((failures + 1))
-		fi
-		total=$((total + 1))
+	printf "%s: " "${linux^^}"
+	if [ "${results[$linux]}" = "ok" ]; then
+		printf "✅\n"
+		successes=$((successes + 1))
+	else
+		printf "❌\n"
+		failures=$((failures + 1))
+	fi
+	total=$((total + 1))
 done
 
 # printf "\nTotal: %d, Successes: %d, Failures: %d\n" "$total" "$successes" "$failures"
