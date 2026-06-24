@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 
+function cleanup {
+		echo
+		echo "Cleaning up..."
+		docker system prune -f
+}
+
 set -euo pipefail
 
 cd $(dirname "$0")/../docker
+
+# Check if docker is installed
+docker info >/dev/null 2>&1 || exit 1
+
+trap cleanup EXIT
 
 for d in * ; do
 	[ -d "$d" ] || continue
