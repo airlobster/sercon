@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdio.h>
-#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +12,7 @@ extern "C" {
 #ifdef _DEBUG_
 #define DEBUG_MSG(fmt, ...) debug_msg(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
 void debug_msg(const char* file, int line, const char* fmt, ...);
-#define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: %s", #cond); abort(); }
+#define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: '%s'", #cond); abort(); }
 #else
 #define DEBUG_MSG(fmt, ...) ((void)0)
 #define ASSERT(cond) ((void)0)

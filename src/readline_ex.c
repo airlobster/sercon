@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <assert.h>
 #include "readline_ex.h"
 #include "command.h"
 #include "utils.h"
