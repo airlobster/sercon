@@ -21,7 +21,7 @@ function test_linux() {
 		printf "\x1b[0m"
 
 		docker run --rm -it -v ~/sercon:/sercon "$image_name" \
-			bash -c "echo help | make run -- -H"
+			bash -c "echo ports | make run -- -H"
 	)
 	local status=$?
 	return $status
@@ -38,13 +38,16 @@ declare -A results
 results=()
 shopt -s nullglob
 
-# for each subdirectory, run the test_linux function and store the result
-for d in docker/* ; do
-	[ -d "$d" ] || continue
-	if test_linux "$d"; then
-		results["$d"]=ok
+# for each Dockerfile found under the docker/ directory,
+# build and run the image, and store the result
+for dockerfile in $(find docker/. -name Dockerfile) ; do
+	dir=$(dirname "$dockerfile")
+	[ -d "$dir" ] || continue
+	linux=$(basename "$dir")
+	if test_linux "$dir"; then
+		results["$linux"]=ok
 	else
-		results["$d"]=failed
+		results["$linux"]=failed
 	fi
 done
 
@@ -54,7 +57,7 @@ total=0
 successes=0
 failures=0
 for linux in "${!results[@]}"; do
-	printf "%s: " "${linux^^}"
+	printf "%s: " "${linux^}"
 	if [ "${results[$linux]}" = "ok" ]; then
 		printf "✅\n"
 		successes=$((successes + 1))
