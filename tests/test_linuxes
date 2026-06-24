@@ -9,9 +9,9 @@ for d in * ; do
 	(
 		cd "$d"
 		linux=$(basename "$d")
-		printf "\x1b[33m================================================\x1b[0m\n"
-		printf "\x1b[33mBuilding and running docker image for $(echo $linux | tr '[:lower:]' '[:upper:]')\x1b[0m\n"
-		printf "\x1b[33m================================================\x1b[0m\n"
+		printf "================================================\n"
+		printf "Building and running docker image for $(echo $linux | tr '[:lower:]' '[:upper:]')\n"
+		printf "================================================\n"
 		docker build --progress=plain -t "dev-sercon-${linux}" . || exit 1
 		docker run --rm -it -v ~/sercon:/sercon "dev-sercon-${linux}" \
 			bash -c "echo help | make run -- -H" || exit 1
