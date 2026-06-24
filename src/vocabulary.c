@@ -6,6 +6,15 @@
 #include "vocabulary.h"
 #include "utils.h"
 
+// allow overriding the database name for debugging purposes
+#ifdef _DEBUG_
+#	ifndef SQLITE3_DB_NAME
+#		define SQLITE3_DB_NAME "/tmp/.vocabulary.db"
+#	endif
+#else
+#	define SQLITE3_DB_NAME ":memory:"
+#endif
+
 /**
  * @brief The internal structure of a vocabulary.
  */
@@ -107,10 +116,10 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	vocab->words_list = 0;
 	vocab->max_capacity = max_capacity;
 
-	if( sqlite3_open(":memory:", &vocab->db) != SQLITE_OK ) {
+	if( sqlite3_open(SQLITE3_DB_NAME, &vocab->db) != SQLITE_OK ) {
 		DB_ERROR(vocab);
 		free(vocab);
-		return 0; // failed to open in-memory database
+		return 0; // failed to open database
 	}
 
 	if( init_schema(vocab) != SQLITE_OK ) {
@@ -119,6 +128,8 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 		vocab = 0;
 		return 0; // failed to initialize database
 	}
+
+	DEBUG_MSG("Vocabulary db: %s", SQLITE3_DB_NAME);
 
 	return vocab;
 }

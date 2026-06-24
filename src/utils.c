@@ -82,10 +82,24 @@ int strnetcontent(char* s, char** start, char** end) {
 #ifdef _DEBUG_
 void debug_msg(const char* file, int line, const char* fmt, ...) {
 	va_list args;
+	char *msg = 0;
+
+	fprintf(stderr, "[%s:%d] ", file, line);
+
 	va_start(args, fmt);
-	fprintf(stderr, "[DEBUG] ");
-	vfprintf(stderr, fmt, args);
-	fprintf(stderr, " at %s:%d\n", file, line);
+	vasprintf(&msg, fmt, args);
 	va_end(args);
+
+	// trim trailing whitespaces
+	char *end = msg;
+	for(register char* p = msg; *p; p++) {
+		if( ! isspace(*p) ) {
+			end = p + 1;
+		}
+	}
+	*end = '\0'; // null-terminate at the last non-whitespace character
+
+	fprintf(stderr, "%s\n", msg);
+	free(msg);
 }
 #endif
