@@ -129,7 +129,7 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 		return 0; // failed to initialize database
 	}
 
-	DEBUG_MSG("Vocabulary db: %s", SQLITE3_DB_NAME);
+	DEBUG_MSG("vocabulary db: %s", SQLITE3_DB_NAME);
 
 	return vocab;
 }

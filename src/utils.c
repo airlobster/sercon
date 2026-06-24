@@ -90,16 +90,14 @@ void debug_msg(const char* file, int line, const char* fmt, ...) {
 	vasprintf(&msg, fmt, args);
 	va_end(args);
 
-	// trim trailing whitespaces
-	char *end = msg;
-	for(register char* p = msg; *p; p++) {
-		if( ! isspace(*p) ) {
-			end = p + 1;
-		}
-	}
+	// trim leading and trailing whitespaces
+	char *start, *end;
+	strnetcontent(msg, &start, &end);
 	*end = '\0'; // null-terminate at the last non-whitespace character
 
-	fprintf(stderr, "%s\n", msg);
+	fprintf(stderr, "%s\n", start);
+	fflush(stderr);
+
 	free(msg);
 }
 #endif
