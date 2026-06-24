@@ -26,7 +26,7 @@ LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lserialport -lreadline -lsqlite3 -lm
 ARTIFACTS_ROOT_DIR ?= $(shell pwd)
-BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
+BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build/$(VERSION)
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
 SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
 
@@ -174,7 +174,6 @@ help:
 	@printf "  $(COLOR_INFO)man$(COLOR_RESET)       - Display the man page\n"
 	@printf "  $(COLOR_INFO)github$(COLOR_RESET)    - Open the GitHub repository in the default browser\n"
 	@printf "  $(COLOR_INFO)readme$(COLOR_RESET)    - Display the README file\n"
-	@printf "  $(COLOR_INFO)test$(COLOR_RESET)      - Run basic tests for proper installation\n"
 	@printf "  $(COLOR_INFO)vars$(COLOR_RESET)      - Display current variable settings\n"
 	@printf "\n"
 	@printf "$(COLOR_BOLD)Build types:$(COLOR_RESET)\n"
@@ -186,10 +185,6 @@ help:
 	@printf "  * Assign a new path to ARTIFACTS_ROOT_DIR to change where build and dist directories are created.$(COLOR_RESET)\n"
 	@printf "    Default is current directory.$(COLOR_RESET)\n"
 	@printf "\n"
-
-test:
-	$(TARGET) --version
-	man $(TARGET)
 
 vars:
 	@printf "* $(COLOR_BOLD)Platform$(COLOR_RESET): $(COLOR_INFO)$(PLATFORM)$(COLOR_RESET)\n"

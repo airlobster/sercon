@@ -4,6 +4,7 @@ RUN apt-get update -y
 
 RUN apt-get install -y \
 		vim \
+		less \
 		curl \
     software-properties-common \
     unminimize \
