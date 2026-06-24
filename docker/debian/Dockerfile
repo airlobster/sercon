@@ -27,6 +27,8 @@ USER devuser
 # Add this near the end of your Dockerfile
 RUN echo "alias ll='ls -la --color=auto'" >> /home/devuser/.bashrc
 
+ENV ARTIFACTS_ROOT_DIR=/tmp/sercon-artifacts
+
 # RUN useradd -m -s /bin/bash appuser
 WORKDIR /sercon
 
