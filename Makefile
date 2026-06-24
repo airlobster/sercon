@@ -94,7 +94,7 @@ OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(s
 DEPS = $(OBJS:.o=.d)
 
 # default entry point
-all: vars $(TARGET) summary
+all: $(TARGET) summary
 
 # LINK
 $(TARGET): $(OBJS)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function cleanup {
-	printf "\x1b[0m"
+	printf "\x1b[0m\n"
 	docker system prune -f >/dev/null 2>&1
 }
 
@@ -52,14 +52,23 @@ for dockerfile in $(find docker/. -name Dockerfile) ; do
 done
 
 # summary of results
-printf "\n--- Test Results ---\n"
+failures=0
+total=0
+printf "\n"
+printf "====== Results ======\n"
+printf "\n"
 for linux in "${!results[@]}"; do
-	printf "%s: " "${linux^}"
+	total=$((total + 1))
+	printf "%d) %s: " "$total" "${linux^}"
 	if [ "${results[$linux]}" = "ok" ]; then
 		printf "✅\n"
 	else
 		printf "❌\n"
+		failures=$((failures + 1))
 	fi
 done
+printf "\n"
+printf "Total: %d, Failures: %d\n" "$total" "$failures"
+# printf "=====================\n"
 
-[[ $failures -eq 0 ]] || exit 1
+[[ $failures == 0 ]] || exit 1
