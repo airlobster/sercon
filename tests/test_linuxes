@@ -34,7 +34,7 @@ docker info >/dev/null 2>&1 || exit 1
 
 trap cleanup EXIT
 
-declare -A results
+declare -A results || exit 1
 results=()
 shopt -s nullglob
 
