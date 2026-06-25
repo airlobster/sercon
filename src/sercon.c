@@ -300,9 +300,6 @@ static void console() {
 	enumSerialPorts(add_ports_to_vocabulary_callback, rlx);
 
 	while( ! shouldAbort ) {
-		// wait for input from either stdin (fds[1]) or the serial port (fds[0]).
-		// if stdin is at EOF while in non-interactive mode, we will ignore stdin
-		// and set a final timeout to allow any pending serial output to be printed before we exit.
 		int ret = poll(termContext.fds, array_size(termContext.fds), pollTimeoutMs);
 
 		// Check for poll errors
@@ -320,7 +317,7 @@ static void console() {
 				break;
 			}
 			// if we have a port specified but are not currently connected,
-			// it means we have lost the connection. retry to connect.
+			// it means we have lost the connection unexpectedly. retry to connect.
 			if( port && fdPort < 0 ) {
 				connect(&termContext, port, baud);
 			}
@@ -329,7 +326,7 @@ static void console() {
 
 		// Check if user input is available
 		if( termContext.fds[1].revents & POLLIN ) {
-  			// trigger readline_ex to read the input and call our RLX callback function
+			// trigger readline_ex to read the input and call our RLX callback function
 			rlx_process_input(rlx);
 		} // end stdin handling
 
