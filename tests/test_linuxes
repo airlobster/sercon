@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+shopt -s nullglob
+
 function cleanup {
 	printf "\x1b[0m\n"
 	docker system prune -f >/dev/null 2>&1
@@ -27,6 +29,7 @@ function test_linux() {
 	return $status
 }
 
+
 cd $(dirname "$0")/..
 
 # Check if docker service is running
@@ -36,7 +39,6 @@ trap cleanup EXIT
 
 declare -A results || exit 1
 results=()
-shopt -s nullglob
 
 # for each Dockerfile found under the docker/ directory,
 # build and run the image, and store the result
