@@ -1,6 +1,6 @@
 # sercon
 
-sercon is a small serial terminal for Arduino and other USB/UART devices.
+sercon is a small serial terminal for for communicating with serial ports.
 
 It supports:
 - Interactive stdin <-> serial forwarding
@@ -16,11 +16,11 @@ It supports:
 - make
 - libserialport
 - libreadline
-- pkg-config (recommended)
+- sqlite3
 
 On macOS with Homebrew:
 
-    brew install libserialport pkg-config readline
+    brew install libserialport readline sqlite3
 
 ## Usage
 
@@ -34,7 +34,7 @@ Connect to a port at default baud (9600):
 
 Connect with explicit baud rate:
 
-    ./sercon --port cu.usbmodem1101 --baud 115200
+    ./sercon --port cu.usbmodem1101:115200
 
 Baud values below 9600 are clamped to 9600.
 
@@ -54,11 +54,8 @@ Short flags are also available:
 - -l for --list
 - -h for --help
 - -p for --port
-- -b for --baud
 - -T for --no-timestamps
 - -v for --version
-- -r for --retry-delay
-- -w for --eof-wait
 - -H for --non-persistent-history
 - -e for --max-history
 
@@ -75,13 +72,9 @@ This will build the project and install it. To test for installation correctness
 
 ## Behavior notes
 
-- Terminal-like behavior when STDIN is not redirected. That also includes port-specific
-history management.
+- Terminal-like behavior when STDIN is not redirected.
+- From within the app, type 'help' to see the various commands supported.
 - Ctrl+C exits cleanly.
-- The app uses polling to handle both terminal input and serial input.
-- Prompt text defaults to the selected port name (or the executable name if no port basename is available).
-- Prompt and cursor UI are shown only in interactive mode.
-- Carriage returns (\r) are ignored, linefeeds drive line/timestamp boundaries.
 
 ## Appendix
 
