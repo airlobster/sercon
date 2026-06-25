@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "ansi.h"
+#include "utils.h"
 
 #define ESC '\033'
 
@@ -14,10 +15,10 @@ static bool bUseAltScreen = false;
  * @brief Terminates ANSI mode and restores the terminal state.
  */
 static void terminate_ansi() {
+	DEBUG_MSG("Terminating ANSI mode");
 	if( bUseAltScreen ) {
 		ansi_fprintf(stdout, ANSI_END_ALT_SCREEN);
 	}
-
 	if( isAnsiActive(stdout) ) {
 		ansi_fprintf(stdout, ANSI_RESET);
 	}
@@ -34,6 +35,7 @@ void begin_ansi(bool bAltScreen) {
 	bUseAltScreen = bAltScreen;
 
 	if( bUseAltScreen ) {
+		DEBUG_MSG("Enabling alternate screen buffer");
 		ansi_fprintf(stdout, ANSI_BEGIN_ALT_SCREEN ANSI_INIT_CURSOR_POS);
 	}
 
