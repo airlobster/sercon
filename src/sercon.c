@@ -32,7 +32,6 @@ char *appname = 0;
 int fdPort = -1;
 rlx_t rlx = 0;
 char *prompt = 0;
-struct termios originalTermios;
 volatile int shouldAbort = 0;
 
 // a pointer to the type below will be passed to the RLX callback function as userData,
@@ -59,8 +58,9 @@ static void print_ports_list() {
 	}
 }
 
-static char* makePrompt() {
-	if( ! isatty(fileno(stdin)) ) return 0; // no prompt if stdin is redirected!!
+static char* makePrompt(char** outPrompt) {
+	ASSERT(outPrompt);
+	if( ! isatty(fileno(stdin)) ) return *outPrompt; // no prompt if stdin is redirected!!
 	char* p = 0;
 	bool connected = fdPort >= 0;
 	if( port ) {
@@ -73,6 +73,8 @@ static char* makePrompt() {
 	} else {
 		ansi_asprintf(&p, "\001" ANSI_BLUE ANSI_DIM ANSI_ITALIC "\002" "%s> " "\001" ANSI_RESET "\002", "not-connected");
 	}
+	if( *outPrompt ) free(*outPrompt);
+	*outPrompt = p;
 	return p;
 }
 
@@ -94,8 +96,7 @@ static void disconnect(terminal_context_t* termContext) {
 		port = 0;
 	}
 	// update prompt
-	if( prompt ) free(prompt);
-	prompt = makePrompt();
+	makePrompt(&prompt);
 	if( rlx ) {
 		rlx_change_prompt(rlx, prompt);
 	}
@@ -122,8 +123,7 @@ static bool connect(terminal_context_t* termContext, const char* portName, int b
 	cfsetspeed(&t, baudRate);
 	tcsetattr(fdPort, TCSANOW, &t);
 	// update prompt
-	if( prompt ) free(prompt);
-	prompt = makePrompt();
+	makePrompt(&prompt);
 	if( rlx ) {
 		rlx_change_prompt(rlx, prompt);
 	}
@@ -279,7 +279,7 @@ static void console() {
 	};
 
 	if( ! prompt ) {
-		prompt = makePrompt();
+		makePrompt(&prompt);
 	}
 
 	// create a readline_ex session for handling user input, command history and auto-completion
@@ -435,6 +435,7 @@ static void on_signal(int signum) {
 }
 
 static void on_exit_app(void) {
+	DEBUG_MSG("Shutting down application");
 	if( rlx ) {
 		rlx_end(rlx);
 		rlx = 0;
@@ -444,8 +445,6 @@ static void on_exit_app(void) {
 		free(prompt);
 		prompt = 0;
 	}
-	// restore old terminal settings (in case we changed them)
-	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
 }
 
 int main(int argc, char *argv[])
@@ -454,9 +453,6 @@ int main(int argc, char *argv[])
 
 	// process command-line arguments
 	parse_cli_args(argc, argv);
-
-	// save original terminal settings so we can restore them on exit
-	tcgetattr(fileno(stdin), &originalTermios);
 
 	begin_ansi(false);
 	atexit(on_exit_app);

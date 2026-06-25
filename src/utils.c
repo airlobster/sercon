@@ -1,4 +1,5 @@
 #include <string.h>
+#include <termios.h>
 #include <stdarg.h>
 #include <ctype.h>
 #include <time.h>
@@ -101,3 +102,21 @@ void debug_msg(const char* file, int line, const char* fmt, ...) {
 	free(msg);
 }
 #endif
+
+
+/**
+ * @brief Automatic termios scope management for the application.
+ * 
+ */
+
+static struct termios originalTermios;
+static void on_exit_app(void) {
+	DEBUG_MSG("Restoring original terminal settings");
+	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
+}
+static void set_termios_scope(void) __attribute__((constructor));
+static void set_termios_scope(void) {
+	DEBUG_MSG("Initiating termios scope");
+	tcgetattr(fileno(stdin), &originalTermios);
+	atexit(on_exit_app);
+}
