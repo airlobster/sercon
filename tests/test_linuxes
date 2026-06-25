@@ -2,7 +2,12 @@
 
 shopt -s nullglob
 
-function cleanup {
+function error() {
+	echo "$@" >&2
+	exit 1
+}
+
+function cleanup() {
 	printf "\x1b[0m\n"
 	docker system prune -f >/dev/null 2>&1
 }
@@ -38,7 +43,7 @@ while [ ! -f "Makefile" ]; do
 done
 
 # Check if docker service is running
-docker info >/dev/null 2>&1 || exit 1
+docker info >/dev/null 2>&1  || error "Docker daemon is not available"
 
 trap cleanup EXIT
 
