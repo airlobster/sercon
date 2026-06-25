@@ -10,7 +10,7 @@ function cleanup {
 function test_linux() {
 	local dir="$1"
 	local linux=$(basename "$dir")
-	local image_name="test-sercon-${linux}"
+	local image_name="dev-sercon-${linux}"
 	(
 		cd "$dir" || exit 1
 
@@ -30,7 +30,12 @@ function test_linux() {
 }
 
 
-cd $(dirname "$0")/..
+cd $(dirname "$0")
+# Find the root of the repository by looking for a Makefile
+while [ ! -f "Makefile" ]; do
+	cd ..
+	[ "$PWD" = "/" ] && exit 1
+done
 
 # Check if docker service is running
 docker info >/dev/null 2>&1 || exit 1
