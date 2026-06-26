@@ -1,23 +1,16 @@
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <sqlite3.h>
 #include "vocabulary.h"
 #include "utils.h"
 
-// allow overriding the database name for debugging purposes
-#ifdef _DEBUG_
-#	ifndef SQLITE3_DB_NAME
-#		define SQLITE3_DB_NAME "/tmp/.vocabulary.db"
-#	endif
-#else
-#	define SQLITE3_DB_NAME ":memory:"
-#endif
-
 /**
  * @brief The internal structure of a vocabulary.
  */
 typedef struct _vocabulary_internal_t {
+	char* db_filename;
 	unsigned long options;
 	sqlite3* db;
 	size_t size;
@@ -115,9 +108,15 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	vocab->words_list = 0;
 	vocab->max_capacity = max_capacity;
 
-	if( sqlite3_open(SQLITE3_DB_NAME, &vocab->db) != SQLITE_OK ) {
+#ifdef _DEBUG_
+	asprintf(&vocab->db_filename, "/tmp/.vocabulary.%d.db", getpid());
+#else
+	vocab->db_filename = strdup(":memory:");
+#endif
+
+	if( sqlite3_open(vocab->db_filename, &vocab->db) != SQLITE_OK ) {
 		DB_ERROR(vocab);
-		free(vocab);
+		vocab_destroy(vocab);
 		return 0; // failed to open database
 	}
 
@@ -127,8 +126,6 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 		vocab = 0;
 		return 0; // failed to initialize database
 	}
-
-	DEBUG_MSG("vocabulary db: %s", SQLITE3_DB_NAME);
 
 	return vocab;
 }
@@ -142,6 +139,10 @@ void vocab_destroy(vocabulary_t vocab) {
 	destroy_words_list(vocab);
 	if( vocab->db ) {
 		sqlite3_close(vocab->db);
+	}
+	if( vocab->db_filename ) {
+		free(vocab->db_filename);
+		vocab->db_filename = 0;
 	}
 	free(vocab);
 }
