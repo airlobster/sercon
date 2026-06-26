@@ -18,7 +18,7 @@ VERSION ?= 1.2.0
 FULL_VERSION := $(VERSION).$(GIT_COMMIT_HASH)
 
 CC := cc
-CFLAGS := -Wall -Wextra -Wno-unused-result -MMD -MP -DVERSION=\"$(FULL_VERSION)\" -D_GNU_SOURCE
+CFLAGS := -Wall -Wextra -Wno-unused-result -Wno-unused-parameter -MMD -MP -DVERSION=\"$(FULL_VERSION)\" -D_GNU_SOURCE
 TARGET := sercon
 SRC_DIRS := src
 INCLUDE_DIRS :=

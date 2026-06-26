@@ -37,7 +37,7 @@ cd $(dirname "$0")
 # Find the root of the repository by looking for a Makefile
 while [ ! -f "Makefile" ]; do
 	cd ..
-	[ "$PWD" = "/" ] && exit 1
+	[ "$PWD" = "/" ] && error "Could not find the root of the repository (Makefile not found)"
 done
 
 # Check if docker service is running
@@ -45,14 +45,13 @@ docker info >/dev/null 2>&1  || error "Docker daemon is not available"
 
 trap cleanup EXIT
 
-declare -A results || exit 1
+declare -A results || error "Bash 4+ is required to run this script"
 results=()
 
 # for each Dockerfile found under the docker/ directory,
 # build and run the image, and store the result
 for dockerfile in docker/Dockerfile.*; do
 	distro=${dockerfile##*.}
-	echo "Testing $distro ($dockerfile)..."
 	if test_linux "$dockerfile"; then
 		results["$distro"]=ok
 	else
