@@ -176,7 +176,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
 				if( ! newTokens ) {
 					// FATAL: memory allocation failure
-					DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array at %s:%d");
+					DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array");
 					free_command_args(tokenCount, tokens);
 					return -1;
 				}
@@ -198,7 +198,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
 		if( ! newTokens ) {
 			// FATAL: memory allocation failure
-			DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array at %s:%d");
+			DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array");
 			free_command_args(tokenCount, tokens);
 			return -1;
 		}
