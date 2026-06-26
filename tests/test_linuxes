@@ -13,18 +13,16 @@ function cleanup() {
 }
 
 function test_linux() {
-	local dir="$1"
-	local linux=$(basename "$dir")
-	local image_name="dev-sercon-${linux}"
+	local dockerfile="$1"
+	local distro=${dockerfile##*.}
+	local image_name="dev-sercon-${distro}"
 	(
-		cd "$dir" || exit 1
-
 		printf "\x1b[33m================================================\x1b[0m\n"
-		printf "\x1b[33mBuilding and running docker image for ${linux^^}\x1b[0m\n"
+		printf "\x1b[33mBuilding and running docker image for ${distro^^}\x1b[0m\n"
 		printf "\x1b[33m================================================\x1b[0m\n"
 
 		printf "\x1b[2m"
-		docker build --progress=plain -t "$image_name" .
+		docker build --progress=plain -t "$image_name" -f "$dockerfile" .
 		printf "\x1b[0m"
 
 		docker run --rm -it --privileged -v ~/sercon:/sercon "$image_name" \
@@ -52,14 +50,13 @@ results=()
 
 # for each Dockerfile found under the docker/ directory,
 # build and run the image, and store the result
-for dockerfile in $(find docker/. -name Dockerfile) ; do
-	dir=$(dirname "$dockerfile")
-	[ -d "$dir" ] || continue
-	linux=$(basename "$dir")
-	if test_linux "$dir"; then
-		results["$linux"]=ok
+for dockerfile in docker/Dockerfile.*; do
+	distro=${dockerfile##*.}
+	echo "Testing $distro ($dockerfile)..."
+	if test_linux "$dockerfile"; then
+		results["$distro"]=ok
 	else
-		results["$linux"]=failed
+		results["$distro"]=failed
 	fi
 done
 
