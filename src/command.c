@@ -137,37 +137,37 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				break;
 			}
 			case PS_ESCAPE_OCTAL: {
+				int done = 0;
 				if( *p >= '0' && *p <= '7' ) {
 					integerValue = (integerValue << 3) | (*p - '0');
-					if( --nExpectedDigits == 0 ) {
-						ASSERT(integerValue <= 255);
-						*pTokenWr++ = (char)integerValue;
-						*pTokenWr = '\0';
-						--statePos; // exit PS_ESCAPE_OCTAL state
-					}
 				} else {
-					// invalid octal digit, terminate octal value and flush
+					--p; // return this character to the previous state for processing
+					done = 1;
+				}
+				if( --nExpectedDigits == 0 || done ) {
 					ASSERT(integerValue <= 255);
-					*pTokenWr++ = (char)integerValue;
+					*pTokenWr++ = (char)(integerValue & 0xFF);
 					*pTokenWr = '\0';
-					--statePos;
+					--statePos; // exit PS_ESCAPE_OCTAL state
 				}
 				break;
 			}
 			case PS_ESCAPE_HEX: {
-				if( isxdigit(*p) ) {
-					integerValue = (integerValue << 4) | (isdigit(*p) ? (*p - '0') : (tolower(*p) - 'a' + 10));
-					if( --nExpectedDigits == 0 ) {
-						ASSERT(integerValue <= 255);
-						*pTokenWr++ = (char)integerValue;
-						*pTokenWr = '\0';
-						--statePos; // exit PS_ESCAPE_HEX state
-					}
+				int stop = 0;
+				if( isdigit(*p) ) {
+					integerValue = (integerValue << 4) | (*p - '0');
+				} else if( isxdigit(*p) ) {
+					integerValue = (integerValue << 4) | (tolower(*p) - 'a' + 10);
 				} else {
-					// invalid hex digit, treat as literal character and exit PS_ESCAPE_HEX state
-					*pTokenWr++ = *p;
+					// invalid hex digit
+					--p; // return this character to the previous state for processing
+					stop = 1;
+				}
+				if( --nExpectedDigits == 0 || stop ) {
+					ASSERT(integerValue <= 255);
+					*pTokenWr++ = (char)(integerValue & 0xFF);
 					*pTokenWr = '\0';
-					--statePos;
+					--statePos; // exit PS_ESCAPE_HEX state
 				}
 				break;
 			}
