@@ -123,10 +123,8 @@ int cglob(const char* pattern, void(*callback)(const char* path, void* userData)
 			callback(glob_result.gl_pathv[i], userData);
 			++n;
 		}
-	} else if( ret == GLOB_NOMATCH ) {
-		// DEBUG_MSG("No matches found for pattern: %s", pattern);
-	} else {
-		// DEBUG_MSG("Error occurred while globbing pattern: %s", pattern);
+	} else if( ret != GLOB_NOMATCH ) {
+		DEBUG_MSG("Error occurred while globbing pattern: %s", pattern);
 	}
 	globfree(&glob_result);
 	return n;
