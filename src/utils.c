@@ -141,10 +141,8 @@ static void on_exit_app(void) {
 	DEBUG_MSG("Restoring original terminal settings");
 	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
 }
-static void set_termios_scope(void) __attribute__((constructor));
-static void set_termios_scope(void) {
+CONSTRUCTOR(static void set_termios_scope(void)) {
 	DEBUG_MSG("Initiating termios scope");
 	tcgetattr(fileno(stdin), &originalTermios);
 	atexit(on_exit_app);
 }
-

@@ -19,7 +19,19 @@ void debug_msg(const char* file, int line, const char* fmt, ...);
 #endif
 
 #define autoptr(f) __attribute__((cleanup(f)))
+
+/**
+ * @brief Get the number of elements in an array.
+ * @param arr The array.
+ * @return The number of elements in the array.
+ */
 #define array_size(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+/**
+ * @brief Macro to define a constructor function that runs before main().
+ * @param decl The function signature.
+ */
+#define CONSTRUCTOR(decl) decl __attribute__((constructor)); decl
 
 const char* getHomeDir();
 
