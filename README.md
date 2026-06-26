@@ -63,7 +63,7 @@ Short flags are also available:
 
 After cloning this repository, just enter the repository's root directory and run
 
-	./INSTALL
+	make install
 
 This will build the project and install it. To test for installation correctness, run
 
