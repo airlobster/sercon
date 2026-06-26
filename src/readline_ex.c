@@ -12,29 +12,46 @@
 #include "command.h"
 #include "utils.h"
 
-// registered command linked list node type
+/**
+ * @brief Node for a linked list of registered commands.
+ */
 typedef struct _rlx_command_node_t {
+	/** Pointer to the next node in the linked list. */
 	struct _rlx_command_node_t* next;
+	/** The registered command. */
 	rlx_registered_command_t cmd;
 } rlx_command_node_t;
 
-// internal readline context structure type
+/**
+ * @brief Internal readline context structure type.
+ */
 typedef struct _rlx_internal_t {
+	/** Flag indicating whether the readline context has been initialized. */
 	bool isInitialized;
+	/** The callback function to handle input lines. */
 	rlx_callback_t callback;
+	/** User data to pass to the callback function and registered command handlers. */
 	void* userData;
+	/** Options for configuring the readline_ex session. */
 	unsigned long options;
+	/** The prompt string to display. */
 	const char* prompt;
+	/** The file path for the history file. */
 	char* historyFilePath;
+	/** The maximum number of history entries to keep. */
 	size_t maxHistoryEntries;
+	/** The buffer for the currently saved line. */
 	char* savedLineBuffer;
+	/** The linked list of registered commands. */
 	rlx_command_node_t* commands;
+	/** The vocabulary for autocompletion. */
 	vocabulary_t completionVocabulary;
+	/** Flag indicating whether the readline_ex session owns the completion vocabulary. */
 	bool ownsCompletionVocabulary;
+	/** Flag indicating whether the readline_ex session is paused. */
 	bool isPaused;
 } rlx_internal_t;
 
-// singleton readline context
 static rlx_internal_t rlxStatic = {0};
 
 // forward local declarations
@@ -380,7 +397,7 @@ static void rlx_add_history_entry(rlx_t rlx, const char* line) {
 
 /**
 	@brief Process input for the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 */
 void rlx_process_input(rlx_t rlx) {
 	(void)rlx;
@@ -448,7 +465,7 @@ static void rlx_commit_history(rlx_t rlx) {
 
 /**
 	@brief Print the command history for the readline_ex session.
-	@param h The readline_ex session handle.
+	@param rlx The readline_ex session handle.
 */
 void rlx_print_history(rlx_t rlx) {
 	ASSERT(rlx);

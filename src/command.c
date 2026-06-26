@@ -212,6 +212,11 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	return tokenCount;
 }
 
+/**
+ * @brief Frees the memory allocated for command arguments.
+ * @param argc The number of arguments.
+ * @param argv The array of argument strings.
+ */
 void free_command_args(int argc, char** argv) {
 	ASSERT(argv);
 	for(int i = 0; i < argc; i++) {

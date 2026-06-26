@@ -1,27 +1,46 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
+/**
+ * @file utils.h
+ * @brief Utility macros and functions
+ * 
+ */
+
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdio.h>
-
+ 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef _DEBUG_
+/**
+ * @brief Print a debug message with file and line information.
+ * @param fmt The format string.
+ * @param ... The format arguments.
+ */
 #define DEBUG_MSG(fmt, ...) debug_msg(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
 void debug_msg(const char* file, int line, const char* fmt, ...);
+/**
+ * @brief Assert a condition and print a debug message if the assertion fails.
+ * @param cond The condition to assert.
+ */
 #define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: '%s'", #cond); abort(); }
 #else
 #define DEBUG_MSG(fmt, ...) ((void)0)
 #define ASSERT(cond) ((void)0)
 #endif
 
+/**
+ * @brief Macro to automatically call a cleanup function when a variable goes out of scope.
+ * @param f The cleanup function to call.
+ */
 #define autoptr(f) __attribute__((cleanup(f)))
 
 /**
- * @brief Get the number of elements in an array.
+ * @brief Macro to calculate the number of elements in an array.
  * @param arr The array.
  * @return The number of elements in the array.
  */
@@ -35,14 +54,18 @@ void debug_msg(const char* file, int line, const char* fmt, ...);
 
 const char* getHomeDir();
 
+/**
+ * @brief Structure representing a calendar time.
+ * @details This structure holds information about the day, month, year, hours, minutes, seconds, and milliseconds.
+ */
 typedef struct {
-	int day;
-	int month;
-	int year;
-	int hours;
-	int minutes;
-	int seconds;
-	int milliseconds;
+	int day; /**< The day of the month. */
+	int month; /**< The month of the year. */
+	int year; /**< The year. */
+	int hours; /**< The hour of the day. */
+	int minutes; /**< The minute of the hour. */
+	int seconds; /**< The second of the minute. */
+	int milliseconds; /**< The millisecond of the second. */
 } cal_time_t;
 int now(cal_time_t* t);
 

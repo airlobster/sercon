@@ -8,7 +8,14 @@
 
 #define ESC '\033'
 
+/**
+ * @brief ANSI mode setting.
+ */
 ansi_mode_t ANSI_mode = ANSI_MODE_AUTO;
+
+/**
+ * @brief Flag indicating whether the alternate screen buffer is in use.
+ */
 static bool bUseAltScreen = false;
 
 /**
@@ -143,6 +150,14 @@ int ansi_fprintf(FILE* stream, const char* fmt, ...) {
 	return n;
 }
 
+/**
+ * @brief Prints formatted output to a string, while respecting ANSI color codes.
+ * @param out The output string.
+ * @param fmt The format string.
+ * @param ... The variable arguments.
+ * @return int The number of characters printed.
+ * @note ANSI color codes will only be included if ANSI mode is active.
+ */
 int ansi_asprintf(char** out, const char* fmt, ...) {
 	va_list args;
 	int n;

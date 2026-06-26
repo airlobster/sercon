@@ -126,6 +126,16 @@ man:
 readme:
 	@$(OPENER) $(README)
 
+doxygen:
+	@rm -rf Doxyfile* html latex
+	@doxygen -g
+	@sed -E -i '' 's/^INPUT.+/INPUT = src/g' Doxyfile
+	@sed -E -i '' 's/^GENERATE_HTML.+/GENERATE_HTML = YES/g' Doxyfile
+	@sed -E -i '' 's/^SEARCHENGINE.+/SEARCHENGINE = YES/g' Doxyfile
+	@doxygen Doxyfile
+# 	@$(OPENER) html/index.html
+	@rm -rf Doxyfile* latex
+
 # open the GitHub repository in the default browser
 github:
 	@$(OPENER) "https://github.com/airlobster/sercon/tree/main"
@@ -157,7 +167,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 cleanall:
-	rm -rf $(BUILD_ROOT) $(DIST_DIR)
+	rm -rf $(BUILD_ROOT) $(DIST_DIR) Doxyfile* html latex
 
 test:
 	@./tests/test_linuxes
@@ -211,6 +221,6 @@ vars:
 %:
 	@:
 
-.PHONY: all clean cleanall help install uninstall package man vars test run doxygen github readme summary
+.PHONY: all clean cleanall help install uninstall package man vars test run doxygen github readme summary doxygen
 
 -include $(DEPS)

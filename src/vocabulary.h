@@ -1,6 +1,12 @@
 #ifndef _VOCABULARY_H_
 #define _VOCABULARY_H_
 
+/**
+ * @file vocabulary.h
+ * @brief Vocabulary management functions
+ * 
+ */
+
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -8,6 +14,9 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Opaque type for vocabulary
+ */
 typedef struct _vocabulary_internal_t* vocabulary_t;
 
 vocabulary_t vocab_create(unsigned long options, size_t max_capacity);

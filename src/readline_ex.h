@@ -20,10 +20,7 @@
 	(GNU readline Library: https://tiswww.case.edu/php/chet/readline/rltop.html)
 	(GNU history library: https://tiswww.case.edu/php/chet/readline/history.html)
 
-	@license: MIT License (https://opensource.org/licenses/MIT)
-
 	@author Adi Degani
-	@email: adid172@gmail.com
 	@copyright Copyright (c) 2026 Adi Degani. All rights reserved.
 */
 
@@ -35,15 +32,31 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Opaque handle to a readline_ex session.
+ */
 typedef struct _rlx_internal_t* rlx_t;
 
+/**
+ * @brief Structure representing a registered command.
+ * @details This structure holds information about a command, including its ID, command string,
+ * description, and a handler function that is called when the command is executed.
+ */
 typedef struct _rlx_registered_command_t {
+	/** The unique identifier for the command. */
 	int id;
+	/** The command string. */
 	const char* command;
+	/** A description of the command. */
 	const char* description;
+	/** The handler function that is called when the command is executed. */
 	void(*handler)(rlx_t h, const struct _rlx_registered_command_t* cmd, int argc, const char *argv[], void* userData);
 } rlx_registered_command_t;
 
+/**
+ * @brief Options for configuring a readline_ex session.
+ * @details These options can be combined using bitwise OR to enable multiple features.
+ */
 typedef enum {
 	RLX_OPT_AUTOCOMPLETE_HISTORY = 1UL << 0, // include history entries in the autocomplete vocabulary
 	RLX_OPT_AUTOCOMPLETE_COMMANDS = 1UL << 1, // include registered commands in the autocomplete vocabulary
@@ -54,6 +67,13 @@ typedef enum {
 	RLX_OPT_NO_TRIM_LINE = 1UL << 5, // do not trim leading and trailing whitespace from input lines before processing
 } rlx_options_t;
 
+/**
+ * @brief Callback function type for handling input lines.
+ * @param h The readline_ex session handle.
+ * @param line The input line.
+ * @param length The length of the input line.
+ * @param userData User data passed to the callback function.
+ */
 typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length, void* userData);
 
 // RLX session management

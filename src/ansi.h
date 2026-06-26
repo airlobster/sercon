@@ -12,6 +12,10 @@
 
 #define ANSI_CSI                "\033["
 
+/**
+ * @brief ANSI escape codes.
+ */
+
 #define ANSI_RESET              ANSI_CSI "0m"
 #define ANSI_BOLD               ANSI_CSI "1m"
 #define ANSI_DIM                ANSI_CSI "2m"
@@ -51,6 +55,10 @@
 extern "C" {
 #endif
 
+/**
+ * @brief ANSI mode enumeration.
+ * @details This enumeration defines the different modes for ANSI escape code handling.
+ */
 typedef enum {
 	ANSI_MODE_AUTO,
 	ANSI_MODE_ALWAYS,

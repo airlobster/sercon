@@ -14,10 +14,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Extended option structure for getopt_ex
+ * @details This structure extends the standard `struct option` with additional fields for description and argument name.
+ */
 typedef struct {
-	struct option opt;
-	const char* description;
-	const char* argname;
+	struct option opt; /**< The standard `struct option` from getopt.h. */
+	const char* description; /**< A string describing the option, used for generating help text. */
+	const char* argname; /**< A string representing the name of the argument for this option, used in help text. */	
 } getopt_ex_option_t;
 
 #define GETOPT_EX_OPTIONS_END   ((getopt_ex_option_t){ {0, 0, 0, 0}, 0, 0 })

@@ -38,9 +38,12 @@ rlx_t rlx = 0;
 char *prompt = 0;
 volatile int shouldAbort = 0;
 
-// a pointer to the type below will be passed to the RLX callback function as userData,
-// allowing us to maintain state across calls
+/**
+ * @brief Context structure for the terminal.
+ * @details This structure holds the file descriptors for polling.
+ */
 typedef struct {
+	/** The file descriptors for polling. */
 	struct pollfd fds[2];
 } terminal_context_t;
 

@@ -10,13 +10,13 @@
  * @brief The internal structure of a vocabulary.
  */
 typedef struct _vocabulary_internal_t {
-	char* db_filename;
-	unsigned long options;
-	sqlite3* db;
-	size_t size;
-	char** words_list;
-	bool dirty;
-	size_t max_capacity;
+	char* db_filename; /**< The filename of the database. */
+	unsigned long options; /**< Options for the vocabulary. */
+	sqlite3* db; /**< The SQLite database handle. */
+	size_t size; /**< The number of words in the vocabulary. */
+	char** words_list; /**< The list of words in the vocabulary. */
+	bool dirty; /**< Indicates if the vocabulary has been modified. */
+	size_t max_capacity; /**< The maximum number of words the vocabulary can hold. */
 } vocabulary_internal_t;
 
 #ifdef _DEBUG_
