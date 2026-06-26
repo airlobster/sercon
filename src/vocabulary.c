@@ -98,17 +98,20 @@ static void destroy_words_list(vocabulary_internal_t* vocab) {
  */
 vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	vocabulary_internal_t* vocab = (vocabulary_internal_t*)malloc(sizeof(vocabulary_internal_t));
-	ASSERT(vocab);
-	if( ! vocab ) return 0; // allocation failed
+	if( ! vocab ) {
+		DEBUG_MSG("Failed to allocate memory for vocabulary");
+		return 0; // allocation failed
+	}
 
 	vocab->options = options;
-	vocab->size = 0;
 	vocab->db = 0;
+	vocab->size = 0;
 	vocab->dirty = true;
 	vocab->words_list = 0;
 	vocab->max_capacity = max_capacity;
 
 #ifdef _DEBUG_
+	// in debug mode we do want to have an actual file we can debug with the sqlite3 shell
 	asprintf(&vocab->db_filename, "/tmp/.vocabulary.%d.db", getpid());
 #else
 	vocab->db_filename = strdup(":memory:");
@@ -123,7 +126,6 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	if( init_schema(vocab) != SQLITE_OK ) {
 		DB_ERROR(vocab);
 		vocab_destroy(vocab);
-		vocab = 0;
 		return 0; // failed to initialize database
 	}
 
@@ -142,7 +144,6 @@ void vocab_destroy(vocabulary_t vocab) {
 	}
 	if( vocab->db_filename ) {
 		free(vocab->db_filename);
-		vocab->db_filename = 0;
 	}
 	free(vocab);
 }
