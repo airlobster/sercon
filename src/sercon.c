@@ -1,3 +1,7 @@
+#if !defined(__APPLE__) && !defined(__linux__)
+#error "Unsupported platform"
+#endif
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
