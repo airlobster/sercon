@@ -76,6 +76,22 @@ This will build the project and install it. To test for installation correctness
 - From within the app, type 'help' to see the various commands supported.
 - Ctrl+C exits cleanly.
 
+## Serial-ports listing
+
+Listing available serial-ports occures either when running sercon with the -l|--list option,
+or with the 'ports' command from sercon's shell.
+Serial-ports patterns being used:
+- **MacOS**:
+	- ```/dev/cu.*```
+- **Linux**:
+	- ```/dev/ttyUSB*```
+	- ```/dev/ttyACM*```
+	- ```/dev/ttyS*```
+	- ```/dev/bus/usb/*```
+
+Additionally, the pattern-sets above may be overridden using the ```SERIAL_PORT_PATTERNS``` environment variable.
+
+
 ## Appendix
 
 ### Reussable modules
