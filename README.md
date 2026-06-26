@@ -89,7 +89,7 @@ Serial-ports patterns being used:
 	- ```/dev/ttyS*```
 	- ```/dev/bus/usb/*```
 
-Additionally, the pattern-sets above may be expanded using the ```PORTS_SEARCH_PATH``` environment variable, which is formatted like a ```PATH``` string, using a colon (':') as a delimiter.
+Additionally, the pattern-sets above may be extended by using the ```PORTS_SEARCH_PATH``` environment variable, which is formatted like a ```PATH``` string, using a colon (:) as a delimiter.
 
 
 ## Appendix
