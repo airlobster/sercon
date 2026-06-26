@@ -57,7 +57,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		switch( state[statePos - 1] ) {
 			case PS_START: {
 				if( isspace(*p) ) break;
-				// reset token buffer and start writing the first token
+				// reset token buffer
 				pTokenWr = token;
 				*pTokenWr = '\0';
 				// push token-completion state
@@ -76,21 +76,21 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 			}
 			case PS_UNQUOTED: {
 				if( isspace(*p) ) {
-					// end of this token, push PS_END state to flush the token and prepare for the next one
+					// end of this token
 					--statePos; // end of this state, pop back to previous state
 					--p; // reprocess this character in the following state
-				} else {
-					*pTokenWr++ = *p;
-					*pTokenWr = '\0';
+					break;
 				}
+				*pTokenWr++ = *p;
+				*pTokenWr = '\0';
 				break;
 			}
 			case PS_QUOTED: {
 				if( *p == '\\' && quote == '"' ) {
-					// handle escaped characters only inside double quotes, push PS_ESCAPE state to process the next character
+					// push PS_ESCAPE state to process the next character
 					state[statePos++] = PS_ESCAPE;
 				} else if( *p == quote ) {
-					// end of this quoted token, push PS_END state to flush the token and prepare for the next one
+					// end of this quoted token
 					--statePos;
 					quote = 0;
 				} else {
@@ -192,7 +192,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		} // end state machine switch
 	} // end for
 
-	// if there's still a pending un-terminated token, flush it out as well
+	// if there's still a pending token, commit it
 	if( *token ) {
 		// add the last token if there is one after processing the whole line
 		char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
@@ -213,6 +213,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 }
 
 void free_command_args(int argc, char** argv) {
+	ASSERT(argv);
 	for(int i = 0; i < argc; i++) {
 		free(argv[i]);
 	}
