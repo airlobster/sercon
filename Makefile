@@ -133,7 +133,7 @@ doxygen:
 	@sed -E -i '' 's/^GENERATE_HTML.+/GENERATE_HTML = YES/g' Doxyfile
 	@sed -E -i '' 's/^SEARCHENGINE.+/SEARCHENGINE = YES/g' Doxyfile
 	@doxygen Doxyfile
-# 	@$(OPENER) html/index.html
+	@$(OPENER) html/index.html
 	@rm -rf Doxyfile* latex
 
 # open the GitHub repository in the default browser
