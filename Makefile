@@ -88,22 +88,24 @@ else
 $(error Invalid build type: $(BUILD). Use \'debug\' or \'release\'.)
 endif
 
+TARGET_PATH = $(BUILD_DIR)/$(TARGET)
+
 # compose a list of object files based on source files
 OBJS = $(foreach src, $(SRCS), $(patsubst $(SRC_DIRS)/%.c, $(BUILD_DIR)/%.o, $(src)))
 # compose a list of dependency files based on source files
 DEPS = $(OBJS:.o=.d)
 
 # default entry point
-all: $(TARGET) summary
+all: $(TARGET_PATH) summary
 
 # LINK
-$(TARGET): $(OBJS)
-	$(CC) $(LIB_DIRS) -o $(BUILD_DIR)/$@ $(OBJS) $(LIBS)
+$(TARGET_PATH): $(OBJS)
+	$(CC) $(LIB_DIRS) -o $(TARGET_PATH) $(OBJS) $(LIBS)
 
 # print a summary of the build, including the size of the target executable.
-summary: SIZE = $(shell wc -c < $(BUILD_DIR)/$(TARGET) | tr -d ' ')
+summary: SIZE = $(shell wc -c < $(TARGET_PATH) | tr -d ' ')
 summary:
-	@printf "$(COLOR_SUCCESS)** Build successful: $(BUILD_DIR)/$(TARGET) ($(SIZE) bytes)$(COLOR_RESET)\n"
+	@printf "$(COLOR_SUCCESS)** Build successful: $(TARGET_PATH) ($(SIZE) bytes)$(COLOR_RESET)\n"
 
 # COMPILE
 $(BUILD_DIR)/%.o: $(SRC_DIRS)/%.c | $(BUILD_DIR)
