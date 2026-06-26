@@ -189,6 +189,7 @@ help:
 	@printf "  $(COLOR_INFO)readme$(COLOR_RESET)    - Display the README file\n"
 	@printf "  $(COLOR_INFO)vars$(COLOR_RESET)      - Display current variable settings\n"
 	@printf "  $(COLOR_INFO)test$(COLOR_RESET)      - Run the test suite\n"
+	@printf "  $(COLOR_INFO)doxygen$(COLOR_RESET)   - Generate and open Doxygen site\n"
 	@printf "\n"
 	@printf "$(COLOR_BOLD)Build types:$(COLOR_RESET)\n"
 	@printf "  $(COLOR_INFO)debug$(COLOR_RESET)     - Build with debug symbols and no optimizations (default)\n"
