@@ -133,7 +133,7 @@ int cglob(const char* pattern, void(*callback)(const char* path, void* userData)
 
 /**
  * @brief Automatic termios scope management for the application.
- * 
+ *
  */
 
 static struct termios originalTermios;

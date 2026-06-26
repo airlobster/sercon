@@ -6,7 +6,7 @@
 
 /**
  * @brief Warns if the SERIAL_PORT_PATTERNS environment variable is set, overriding default patterns.
- */	
+ */
 CONSTRUCTOR(static void warn_about_overriding_env_patterns()) {
 	const char* env_patterns = getenv("SERIAL_PORT_PATTERNS");
 	if( env_patterns ) {

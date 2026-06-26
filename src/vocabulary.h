@@ -4,7 +4,7 @@
 /**
  * @file vocabulary.h
  * @brief Vocabulary management functions
- * 
+ *
  */
 
 #include <stddef.h>

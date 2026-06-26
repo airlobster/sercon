@@ -21,7 +21,7 @@ extern "C" {
 typedef struct {
 	struct option opt; /**< The standard `struct option` from getopt.h. */
 	const char* description; /**< A string describing the option, used for generating help text. */
-	const char* argname; /**< A string representing the name of the argument for this option, used in help text. */	
+	const char* argname; /**< A string representing the name of the argument for this option, used in help text. */
 } getopt_ex_option_t;
 
 #define GETOPT_EX_OPTIONS_END   ((getopt_ex_option_t){ {0, 0, 0, 0}, 0, 0 })

@@ -4,13 +4,13 @@
 /**
  * @file utils.h
  * @brief Utility macros and functions
- * 
+ *
  */
 
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdio.h>
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
