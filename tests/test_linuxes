@@ -27,7 +27,7 @@ function test_linux() {
 		docker build --progress=plain -t "$image_name" .
 		printf "\x1b[0m"
 
-		docker run --rm -it -v ~/sercon:/sercon "$image_name" \
+		docker run --rm -it --privileged -v ~/sercon:/sercon "$image_name" \
 			bash -c "echo ports | make run -- -H"
 	)
 	local status=$?

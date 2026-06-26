@@ -17,7 +17,6 @@ RUN apt-get install -y \
     net-tools \
     build-essential \
     libreadline-dev \
-    libserialport-dev \
     sqlite3 \
     libsqlite3-dev \
     git \

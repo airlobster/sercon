@@ -23,7 +23,6 @@ RUN dnf -y install \
     less \
     sqlite-devel \
     readline-devel \
-    libserialport-devel \
     && dnf clean all
 
 # Set up a non-root user

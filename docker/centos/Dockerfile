@@ -14,7 +14,6 @@ RUN dnf install -y epel-release && \
     pkgconfig \
     sqlite-devel \
     readline-devel \
-    libserialport-devel \
     vim \
     curl \
     less \

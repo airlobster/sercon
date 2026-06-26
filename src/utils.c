@@ -5,6 +5,7 @@
 #include <time.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <glob.h>
 #include <math.h>
 #include "utils.h"
 
@@ -103,6 +104,33 @@ void debug_msg(const char* file, int line, const char* fmt, ...) {
 }
 #endif
 
+/**
+ * @brief Perform a glob operation and invoke a callback for each matched path.
+ * @param pattern The glob pattern.
+ * @param callback The callback function to be called for each matched path.
+ * @param userData User-defined data to be passed to the callback function.
+ * @return int The number of matched paths.
+ */
+int cglob(const char* pattern, void(*callback)(const char* path, void* userData), void* userData) {
+	ASSERT(pattern && callback);
+	int n = 0;
+	glob_t glob_result;
+	memset(&glob_result, 0, sizeof(glob_result));
+	int ret = glob(pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &glob_result);
+	if( ret == 0 ) {
+		for( size_t i = 0; i < glob_result.gl_pathc; ++i ) {
+			callback(glob_result.gl_pathv[i], userData);
+			++n;
+		}
+	} else if( ret == GLOB_NOMATCH ) {
+		// DEBUG_MSG("No matches found for pattern: %s", pattern);
+	} else {
+		// DEBUG_MSG("Error occurred while globbing pattern: %s", pattern);
+	}
+	globfree(&glob_result);
+	return n;
+}
+
 
 /**
  * @brief Automatic termios scope management for the application.
@@ -120,3 +148,4 @@ static void set_termios_scope(void) {
 	tcgetattr(fileno(stdin), &originalTermios);
 	atexit(on_exit_app);
 }
+

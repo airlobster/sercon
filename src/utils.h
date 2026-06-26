@@ -38,6 +38,8 @@ int numdigits(long long v, unsigned short base);
 
 int strnetcontent(char* s, char** start, char** end);
 
+int cglob(const char* pattern, void(*callback)(const char* path, void* userData), void* userData);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

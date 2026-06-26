@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		vim \
 		less \
 		libsqlite3-dev \
-    libreadline-dev \
-    libserialport-dev
+    libreadline-dev
 
 RUN rm -rf /var/lib/apt/lists/*
 
