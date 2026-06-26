@@ -6,7 +6,7 @@ function error() {
 }
 
 linux=$1
-[ -n "$linux" ] || error "Missing linux version argument"
+[ -n "$linux" ] || error "Usage: $0 <linux-distro>"
 
 cd "$(dirname "$0")"
 [ -d "${linux}" ] || error "Linux version directory '${linux}' does not exist"
