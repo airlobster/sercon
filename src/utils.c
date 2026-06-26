@@ -112,7 +112,8 @@ void debug_msg(const char* file, int line, const char* fmt, ...) {
  * @return int The number of matched paths.
  */
 int cglob(const char* pattern, void(*callback)(const char* path, void* userData), void* userData) {
-	ASSERT(pattern && callback);
+	ASSERT(pattern);
+	ASSERT(callback);
 	int n = 0;
 	glob_t glob_result;
 	memset(&glob_result, 0, sizeof(glob_result));
