@@ -72,7 +72,7 @@ int now(cal_time_t* t);
 int numdigits(long long v, unsigned short base);
 
 int strnetcontent(char* s, char** start, char** end);
-
+int parse_path_list(const char* pathlist, int* argc, char*** argv);
 int cglob(const char* pattern, void(*callback)(const char* path, void* userData), void* userData);
 
 #ifdef __cplusplus

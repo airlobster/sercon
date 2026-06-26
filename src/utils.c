@@ -146,3 +146,40 @@ CONSTRUCTOR(static void set_termios_scope(void)) {
 	tcgetattr(fileno(stdin), &originalTermios);
 	atexit(on_exit_app);
 }
+
+/**
+ * @brief Parse a colon-separated list of paths and populate argc and argv.
+ * 
+ * @param pathlist The colon-separated list of paths.
+ * @param argc Pointer to store the number of paths.
+ * @param argv Pointer to store the array of paths.
+ * @return int The number of paths parsed.
+ * @note The caller is responsible for freeing the memory allocated for argv and its contents.
+ */
+int parse_path_list(const char* pathlist, int* argc, char*** argv) {
+	ASSERT(pathlist);
+	ASSERT(argc);
+	ASSERT(argv);
+	*argc = 0;
+	*argv = 0;
+	size_t count = 0;
+	char** paths = 0;
+	const char* start = pathlist, *end = pathlist;
+	while( *start ) {
+		while( isspace(*start) ) {
+			++start;
+		}
+		end = start;
+		while( *end && *end != ':' ) {
+			++end;
+		}
+		if( end > start ) {
+			paths = realloc(paths, sizeof(char*) * (count + 1));
+			paths[count++] = strndup(start, end - start);
+		}
+		start = (*end) ? end + 1 : end;
+	}
+	*argc = count;
+	*argv = paths;
+	return *argc;
+}
