@@ -79,7 +79,8 @@ endif
 
 # debug/release adaptations
 ifeq ($(BUILD), debug)
-	CFLAGS += -g -D_DEBUG_ -DDEBUG
+	CFLAGS += -O0 -g -D_DEBUG_ -DDEBUG -fsanitize=address
+	LDFLAGS += -fsanitize=address
 	BUILD_DIR := $(BUILD_PLAT_ROOT_DIR)/debug
 else ifeq ($(BUILD), release)
 	CFLAGS += -O3 -DNDEBUG
@@ -100,7 +101,7 @@ all: $(TARGET_PATH) summary
 
 # LINK
 $(TARGET_PATH): $(OBJS)
-	$(CC) $(LIB_DIRS) -o $(TARGET_PATH) $(OBJS) $(LIBS)
+	$(CC) $(LIB_DIRS) $(LDFLAGS) -o $(TARGET_PATH) $(OBJS) $(LIBS)
 
 # print a summary of the build, including the size of the target executable.
 summary: SIZE = $(shell wc -c < $(TARGET_PATH) | tr -d ' ')

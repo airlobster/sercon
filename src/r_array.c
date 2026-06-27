@@ -37,6 +37,7 @@ r_array_t r_array_create(r_array_dtor_t dtor) {
 	a->capacity = 0;
 	a->size = 0;
 	a->dtor = dtor ? dtor : null_dtor;
+
 	return (r_array_t)a;
 }
 
@@ -68,7 +69,6 @@ void r_array_add(r_array_t array, void* element) {
 	ASSERT(a);
 	if( a->size >= a->capacity ) {
 			size_t new_capacity = a->capacity ? a->capacity * 2 : PAGE_SIZE;
-			DEBUG_MSG("Resizing r_array from capacity %zu to %zu", a->capacity, new_capacity);
 			void** new_elements = realloc(a->elements, (new_capacity + 1) * sizeof(void*));
 			if( ! new_elements ) {
 				DEBUG_MSG("ERROR: Failed to allocate memory for r_array elements");
