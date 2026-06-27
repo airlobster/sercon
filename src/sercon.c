@@ -463,6 +463,8 @@ int main(int argc, char *argv[])
 
 	begin_ansi(false);
 	atexit(on_exit_app);
+	signal(SIGTERM, on_signal);
+	signal(SIGSEGV, on_signal);
 	signal(SIGINT, on_signal);
 
 	console();

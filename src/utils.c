@@ -138,9 +138,12 @@ int cglob(const char* pattern, void(*callback)(const char* path, void* userData)
  */
 
 static struct termios originalTermios;
-static void on_exit_app(void) {
-	DEBUG_MSG("Restoring original terminal settings");
+static void reset_termios(void) {
+	DEBUG_MSG("Resetting terminal settings to original");
 	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
+}
+static void on_exit_app(void) {
+	reset_termios();
 }
 CONSTRUCTOR(static void set_termios_scope(void)) {
 	DEBUG_MSG("Initiating termios scope");
@@ -183,3 +186,16 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 	r_array_destroy(paths_array);
 	return *argc;
 }
+
+/**
+ * @brief ASAN for debug-builds: Set a callback to reset terminal settings on ASAN death.
+ * 
+ */
+#ifdef _DEBUG_
+#include <sanitizer/asan_interface.h>
+static void asan_callback(void) { reset_termios(); };
+CONSTRUCTOR(static void set_asan_callback(void)) {
+	DEBUG_MSG("Setting ASAN death callback");
+	__asan_set_death_callback(asan_callback);
+}
+#endif
