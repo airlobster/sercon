@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "command.h"
+#include "r_array.h"
 #include "utils.h"
 
 /**
@@ -25,11 +26,10 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		PS_END,
 	} parse_state_t;
 
+	r_array_t atokens = r_array_create(free);
 	parse_state_t state[32] = {0}; // state stack
 	int statePos = 0; // current position in the state stack
 	char quote = 0; // current quote character when in PS_QUOTED state
-	size_t tokenCount = 0; // number of tokens parsed so far
-	char** tokens = 0; // array of token strings, will be realloc'd as we add tokens
 	char token[256] = {0}; // buffer for the current token
 	char* pTokenWr = token; // pointer to the current position in the token buffer
 	unsigned int integerValue = 0; // used for parsing octal and hex escape sequences
@@ -49,7 +49,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		// token buffer overflow check
 		if( pTokenWr - token >= (long)sizeof(token) - 1 ) {
 			// FATAL: token buffer overflow
-			free_command_args(tokenCount, tokens);
+			r_array_destroy(atokens);
 			return -1;
 		}
 		// state stack overflow check
@@ -172,16 +172,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				break;
 			}
 			case PS_END: {
-				// add this token to the argv array
-				char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
-				if( ! newTokens ) {
-					// FATAL: memory allocation failure
-					DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array");
-					free_command_args(tokenCount, tokens);
-					return -1;
-				}
-				tokens = newTokens;
-				tokens[tokenCount++] = strdup(token);
+				r_array_add(atokens, strdup(token));
 				// reset token buffer for the next token
 				pTokenWr = token;
 				*pTokenWr = '\0';
@@ -194,22 +185,15 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 
 	// if there's still a pending token, commit it
 	if( *token ) {
-		// add the last token if there is one after processing the whole line
-		char** newTokens = realloc(tokens, sizeof(char*) * (tokenCount + 1));
-		if( ! newTokens ) {
-			// FATAL: memory allocation failure
-			DEBUG_MSG("FATAL: memory allocation failure while reallocating tokens array");
-			free_command_args(tokenCount, tokens);
-			return -1;
-		}
-		tokens = newTokens;
-		tokens[tokenCount++] = strdup(token);
+		r_array_add(atokens, strdup(token));
 	}
 
-	*argc = tokenCount;
-	*argv = tokens;
+	*argc = r_array_size(atokens);
+	*argv = (char**)r_array_detach_elements(atokens);
 
-	return tokenCount;
+	r_array_destroy(atokens);
+
+	return *argc;
 }
 
 /**

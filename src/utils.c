@@ -8,6 +8,7 @@
 #include <glob.h>
 #include <math.h>
 #include "utils.h"
+#include "r_array.h"
 
 /**
  * @brief Get the current time.
@@ -162,8 +163,7 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 	ASSERT(argv);
 	*argc = 0;
 	*argv = 0;
-	size_t count = 0;
-	char** paths = 0;
+	r_array_t paths_array = r_array_create(free);
 	const char* start = pathlist, *end = pathlist;
 	while( *start ) {
 		while( isspace(*start) ) {
@@ -174,12 +174,12 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 			++end;
 		}
 		if( end > start ) {
-			paths = realloc(paths, sizeof(char*) * (count + 1));
-			paths[count++] = strndup(start, end - start);
+			r_array_add(paths_array, strndup(start, end - start));
 		}
 		start = (*end) ? end + 1 : end;
 	}
-	*argc = count;
-	*argv = paths;
+	*argc = r_array_size(paths_array);
+	*argv = (char**)r_array_detach_elements(paths_array);
+	r_array_destroy(paths_array);
 	return *argc;
 }
