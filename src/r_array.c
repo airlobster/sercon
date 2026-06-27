@@ -7,15 +7,11 @@
 /**
  * @brief Internal structure representing a dynamic array.
  */
-typedef struct r_array_internal_t {
-	/**< Pointer to the array elements */
-	void** elements;
-	/**< Number of elements in the array */
-	size_t size;
-	/**< Capacity of the array */
-	size_t capacity;
-	/**< Destructor function for array elements */
-	r_array_dtor_t dtor;
+typedef struct {
+	void** elements; /**< Pointer to the array elements */
+	size_t size; /**< Number of elements in the array */
+	size_t capacity; /**< Capacity of the array */
+	r_array_dtor_t dtor; /**< Destructor function for array elements */
 } r_array_internal_t;
 
 /**
