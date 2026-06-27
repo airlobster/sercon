@@ -19,7 +19,7 @@ static const char* def_paths = "";
 /**
  * @brief Warns if the PORTS_SEARCH_PATH environment variable is set, overriding default patterns.
  */
-CONSTRUCTOR(static void warn_about_overriding_env_patterns()) {
+INITIALIZER(static void warn_about_overriding_env_patterns()) {
 	const char* env_patterns = getenv(ENV_NAME);
 	if( env_patterns ) {
 		DEBUG_MSG("${%s} is set and will be added to the default patterns: %s", ENV_NAME, env_patterns);

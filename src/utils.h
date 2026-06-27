@@ -50,7 +50,7 @@ void debug_msg(const char* file, int line, const char* fmt, ...);
  * @brief Macro to define a constructor function that runs before main().
  * @param decl The function signature.
  */
-#define CONSTRUCTOR(decl) decl __attribute__((constructor)); decl
+#define INITIALIZER(decl) decl __attribute__((constructor)); decl
 
 const char* getHomeDir();
 

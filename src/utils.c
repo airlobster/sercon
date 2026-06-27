@@ -145,7 +145,7 @@ static void reset_termios(void) {
 static void on_exit_app(void) {
 	reset_termios();
 }
-CONSTRUCTOR(static void set_termios_scope(void)) {
+INITIALIZER(static void set_termios_scope(void)) {
 	DEBUG_MSG("Initiating termios scope");
 	tcgetattr(fileno(stdin), &originalTermios);
 	atexit(on_exit_app);
@@ -194,7 +194,7 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 #ifdef _DEBUG_
 #include <sanitizer/asan_interface.h>
 static void asan_callback(void) { reset_termios(); };
-CONSTRUCTOR(static void set_asan_callback(void)) {
+INITIALIZER(static void set_asan_callback(void)) {
 	DEBUG_MSG("Setting ASAN death callback");
 	__asan_set_death_callback(asan_callback);
 }
