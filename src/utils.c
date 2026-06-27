@@ -149,7 +149,7 @@ CONSTRUCTOR(static void set_termios_scope(void)) {
 
 /**
  * @brief Parse a colon-separated list of paths and populate argc and argv.
- * 
+ *
  * @param pathlist The colon-separated list of paths.
  * @param argc Pointer to store the number of paths.
  * @param argv Pointer to store the array of paths.
