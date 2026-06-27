@@ -28,7 +28,7 @@ static void null_dtor(void* element) {
 
 /**
  * @brief Create a new dynamic array.
- * @param dtor Destructor function for array elements.
+ * @param dtor Destructor function for array elements (optional).
  * @return r_array_t The created dynamic array.
  */
 r_array_t r_array_create(r_array_dtor_t dtor) {
