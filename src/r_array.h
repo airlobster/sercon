@@ -23,7 +23,7 @@ typedef struct r_array_internal_t* r_array_t;
  */
 typedef void(*r_array_dtor_t)(void* element);
 
-r_array_t r_array_create(r_array_dtor_t dtor);
+r_array_t r_array_create(size_t maxEntries, r_array_dtor_t dtor);
 void r_array_destroy(r_array_t array);
 void r_array_add(r_array_t array, void* element);
 void* r_array_get(r_array_t array, size_t index);

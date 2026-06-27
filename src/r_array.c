@@ -11,6 +11,7 @@ typedef struct {
 	void** elements; /**< Pointer to the array elements */
 	size_t size; /**< Number of elements in the array */
 	size_t capacity; /**< Capacity of the array */
+	size_t maxEntries; /**< Maximum number of entries allowed in the array */
 	r_array_dtor_t dtor; /**< Destructor function for array elements */
 } r_array_internal_t;
 
@@ -24,10 +25,11 @@ static void null_dtor(void* element) {
 
 /**
  * @brief Create a new dynamic array.
+ * @param maxEntries The initial maximum number of entries.
  * @param dtor Destructor function for array elements (optional).
  * @return r_array_t The created dynamic array.
  */
-r_array_t r_array_create(r_array_dtor_t dtor) {
+r_array_t r_array_create(size_t maxEntries, r_array_dtor_t dtor) {
 	r_array_internal_t* a = (r_array_internal_t*)malloc(sizeof(r_array_internal_t));
 	if( ! a ) {
 		DEBUG_MSG("ERROR: Failed to allocate memory for r_array_internal_t");
@@ -36,6 +38,7 @@ r_array_t r_array_create(r_array_dtor_t dtor) {
 	a->elements = 0;
 	a->capacity = 0;
 	a->size = 0;
+	a->maxEntries = maxEntries;
 	a->dtor = dtor ? dtor : null_dtor;
 
 	return (r_array_t)a;
@@ -67,6 +70,10 @@ void r_array_add(r_array_t array, void* element) {
 	r_array_internal_t* a = (r_array_internal_t*)array;
 	ASSERT(a);
 	if( a->size >= a->capacity ) {
+			if( a->maxEntries && a->size >= a->maxEntries ) {
+				DEBUG_MSG("ERROR: Maximum number of entries reached in r_array_add");
+				return;
+			}
 			size_t new_capacity = a->capacity ? a->capacity * 2 : PAGE_SIZE;
 			void** new_elements = realloc(a->elements, (new_capacity + 1) * sizeof(void*));
 			if( ! new_elements ) {

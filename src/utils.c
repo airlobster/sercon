@@ -166,7 +166,7 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 	ASSERT(argv);
 	*argc = 0;
 	*argv = 0;
-	r_array_t paths_array = r_array_create(free);
+	r_array_t paths_array = r_array_create(100, free);
 	const char* start = pathlist, *end = pathlist;
 	while( *start ) {
 		while( isspace(*start) ) {

@@ -26,7 +26,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		PS_END,
 	} parse_state_t;
 
-	r_array_t atokens = r_array_create(free);
+	r_array_t atokens = r_array_create(100, free);
 	parse_state_t state[32] = {0}; // state stack
 	int statePos = 0; // current position in the state stack
 	char quote = 0; // current quote character when in PS_QUOTED state
