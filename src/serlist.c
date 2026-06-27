@@ -12,6 +12,7 @@ static const char* def_paths = "/dev/cu.*";
 static const char* def_paths = "/dev/ttyUSB*:/dev/ttyACM*:/dev/ttyS*:/dev/bus/usb/*";
 #else
 #	warning "Unsupported platform for serial port enumeration. No knowledge of default search paths."
+static const char* def_paths = "";
 #endif
 
 
