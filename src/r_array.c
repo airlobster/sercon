@@ -48,15 +48,14 @@ r_array_t r_array_create(r_array_dtor_t dtor) {
 void r_array_destroy(r_array_t array) {
 	r_array_internal_t* a = (r_array_internal_t*)array;
 	ASSERT(a);
-	if( a) {
-		if( a->elements ) {
-			for( size_t i = 0; i < a->size; ++i ) {
-				a->dtor(a->elements[i]);
-			}
-			free(a->elements);
+	if( a->elements ) {
+		for( size_t i = 0; i < a->size; ++i ) {
+			ASSERT(a->dtor);
+			a->dtor(a->elements[i]);
 		}
-		free(a);
+		free(a->elements);
 	}
+	free(a);
 }
 
 /**
