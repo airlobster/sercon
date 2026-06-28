@@ -29,7 +29,7 @@ void r_array_destroy(r_array_t array);
 bool r_array_add(r_array_t array, void* element);
 void* r_array_get(r_array_t array, size_t index);
 size_t r_array_size(r_array_t array);
-void** r_array_elements(r_array_t array);
+const void* const* r_array_elements(r_array_t array);
 void** r_array_detach_elements(r_array_t array);
 
 #ifdef __cplusplus

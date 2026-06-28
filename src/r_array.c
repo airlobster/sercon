@@ -122,12 +122,12 @@ size_t r_array_size(r_array_t array) {
 /**
  * @brief Get the elements of the dynamic array.
  * @param array The dynamic array.
- * @return void** The elements of the array.
+ * @return const void* const* The elements of the array.
  */
-void** r_array_elements(r_array_t array) {
+const void* const*  r_array_elements(r_array_t array) {
 	r_array_internal_t* a = (r_array_internal_t*)array;
 	ASSERT(a);
-	return a->elements;
+	return (const void* const*)a->elements;
 }
 
 /**
