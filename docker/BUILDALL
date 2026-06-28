@@ -23,6 +23,16 @@ function build() {
 	return ${ret}
 }
 
+function progress() {
+	local chars="|/-\\"
+	while true; do
+		for ((i = 0; i < ${#chars}; i++)); do
+			printf "%s\b" "${chars:i:1}"
+			sleep 0.1
+		done
+	done
+}
+
 cd "$(dirname "$0")" || error "Failed to change directory to $(dirname "$0")"
 
 rm -f "${logprefix}"*.log
@@ -34,9 +44,13 @@ failures=0
 for dockerfile in Dockerfile.*; do
 	distro="${dockerfile##*.}"
 	distro="${distro,,}"
-	printf "%s: ..." "${distro^}"
+	printf "%s: " "${distro^}"
+	progress &
+	progress_pid=$!
 	build "${dockerfile}"
 	ret=$?
+	kill "${progress_pid}" >/dev/null 2>&1
+	wait "${progress_pid}" >/dev/null 2>&1
 	[ "${ret}" -eq 0 ] && icon="✅" || icon="❌"
 	printf "\r%s: ${icon} (%s)\n" "${distro^}" "${logprefix}${distro}.log"
 	[ "${ret}" -ne 0 ] && failures=$((failures + 1))
