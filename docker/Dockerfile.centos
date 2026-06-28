@@ -17,6 +17,7 @@ RUN dnf install -y epel-release && \
     vim \
     curl \
     less \
+		tree \
     && dnf clean all
 
 # Set up user and alias

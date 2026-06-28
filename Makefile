@@ -206,6 +206,9 @@ help:
 	@printf "  * Assign a new path to ARTIFACTS_ROOT_DIR to change where build and dist directories are created.$(COLOR_RESET)\n"
 	@printf "    Default is current directory.$(COLOR_RESET)\n"
 	@printf "\n"
+	@printf "$(COLOR_BOLD)Artifacts Tree:$(COLOR_RESET)\n"
+	@tree --charset=utf8 -F -P $(TARGET) $(ARTIFACTS_ROOT_DIR)
+	@printf "\n"
 
 vars:
 	@printf "* $(COLOR_BOLD)Platform$(COLOR_RESET): $(COLOR_INFO)$(PLATFORM)$(COLOR_RESET)\n"

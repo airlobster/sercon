@@ -21,6 +21,7 @@ RUN dnf -y install \
     curl \
     vim \
     less \
+		tree \
     sqlite-devel \
     readline-devel \
     && dnf clean all

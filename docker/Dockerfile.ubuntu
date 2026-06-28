@@ -1,28 +1,22 @@
 FROM ubuntu:24.04
 
-RUN apt-get update -y
-
-RUN apt-get install -y \
-		vim \
-		less \
-		curl \
-    software-properties-common \
-    unminimize \
-    man-db \
-    manpages \
-    manpages-dev \
-    manpages-posix-dev \
-    curl \
-    vim-tiny \
-    net-tools \
-    build-essential \
-    libreadline-dev \
-    sqlite3 \
-    libsqlite3-dev \
-    git \
-    doxygen \
-    graphviz \
-    xdg-utils
+RUN apt-get update -y && apt-get install -y \
+  vim \
+  less \
+  curl \
+	tree \
+  software-properties-common \
+  unminimize \
+  man-db \
+  manpages \
+  manpages-dev \
+  manpages-posix-dev \
+  vim-tiny \
+  net-tools \
+  build-essential \
+  libreadline-dev \
+  sqlite3 \
+  libsqlite3-dev
 
 RUN yes | unminimize
 RUN apt-get upgrade -y
