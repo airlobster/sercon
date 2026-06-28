@@ -14,6 +14,7 @@
  * @param argv Pointer to an array of strings to store the arguments.
  * @return int The number of arguments parsed, or -1 on error (e.g., memory allocation failure or buffer overflow).
  * @note The caller is responsible for freeing the memory allocated for argv and its contents using free_command_args.
+ *	(no support for environment variables expansion, command substitution, or other shell features)
  */
 int parse_command_line(const char* line, int* argc, char*** argv) {
 #define PUSH(s) state[statePos++]=(s)
