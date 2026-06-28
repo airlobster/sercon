@@ -23,6 +23,7 @@ cd "$(dirname "$0")" || error "Failed to change directory to $(dirname "$0")"
 
 rm -f "${logprefix}"*.log
 
+failures=0
 for dockerfile in Dockerfile.*; do
 	distro="${dockerfile##*.}"
 	distro="${distro,,}"
@@ -31,4 +32,7 @@ for dockerfile in Dockerfile.*; do
 	ret=$?
 	[ "${ret}" -eq 0 ] && icon="✅" || icon="❌"
 	printf "\r%s: ${icon} (%s)\n" "${distro^}" "${logprefix}${distro}.log"
+	[ "${ret}" -ne 0 ] && failures=$((failures + 1))
 done
+
+exit ${failures}
