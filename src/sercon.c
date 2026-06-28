@@ -37,6 +37,7 @@ int fdPort = -1;
 rlx_t rlx = 0;
 char *prompt = 0;
 volatile int shouldAbort = 0;
+int firstConnectionError = true;
 
 /**
  * @brief Context structure for the terminal.
@@ -75,7 +76,7 @@ static char* makePrompt(char** outPrompt) {
 		if( connected ) {
 			ansi_asprintf(&p, "\001" ANSI_BLUE ANSI_ITALIC "\002" "%s:%d> " "\001" ANSI_RESET "\002", portNoPath, baud);
 		} else {
-			ansi_asprintf(&p, "\001" ANSI_RED ANSI_ITALIC "\002" "%s...> " "\001" ANSI_RESET "\002", portNoPath);
+			ansi_asprintf(&p, "\001" ANSI_YELLOW ANSI_ITALIC "\002" "%s...> " "\001" ANSI_RESET "\002", portNoPath);
 		}
 	} else {
 		ansi_asprintf(&p, "\001" ANSI_BLUE ANSI_DIM ANSI_ITALIC "\002" "%s> " "\001" ANSI_RESET "\002", "not-connected");
@@ -118,9 +119,13 @@ static bool connect(terminal_context_t* termContext, const char* portName, int b
 	}
 	fdPort = open(portName, O_RDWR | O_NOCTTY);
 	if( fdPort < 0 ) {
-		a_error("Error opening serial port '%s': %s\n", portName, strerror(errno));
+		if( firstConnectionError ) {
+			a_error("Error opening serial port '%s': %s\n", portName, strerror(errno));
+			firstConnectionError = false;
+		}
 		return false;
 	}
+	firstConnectionError = true;
 	if( termContext ) termContext->fds[0].fd = fdPort;
 	port = strdup(portName);
 	baud = baudRate;
@@ -341,8 +346,13 @@ static void console() {
 		if( termContext.fds[0].revents & POLLIN ) {
 			ssize_t bytesRead = read(termContext.fds[0].fd, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
-				a_error("Error reading from serial port: %s\n", strerror(errno));
-				disconnect(&termContext);
+				// a_error("Error reading from serial port: %s\n", strerror(errno));
+				termContext.fds[0].fd = fdPort = -1; // mark the serial port as disconnected
+				if( isatty(fdStdin) ) {
+					// update prompt to reflect disconnected state
+					makePrompt(&prompt);
+					rlx_change_prompt(rlx, prompt);
+				}
 				continue;
 			}
 
