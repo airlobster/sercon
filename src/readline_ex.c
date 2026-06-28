@@ -195,6 +195,8 @@ rlx_t rlx_begin(
 		rl_bind_key('\t', rl_insert);
 	}
 
+	using_history();
+
 	return (rlx_t)rlx;
 }
 
@@ -335,7 +337,6 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 
 	if( ! (rlx->options & RLX_OPT_HISTORY_ALLOW_DUPLICATES) ) {
 		// add history entry while avoiding duplications
-		using_history();
 		HIST_ENTRY* lastEntry = previous_history();
 		if( ! lastEntry || strcmp(lastEntry->line, line) != 0 ) {
 			rlx_add_history_entry(rlx, line);
@@ -356,7 +357,6 @@ static void rlx_add_history_entry(rlx_t rlx, const char* line) {
 	ASSERT(rlx);
 	if( ! line || ! *line ) return;
 	add_history(line);
-	using_history();
 	// add the new history entry to the autocomplete vocabulary if we own it and the option is enabled
 	if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary && (rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY) ) {
 		vocab_add_word(rlx->completionVocabulary, line);
@@ -432,7 +432,6 @@ void rlx_reset_history(rlx_t rlx) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 	rl_clear_history();
-	using_history();
 }
 
 /**
