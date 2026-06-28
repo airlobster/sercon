@@ -208,7 +208,8 @@ help:
 	@printf "\n"
 
 tree:
-	@tree --charset=utf8 -F -C -P $(TARGET) $(ARTIFACTS_ROOT_DIR) | while IFS= read line; do printf "   %s\n" "$$line"; done
+	@tree --charset=utf8 -F -C --dirsfirst --noreport  -P $(TARGET) $(ARTIFACTS_ROOT_DIR) \
+		| while IFS= read line; do printf "   %s\n" "$$line"; done
 
 vars:
 	@printf "* $(COLOR_BOLD)Platform$(COLOR_RESET): $(COLOR_INFO)$(PLATFORM)$(COLOR_RESET)\n"
