@@ -206,9 +206,9 @@ help:
 	@printf "  * Assign a new path to ARTIFACTS_ROOT_DIR to change where build and dist directories are created.$(COLOR_RESET)\n"
 	@printf "    Default is current directory.$(COLOR_RESET)\n"
 	@printf "\n"
-	@printf "$(COLOR_BOLD)Artifacts Tree:$(COLOR_RESET)\n"
-	@tree --charset=utf8 -F -P $(TARGET) $(ARTIFACTS_ROOT_DIR) | while IFS= read line; do printf "   %s\n" "$$line"; done
-	@printf "\n"
+
+tree:
+	@tree --charset=utf8 -F -C -P $(TARGET) $(ARTIFACTS_ROOT_DIR)
 
 vars:
 	@printf "* $(COLOR_BOLD)Platform$(COLOR_RESET): $(COLOR_INFO)$(PLATFORM)$(COLOR_RESET)\n"
@@ -231,6 +231,6 @@ vars:
 %:
 	@:
 
-.PHONY: all clean cleanall help install uninstall package man vars test run doxygen github readme summary doxygen
+.PHONY: all clean cleanall help install uninstall package man vars test run doxygen github readme summary doxygen tree
 
 -include $(DEPS)
