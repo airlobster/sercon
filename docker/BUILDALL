@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+logprefix="/tmp/build-"
+
+function error() {
+	echo "Error: $@" >&2
+	exit 1
+}
+
+function build() {
+	local dockerfile="$1"
+	local extension="${dockerfile##*.}"
+	local distro="${extension,,}"
+	local image_name="dev-sercon-${distro,,}"
+	(
+		docker build --progress=plain -t "${image_name}" -f "${dockerfile}" . 2>&1
+	) > "${logprefix}${distro}.log"
+	ret=$?
+	return ${ret}
+}
+
+cd "$(dirname "$0")" || error "Failed to change directory to $(dirname "$0")"
+
+rm -f "${logprefix}"*.log
+
+for dockerfile in Dockerfile.*; do
+	distro="${dockerfile##*.}"
+	distro="${distro,,}"
+	printf "%s: ..." "${distro^}"
+	build "${dockerfile}"
+	ret=$?
+	[ "${ret}" -eq 0 ] && icon="✅" || icon="❌"
+	printf "\r%s: ${icon} (%s)\n" "${distro^}" "${logprefix}${distro}.log"
+done

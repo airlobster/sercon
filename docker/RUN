@@ -10,4 +10,5 @@ linux=$1
 
 cd $(dirname "$0")
 
-docker run --rm -it --privileged -v ~/sercon:/sercon --name sercon-${linux,,} dev-sercon-${linux,,} bash
+docker run --rm -it --privileged -v ~/sercon:/sercon --name sercon-${linux,,} \
+	dev-sercon-${linux,,} bash
