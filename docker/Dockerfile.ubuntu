@@ -29,8 +29,3 @@ USER appuser
 
 WORKDIR /sercon
 ENV ARTIFACTS_ROOT_DIR=/tmp/sercon-artifacts
-
-# to build:
-# > docker build -t my-ubuntu -f Dockerfile.ubuntu .
-# to run:
-# > docker run -it -v ~/sercon:/sercon my-ubuntu bash

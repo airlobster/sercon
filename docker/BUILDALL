@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 logprefix="/tmp/build-"
+image_prefix="dev-sercon-"
 
 function cleanup() {
 	docker system prune -f >/dev/null 2>&1
@@ -15,7 +16,7 @@ function build() {
 	local dockerfile="$1"
 	local extension="${dockerfile##*.}"
 	local distro="${extension,,}"
-	local image_name="dev-sercon-${distro,,}"
+	local image_name="${image_prefix}${distro,,}"
 	(
 		docker build --progress=plain -t "${image_name}" -f "${dockerfile}" . 2>&1
 	) > "${logprefix}${distro}.log"
@@ -24,7 +25,7 @@ function build() {
 }
 
 function progress() {
-	local chars="|/-\\"
+	local chars='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
 	while true; do
 		for ((i = 0; i < ${#chars}; i++)); do
 			printf "%s\b" "${chars:i:1}"
@@ -33,13 +34,37 @@ function progress() {
 	done
 }
 
+# parse command line arguments
+while [ -n "$1" ]; do
+	case "$1" in
+		-h|--help)
+			echo "Usage: $(basename "$0") {[-h|--help] [-r|--rebuild]}"
+			echo "Builds all Linux images in the current directory."
+			exit 0
+			;;
+		-r|--rebuild)
+			printf "Removing existing images with prefix '%s'...\n" "${image_prefix}"
+			docker images | grep -E "^${image_prefix}" | awk '{print $2}' | xargs docker rmi -f >/dev/null 2>&1
+			;;
+		*)
+			error "Unknown option: $1"
+			;;
+	esac
+	shift
+done
+
 cd "$(dirname "$0")" || error "Failed to change directory to $(dirname "$0")"
 
+# remove old log files
 rm -f "${logprefix}"*.log
 
+# verify that Docker is running and accessible
 docker info > /dev/null 2>&1 || error "Docker is not running or not accessible"
+
+# set up a trap to clean up Docker resources on exit
 trap cleanup EXIT
 
+# for each Dockerfile, build the image and show result
 failures=0
 for dockerfile in Dockerfile.*; do
 	distro="${dockerfile##*.}"
