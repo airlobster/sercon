@@ -132,11 +132,12 @@ readme:
 doxygen:
 	@rm -rf Doxyfile* html latex
 	@doxygen -g
-	@sed -E -i '' 's/^INPUT.+/INPUT = src/g' Doxyfile
-	@sed -E -i '' 's/^GENERATE_HTML.+/GENERATE_HTML = YES/g' Doxyfile
-	@sed -E -i '' 's/^SEARCHENGINE.+/SEARCHENGINE = YES/g' Doxyfile
+	@sed -E -i '' 's|^INPUT.+|INPUT = src|g' Doxyfile
+	@sed -E -i '' 's|^GENERATE_HTML.+|GENERATE_HTML = YES|g' Doxyfile
+	@sed -E -i '' 's|^SEARCHENGINE.+|SEARCHENGINE = YES|g' Doxyfile
+	@sed -E -i '' 's|^OUTPUT_DIRECTORY.+|OUTPUT_DIRECTORY = "$(ARTIFACTS_ROOT_DIR)"|g' Doxyfile
 	@doxygen Doxyfile
-	@$(OPENER) html/index.html
+	@$(OPENER) $(ARTIFACTS_ROOT_DIR)/html/index.html
 	@rm -rf Doxyfile* latex
 
 # open the GitHub repository in the default browser
