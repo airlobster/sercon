@@ -103,8 +103,8 @@ static void disconnect(terminal_context_t* termContext) {
 		port = 0;
 	}
 	// update prompt
-	makePrompt(&prompt);
-	if( rlx ) {
+	if( rlx && isatty(fileno(stdin)) ) {
+		makePrompt(&prompt);
 		rlx_change_prompt(rlx, prompt);
 	}
 }
@@ -130,8 +130,8 @@ static bool connect(terminal_context_t* termContext, const char* portName, int b
 	cfsetspeed(&t, baudRate);
 	tcsetattr(fdPort, TCSANOW, &t);
 	// update prompt
-	makePrompt(&prompt);
-	if( rlx ) {
+	if( rlx && isatty(fileno(stdin)) ) {
+		makePrompt(&prompt);
 		rlx_change_prompt(rlx, prompt);
 	}
 	return true;
