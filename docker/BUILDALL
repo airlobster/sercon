@@ -2,6 +2,10 @@
 
 logprefix="/tmp/build-"
 
+function cleanup() {
+	docker system prune -f >/dev/null 2>&1
+}
+
 function error() {
 	echo "Error: $@" >&2
 	exit 101
@@ -22,6 +26,9 @@ function build() {
 cd "$(dirname "$0")" || error "Failed to change directory to $(dirname "$0")"
 
 rm -f "${logprefix}"*.log
+
+docker info > /dev/null 2>&1 || error "Docker is not running or not accessible"
+trap cleanup EXIT
 
 failures=0
 for dockerfile in Dockerfile.*; do
