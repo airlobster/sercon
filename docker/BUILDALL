@@ -4,6 +4,7 @@ logprefix="/tmp/build-"
 image_prefix="dev-sercon-"
 
 function cleanup() {
+	tput cnorm # show cursor
 	docker system prune -f >/dev/null 2>&1
 }
 
@@ -66,6 +67,7 @@ trap cleanup EXIT
 
 # for each Dockerfile, build the image and show result
 failures=0
+tput civis # hide cursor
 for dockerfile in Dockerfile.*; do
 	distro="${dockerfile##*.}"
 	distro="${distro,,}"
