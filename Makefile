@@ -207,7 +207,7 @@ help:
 	@printf "    Default is current directory.$(COLOR_RESET)\n"
 	@printf "\n"
 	@printf "$(COLOR_BOLD)Artifacts Tree:$(COLOR_RESET)\n"
-	@tree --charset=utf8 -F -P $(TARGET) $(ARTIFACTS_ROOT_DIR) | while read line; do printf "   %s\n" "$$line"; done
+	@tree --charset=utf8 -F -P $(TARGET) $(ARTIFACTS_ROOT_DIR) | while IFS= read line; do printf "   %s\n" "$$line"; done
 	@printf "\n"
 
 vars:
