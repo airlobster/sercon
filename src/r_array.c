@@ -69,19 +69,21 @@ void r_array_destroy(r_array_t array) {
 void r_array_add(r_array_t array, void* element) {
 	r_array_internal_t* a = (r_array_internal_t*)array;
 	ASSERT(a);
+	// limit reached?
+	if( a->maxEntries && a->size >= a->maxEntries ) {
+		DEBUG_MSG("ERROR: Maximum number of entries reached in r_array_add");
+		return;
+	}
+	// need to grow the array?
 	if( a->size >= a->capacity ) {
-			if( a->maxEntries && a->size >= a->maxEntries ) {
-				DEBUG_MSG("ERROR: Maximum number of entries reached in r_array_add");
-				return;
-			}
-			size_t new_capacity = a->capacity ? a->capacity * 2 : PAGE_SIZE;
-			void** new_elements = realloc(a->elements, (new_capacity + 1) * sizeof(void*));
-			if( ! new_elements ) {
-				DEBUG_MSG("ERROR: Failed to allocate memory for r_array elements");
-				return;
-			};
-			a->elements = new_elements;
-			a->capacity = new_capacity;
+		size_t new_capacity = a->capacity ? a->capacity * 2 : PAGE_SIZE;
+		void** new_elements = realloc(a->elements, (new_capacity + 1) * sizeof(void*));
+		if( ! new_elements ) {
+			DEBUG_MSG("ERROR: Failed to allocate memory for r_array elements");
+			return;
+		};
+		a->elements = new_elements;
+		a->capacity = new_capacity;
 	}
 	a->elements[a->size++] = element;
 	a->elements[a->size] = 0; // Null-terminate the array
@@ -130,7 +132,7 @@ void** r_array_elements(r_array_t array) {
  * @brief Detach the elements from the dynamic array, leaving it empty.
  * @param array The dynamic array.
  * @return void** The detached elements of the array.
- * @note The caller is responsible for freeing the detached elements and their contents.
+ * @note r_array will no longer manage the memory of the detached elements;
  */
 void** r_array_detach_elements(r_array_t array) {
 	r_array_internal_t* a = (r_array_internal_t*)array;
