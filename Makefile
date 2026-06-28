@@ -140,7 +140,7 @@ doxygen:
 	@sed -E -i '' 's|^OUTPUT_DIRECTORY.+|OUTPUT_DIRECTORY = "$(DOXYGEN_ARTIFACTS_DIR)"|g' Doxyfile
 	@doxygen Doxyfile
 	@$(OPENER) $(DOXYGEN_ARTIFACTS_DIR)/html/index.html
-	@rm -rf Doxyfile* latex
+	@rm -rf Doxyfile*
 
 # open the GitHub repository in the default browser
 github:
@@ -207,7 +207,7 @@ help:
 	@printf "    Default is current directory.$(COLOR_RESET)\n"
 	@printf "\n"
 	@printf "$(COLOR_BOLD)Artifacts Tree:$(COLOR_RESET)\n"
-	@tree --charset=utf8 -F -P $(TARGET) $(ARTIFACTS_ROOT_DIR)
+	@tree --charset=utf8 -F -P $(TARGET) $(ARTIFACTS_ROOT_DIR) | while read line; do printf "   %s\n" "$$line"; done
 	@printf "\n"
 
 vars:
