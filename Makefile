@@ -213,7 +213,7 @@ help:
 # (the while loop here is for indenting the whole tree output to make it look nicer in the console)
 tree:
 	@mkdir -p $(ARTIFACTS_ROOT_DIR)
-	@tree $(TREE_FLAGS) -P $(TARGET) $(ARTIFACTS_ROOT_DIR) \
+	@tree $(TREE_FLAGS) -P $(TARGET) -P *.tar.gz $(ARTIFACTS_ROOT_DIR) \
 		| while IFS= read line; do printf "   %s\n" "$$line"; done
 
 vars:
