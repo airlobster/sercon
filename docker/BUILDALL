@@ -44,7 +44,6 @@ while [ -n "$1" ]; do
 			exit 0
 			;;
 		-r|--rebuild)
-			printf "Removing existing images with prefix '%s'...\n" "${image_prefix}"
 			docker images | grep -E "^${image_prefix}" | awk '{print $2}' | xargs docker rmi -f >/dev/null 2>&1
 			;;
 		*)
