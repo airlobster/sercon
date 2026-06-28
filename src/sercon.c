@@ -74,12 +74,12 @@ static char* makePrompt(char** outPrompt) {
 	if( port ) {
 		const char* portNoPath = strrchr(port, '/') + 1;
 		if( connected ) {
-			ansi_asprintf(&p, "\001" ANSI_BLUE ANSI_ITALIC "\002" "%s:%d> " "\001" ANSI_RESET "\002", portNoPath, baud);
+			ansi_asprintf(&p, ANSI_BLUE ANSI_ITALIC "%s:%d> " ANSI_RESET, portNoPath, baud);
 		} else {
-			ansi_asprintf(&p, "\001" ANSI_YELLOW ANSI_ITALIC "\002" "%s...> " "\001" ANSI_RESET "\002", portNoPath);
+			ansi_asprintf(&p, ANSI_YELLOW ANSI_ITALIC "%s...> " ANSI_RESET, portNoPath);
 		}
 	} else {
-		ansi_asprintf(&p, "\001" ANSI_BLUE ANSI_DIM ANSI_ITALIC "\002" "%s> " "\001" ANSI_RESET "\002", "not-connected");
+		ansi_asprintf(&p, ANSI_BLUE ANSI_DIM ANSI_ITALIC "%s> " ANSI_RESET, "not-connected");
 	}
 	if( *outPrompt ) free(*outPrompt);
 	*outPrompt = p;
@@ -449,6 +449,7 @@ static void parse_cli_args(int argc, char *argv[])
 static void on_signal(int signum) {
 	(void)signum;
 	shouldAbort = 1;
+	fputc('\n', stdout);
 }
 
 static void on_exit_app(void) {

@@ -320,8 +320,8 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 		line = expanded;
 	}
 
-	// we convert the command line into argc/argv format for easier parsing by command handlers,
-	// and then free the argv array after processing.
+	// // we convert the command line into argc/argv format for easier parsing by command handlers,
+	// // and then free the argv array after processing.
 	if( parse_command_line(line, &argc, &argv) > 0 ) {
 		if( (cmd = rlx_get_command(rlx, argv[0])) != 0 ) {
 			cmd->handler(rlx, cmd, argc, (const char**)argv, rlx->userData);
@@ -345,6 +345,22 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 	}
 
 	return cmd != 0;
+}
+
+/**
+	@brief Add a line to the command history for the readline_ex session.
+	@param rlx The readline_ex session handle.
+	@param line The line to add to the history.
+*/
+static void rlx_add_history_entry(rlx_t rlx, const char* line) {
+	ASSERT(rlx);
+	if( ! line || ! *line ) return;
+	add_history(line);
+	using_history();
+	// add the new history entry to the autocomplete vocabulary if we own it and the option is enabled
+	if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary && (rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY) ) {
+		vocab_add_word(rlx->completionVocabulary, line);
+	}
 }
 
 /**
@@ -377,22 +393,6 @@ void rlx_resume(rlx_t rlx, bool redisplayPrompt) {
 	free(rlx->savedLineBuffer);
 	rlx->savedLineBuffer = 0;
 	rlx->isPaused = false;
-}
-
-/**
-	@brief Add a line to the command history for the readline_ex session.
-	@param rlx The readline_ex session handle.
-	@param line The line to add to the history.
-*/
-static void rlx_add_history_entry(rlx_t rlx, const char* line) {
-	ASSERT(rlx);
-	if( ! line || ! *line ) return;
-	add_history(line);
-	using_history();
-	// add the new history entry to the autocomplete vocabulary if we own it and the option is enabled
-	if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary && (rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY) ) {
-		vocab_add_word(rlx->completionVocabulary, line);
-	}
 }
 
 /**

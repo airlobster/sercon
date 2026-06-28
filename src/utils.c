@@ -131,26 +131,6 @@ int cglob(const char* pattern, void(*callback)(const char* path, void* userData)
 	return n;
 }
 
-
-/**
- * @brief Automatic termios scope management for the application.
- *
- */
-
-static struct termios originalTermios;
-static void reset_termios(void) {
-	DEBUG_MSG("Resetting terminal settings to original");
-	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
-}
-static void on_exit_app(void) {
-	reset_termios();
-}
-INITIALIZER(static void set_termios_scope(void)) {
-	DEBUG_MSG("Initiating termios scope");
-	tcgetattr(fileno(stdin), &originalTermios);
-	atexit(on_exit_app);
-}
-
 /**
  * @brief Parse a colon-separated list of paths and populate argc and argv.
  *
@@ -187,10 +167,19 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 	return *argc;
 }
 
-/**
- * @brief ASAN for debug-builds: Set a callback to reset terminal settings on ASAN death.
- * 
- */
+
+static struct termios originalTermios;
+static void reset_termios(void) {
+	DEBUG_MSG("Resetting terminal settings to original");
+	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
+}
+static void on_exit_app(void) { reset_termios(); }
+INITIALIZER(static void set_termios_scope(void)) {
+	DEBUG_MSG("Initiating termios scope");
+	tcgetattr(fileno(stdin), &originalTermios);
+	atexit(on_exit_app);
+}
+
 #ifdef _DEBUG_
 #include <sanitizer/asan_interface.h>
 static void asan_callback(void) { reset_termios(); };
