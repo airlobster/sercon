@@ -19,6 +19,7 @@ FULL_VERSION := $(VERSION).$(GIT_COMMIT_HASH)
 
 CC := cc
 CFLAGS := -Wall -Wextra -Wno-unused-result -Wno-unused-parameter -MMD -MP -DVERSION=\"$(FULL_VERSION)\" -D_GNU_SOURCE
+TREE_FLAGS := --charset=utf8 -F -C --dirsfirst --noreport
 TARGET := sercon
 SRC_DIRS := src
 INCLUDE_DIRS :=
@@ -57,6 +58,7 @@ BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(PLATFORM)/$(ARCH)
 
 # select the appropriate include and library directories based on the platform and architecture.
 ifeq ($(PLATFORM), darwin)
+	TREE_FLAGS += --condense
 	OPENER := open
 ifneq (,$(filter $(ARCH), arm64 aarch64))
 # darwin/arm64
@@ -210,7 +212,7 @@ help:
 # (the while loop here is for indenting the whole tree output to make it look nicer in the console)
 tree:
 	@mkdir -p $(ARTIFACTS_ROOT_DIR)
-	@tree --charset=utf8 -F -C --dirsfirst --noreport  -P $(TARGET) $(ARTIFACTS_ROOT_DIR) \
+	@tree $(TREE_FLAGS) -P $(TARGET) $(ARTIFACTS_ROOT_DIR) \
 		| while IFS= read line; do printf "   %s\n" "$$line"; done
 
 vars:
