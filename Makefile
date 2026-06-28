@@ -207,7 +207,9 @@ help:
 	@printf "    Default is current directory.$(COLOR_RESET)\n"
 	@printf "\n"
 
+# (the while loop here is for indenting the whole tree output to make it look nicer in the console)
 tree:
+	@mkdir -p $(ARTIFACTS_ROOT_DIR)
 	@tree --charset=utf8 -F -C --dirsfirst --noreport  -P $(TARGET) $(ARTIFACTS_ROOT_DIR) \
 		| while IFS= read line; do printf "   %s\n" "$$line"; done
 
