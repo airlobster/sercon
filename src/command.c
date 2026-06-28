@@ -16,6 +16,11 @@
  * @note The caller is responsible for freeing the memory allocated for argv and its contents using free_command_args.
  */
 int parse_command_line(const char* line, int* argc, char*** argv) {
+#define PUSH(s) state[statePos++]=(s)
+#define POP() --statePos
+#define UNGET() --p
+#define APPEND(c) *pTokenWr++ = (c); *pTokenWr = '\0'
+#define RESET() pTokenWr = token; *pTokenWr = '\0'
 	typedef enum {
 		PS_START,
 		PS_UNQUOTED,
@@ -43,7 +48,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		return 0;
 	}
 
-	state[statePos++] = PS_START;
+	PUSH(PS_START);
 
 	for(const char* p = line; *p ; p++) {
 		// token buffer overflow check
@@ -58,56 +63,53 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 			case PS_START: {
 				if( isspace(*p) ) break;
 				// reset token buffer
-				pTokenWr = token;
-				*pTokenWr = '\0';
+				RESET();
 				// push token-completion state
-				state[statePos++] = PS_END;
+				PUSH(PS_END);
 				// select next state based on token type (quoted or unquoted)
 				if( *p == '"' || *p == '\'' ) {
 					// beginning of a quoted token, save the quote character and enter PS_QUOTED state
 					quote = *p; // save the quote character to look for when we exit the quoted state
-					state[statePos++] = PS_QUOTED;
+					PUSH(PS_QUOTED);
 				} else {
 					// beginning of an unquoted token, enter PS_UNQUOTED state
-					--p; // pass this character to the PS_UNQUOTED state for processing
-					state[statePos++] = PS_UNQUOTED;
+					UNGET();
+					PUSH(PS_UNQUOTED);
 				}
 				break;
 			}
 			case PS_UNQUOTED: {
 				if( isspace(*p) ) {
 					// end of this token
-					--statePos; // end of this state, pop back to previous state
-					--p; // reprocess this character in the following state
+					POP(); // end of this state, pop back to previous state
+					UNGET(); // reprocess this character in the following state
 					break;
 				}
-				*pTokenWr++ = *p;
-				*pTokenWr = '\0';
+				APPEND(*p);
 				break;
 			}
 			case PS_QUOTED: {
 				if( *p == '\\' && quote == '"' ) {
 					// push PS_ESCAPE state to process the next character
-					state[statePos++] = PS_ESCAPE;
+					PUSH(PS_ESCAPE);
 				} else if( *p == quote ) {
 					// end of this quoted token
-					--statePos;
+					POP();
 					quote = 0;
 				} else {
-					*pTokenWr++ = *p;
-					*pTokenWr = '\0';
+					APPEND(*p);
 				}
 				break;
 			}
 			case PS_ESCAPE: {
-				--statePos;
+				POP();
 				switch( *p ) {
-					case 'n': *pTokenWr++ = '\n'; break;
-					case 'r': *pTokenWr++ = '\r'; break;
-					case 't': *pTokenWr++ = '\t'; break;
-					case 'b': *pTokenWr++ = '\b'; break;
-					case 'a': *pTokenWr++ = '\a'; break;
-					case 'f': *pTokenWr++ = '\f'; break;
+					case 'n': APPEND('\n'); break;
+					case 'r': APPEND('\r'); break;
+					case 't': APPEND('\t'); break;
+					case 'b': APPEND('\b'); break;
+					case 'a': APPEND('\a'); break;
+					case 'f': APPEND('\f'); break;
 					case '0':
 					case '1':
 					case '2':
@@ -120,20 +122,20 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 						// but can be less if a non-octal digit is encountered
 						integerValue = 0;
 						nExpectedDigits = 3;
-						state[statePos++] = PS_ESCAPE_OCTAL;
-						--p; // reprocess this character in the following state
+						PUSH(PS_ESCAPE_OCTAL);
+						UNGET(); // reprocess this character in the following state
 						break;
 					}
 					case 'x': {
 						// hex escape sequence, expect 2 hex digits
 						integerValue = 0;
 						nExpectedDigits = 2;
-						state[statePos++] = PS_ESCAPE_HEX;
+						PUSH(PS_ESCAPE_HEX);
+						UNGET(); // reprocess this character in the following state
 						break;
 					}
-					default: *pTokenWr++ = *p; break;
+					default: APPEND(*p); break;
 				}
-				*pTokenWr = '\0';
 				break;
 			}
 			case PS_ESCAPE_OCTAL: {
@@ -141,14 +143,13 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				if( *p >= '0' && *p <= '7' ) {
 					integerValue = (integerValue << 3) | (*p - '0');
 				} else {
-					--p; // return this character to the previous state for processing
+					UNGET(); // return this character to the previous state for processing
 					done = 1;
 				}
 				if( --nExpectedDigits == 0 || done ) {
 					ASSERT(integerValue <= 255);
-					*pTokenWr++ = (char)(integerValue & 0xFF);
-					*pTokenWr = '\0';
-					--statePos; // exit PS_ESCAPE_OCTAL state
+					APPEND((char)(integerValue & 0xFF));
+					POP(); // exit PS_ESCAPE_OCTAL state
 				}
 				break;
 			}
@@ -160,24 +161,22 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 					integerValue = (integerValue << 4) | (tolower(*p) - 'a' + 10);
 				} else {
 					// invalid hex digit
-					--p; // return this character to the previous state for processing
+					UNGET(); // return this character to the previous state for processing
 					stop = 1;
 				}
 				if( --nExpectedDigits == 0 || stop ) {
 					ASSERT(integerValue <= 255);
-					*pTokenWr++ = (char)(integerValue & 0xFF);
-					*pTokenWr = '\0';
-					--statePos; // exit PS_ESCAPE_HEX state
+					APPEND((char)(integerValue & 0xFF));
+					POP(); // exit PS_ESCAPE_HEX state
 				}
 				break;
 			}
 			case PS_END: {
 				r_array_add(atokens, strdup(token));
 				// reset token buffer for the next token
-				pTokenWr = token;
-				*pTokenWr = '\0';
-				--statePos;
-				--p; // reprocess this character in the following state
+				RESET();
+				POP();
+				UNGET(); // reprocess this character in the following state
 				break;
 			}
 		} // end state machine switch
@@ -194,6 +193,11 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	r_array_destroy(atokens);
 
 	return *argc;
+#undef PUSH
+#undef POP
+#undef UNGET
+#undef APPEND
+#undef RESET
 }
 
 /**
