@@ -65,14 +65,15 @@ void r_array_destroy(r_array_t array) {
  * @brief Add an element to the dynamic array.
  * @param array The dynamic array.
  * @param element The element to add.
+ * @return bool True if the element was added successfully, false otherwise.
  */
-void r_array_add(r_array_t array, void* element) {
+bool r_array_add(r_array_t array, void* element) {
 	r_array_internal_t* a = (r_array_internal_t*)array;
 	ASSERT(a);
 	// limit reached?
 	if( a->maxEntries && a->size >= a->maxEntries ) {
 		DEBUG_MSG("ERROR: Maximum number of entries reached in r_array_add");
-		return;
+		return false;
 	}
 	// need to grow the array?
 	if( a->size >= a->capacity ) {
@@ -80,13 +81,14 @@ void r_array_add(r_array_t array, void* element) {
 		void** new_elements = realloc(a->elements, (new_capacity + 1) * sizeof(void*));
 		if( ! new_elements ) {
 			DEBUG_MSG("ERROR: Failed to allocate memory for r_array elements");
-			return;
+			return false;
 		};
 		a->elements = new_elements;
 		a->capacity = new_capacity;
 	}
 	a->elements[a->size++] = element;
 	a->elements[a->size] = 0; // Null-terminate the array
+	return true;
 }
 
 /**

@@ -7,6 +7,7 @@
  */
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +26,7 @@ typedef void(*r_array_dtor_t)(void* element);
 
 r_array_t r_array_create(size_t maxEntries, r_array_dtor_t dtor);
 void r_array_destroy(r_array_t array);
-void r_array_add(r_array_t array, void* element);
+bool r_array_add(r_array_t array, void* element);
 void* r_array_get(r_array_t array, size_t index);
 size_t r_array_size(r_array_t array);
 void** r_array_elements(r_array_t array);
