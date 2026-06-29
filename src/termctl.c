@@ -44,6 +44,10 @@ typedef struct _termctl_internal_t {
  * @param line The input line.
  * @param length The length of the input line.
  * @param userData User data pointer.
+ * @details This function is called by readline_ex when user input is received.
+ * It processes commands and invokes the user input callback if set.
+ * The sole purpose of this function is to intercept STDIN EOF and notify the termctl instance,
+ * otherwise we could have done without it.
  */
 static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 	(void)h;
