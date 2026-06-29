@@ -644,8 +644,8 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	static const size_t INITIAL_OUTPUT_BUFFER_SIZE = 128;
 	size_t currOutputSize = 0;
 	char *safePrompt = 0;
-	size_t pos = 0;;
-	int ansiEscapeSequence = 0;
+	size_t pos = 0; // write position in the output buffer
+	int ansiEscapeSequence = 0; // count of nested ANSI escape sequences
 	ASSERT(outSafePrompt);
 	if( ! prompt ) {
 		*outSafePrompt = 0;
@@ -654,27 +654,32 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	for(const char *c = prompt; *c; c++) {
 		if( pos >= currOutputSize ) {
 			// resize the output buffer if we exceed the current size
-			currOutputSize = MAX(currOutputSize * 2, INITIAL_OUTPUT_BUFFER_SIZE);
-			safePrompt = realloc(safePrompt, currOutputSize + 1);
+			size_t newSize = MAX(currOutputSize * 2, INITIAL_OUTPUT_BUFFER_SIZE);
+			safePrompt = (char*)realloc(safePrompt, newSize + 1);
 			if( ! safePrompt ) {
 				DEBUG_MSG("Failed to allocate memory for safe prompt");
 				*outSafePrompt = 0;
 				return;
 			}
+			currOutputSize = newSize;
 		}
 		if( *c == '\033' ) {
+			// beginning of an ANSI escape sequence, mark it for readline to ignore
 			ASSERT(ansiEscapeSequence == 0);
 			++ansiEscapeSequence;
-			safePrompt[pos++] = '\001'; // mark the start of an ANSI escape sequence for readline
+			safePrompt[pos++] = '\001';
 			safePrompt[pos++] = *c;
 		} else if( ansiEscapeSequence ) {
+			// inside an ANSI escape sequence
 			safePrompt[pos++] = *c;
 			if( isalpha(*c) ) {
-				safePrompt[pos++] = '\002'; // mark the end of an ANSI escape sequence for readline
+				// end of an ANSI escape sequence, mark it for readline to ignore
+				safePrompt[pos++] = '\002';
 				--ansiEscapeSequence;
 				ASSERT(ansiEscapeSequence >= 0);
 			}
 		} else {
+			// normal character, just copy it to the output buffer
 			safePrompt[pos++] = *c;
 		}
 	}
