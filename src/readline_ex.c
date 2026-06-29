@@ -650,7 +650,8 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	} state_t;
 	state_t state[16] = {0};
 	size_t statePos = 0;
-	buffer_t outputBuffer = r_buffer_create();
+	buffer_t buf = r_buffer_create();
+
 	ASSERT(outSafePrompt);
 
 	if( ! prompt ) {
@@ -665,17 +666,17 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 		switch(state[statePos-1]) {
 			case STATE_NORMAL: {
 				if( *c == '\033' ) {
-					r_buffer_append(outputBuffer, "\001", 1);
+					r_buffer_append(buf, "\001", 1);
 					ASSERT(statePos < array_size(state));
 					state[statePos++] = STATE_ANSI;
 					--c;
 					break;
 				}
-				r_buffer_append(outputBuffer, c, 1);
+				r_buffer_append(buf, c, 1);
 				break;
 			}
 			case STATE_ANSI: {
-				r_buffer_append(outputBuffer, c, 1);
+				r_buffer_append(buf, c, 1);
 				if( IS_ANSI_END_CHAR(*c) ) {
 					ASSERT(statePos > 0);
 					--statePos;
@@ -687,7 +688,7 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 			case STATE_ANSI_END: {
 				ASSERT(statePos > 0);
 				--statePos;
-				r_buffer_append(outputBuffer, "\002", 1);
+				r_buffer_append(buf, "\002", 1);
 				--c; // reprocess this character in the STATE_NORMAL state
 				break;
 			}
@@ -696,8 +697,8 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 
 	// if we ended in the STATE_ANSI_END state, we need to close the ANSI sequence with \002
 	if( state[statePos-1] == STATE_ANSI_END ) {
-		r_buffer_append(outputBuffer, "\002", 1);
+		r_buffer_append(buf, "\002", 1);
 	}
 
-	*outSafePrompt = r_buffer_detach_data(outputBuffer);
+	*outSafePrompt = r_buffer_detach_data(buf);
 }
