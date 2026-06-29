@@ -299,7 +299,8 @@ static void console() {
 	setupTerminalRegisteredCommands();
 
 	// add available ports to the autocomplete vocabulary for convenience
-	// (we do this after initializing RLX so that the readline state is properly set up for handling dynamic vocabulary updates)
+	// (we do this after initializing RLX so that the readline state is properly
+	// set up for handling dynamic vocabulary updates)
 	enumSerialPorts(add_ports_to_vocabulary_callback, rlx);
 
 	while( ! shouldAbort ) {
