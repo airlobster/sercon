@@ -12,6 +12,7 @@
 #include "command.h"
 #include "utils.h"
 #include "ansi.h"
+#include "r_buffer.h"
 
 /**
  * @brief Node for a linked list of registered commands.
@@ -252,7 +253,6 @@ void rlx_end(rlx_t rlx) {
 void rlx_change_prompt(rlx_t rlx, const char* newPrompt) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
-	ASSERT(newPrompt);
 	if( rl_prompt && newPrompt && strcmp(rl_prompt, newPrompt) == 0 ) {
 		// prompt is already set to the requested value, no need to change it
 		return;
@@ -648,45 +648,34 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 		STATE_ANSI,
 		STATE_ANSI_END
 	} state_t;
-	static const size_t INITIAL_OUTPUT_BUFFER_SIZE = 128;
 	state_t state[16] = {0};
 	size_t statePos = 0;
-	size_t currOutputSize = 0;
-	char *safePrompt = 0;
-	size_t pos = 0; // write position in the output buffer
+	buffer_t outputBuffer = r_buffer_create();
 	ASSERT(outSafePrompt);
+
 	if( ! prompt ) {
 		*outSafePrompt = 0;
 		return;
 	}
+
 	state[statePos++] = STATE_NORMAL;
+
 	for(register const char *c = prompt; *c; c++) {
-		if( pos >= currOutputSize ) {
-			// resize the output buffer if we exceed the current size
-			size_t newSize = MAX(currOutputSize * 2, INITIAL_OUTPUT_BUFFER_SIZE);
-			safePrompt = (char*)realloc(safePrompt, newSize + 1);
-			if( ! safePrompt ) {
-				DEBUG_MSG("Failed to allocate memory for safe prompt");
-				*outSafePrompt = 0;
-				return;
-			}
-			currOutputSize = newSize;
-		}
 		ASSERT(statePos > 0);
 		switch(state[statePos-1]) {
 			case STATE_NORMAL: {
 				if( *c == '\033' ) {
-					safePrompt[pos++] = '\001';
+					r_buffer_append(outputBuffer, "\001", 1);
 					ASSERT(statePos < array_size(state));
 					state[statePos++] = STATE_ANSI;
 					--c;
 					break;
 				}
-				safePrompt[pos++] = *c;
+				r_buffer_append(outputBuffer, c, 1);
 				break;
 			}
 			case STATE_ANSI: {
-				safePrompt[pos++] = *c;
+				r_buffer_append(outputBuffer, c, 1);
 				if( IS_ANSI_END_CHAR(*c) ) {
 					ASSERT(statePos > 0);
 					--statePos;
@@ -698,12 +687,17 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 			case STATE_ANSI_END: {
 				ASSERT(statePos > 0);
 				--statePos;
-				safePrompt[pos++] = '\002';
+				r_buffer_append(outputBuffer, "\002", 1);
 				--c; // reprocess this character in the STATE_NORMAL state
 				break;
 			}
 		} // end of switch
 	} // end of for loop
-	safePrompt[pos] = '\0';
-	*outSafePrompt = safePrompt;
+
+	// if we ended in the STATE_ANSI_END state, we need to close the ANSI sequence with \002
+	if( state[statePos-1] == STATE_ANSI_END ) {
+		r_buffer_append(outputBuffer, "\002", 1);
+	}
+
+	*outSafePrompt = r_buffer_detach_data(outputBuffer);
 }
