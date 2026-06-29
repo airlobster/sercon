@@ -2,10 +2,7 @@
 #error "Unsupported platform"
 #endif
 
-#include <stdlib.h>
-#include <unistd.h>
 #include <signal.h>
-#include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/param.h>
