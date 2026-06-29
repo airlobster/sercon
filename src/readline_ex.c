@@ -314,11 +314,11 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 	if( ! line || ! *line ) return false;
 
 	int expansionResult = history_expand((char*)line, &expanded);
-	if( expansionResult < 0 || expansionResult == 2 ) {
+	if( expansionResult < 0 ) {
 		// history expansion failed, or should be ignored
 		free(expanded);
 		return false;
-	} else if( expansionResult > 0 ) {
+	} else {
 		line = expanded;
 	}
 
@@ -331,10 +331,6 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 		free_command_args(argc, argv);
 	}
 
-	if( expanded ) {
-		free(expanded);
-	}
-
 	if( ! (rlx->options & RLX_OPT_HISTORY_ALLOW_DUPLICATES) ) {
 		// add history entry while avoiding duplications
 		HIST_ENTRY* lastEntry = previous_history();
@@ -343,6 +339,10 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 		}
 	} else {
 		rlx_add_history_entry(rlx, line);
+	}
+
+	if( expanded ) {
+		free(expanded);
 	}
 
 	return cmd != 0;
