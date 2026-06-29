@@ -22,7 +22,7 @@ static bool bUseAltScreen = false;
  * @brief Terminates ANSI mode and restores the terminal state.
  */
 static void terminate_ansi() {
-	DEBUG_MSG("Terminating ANSI mode");
+	DEBUG_MSG("Resetting ANSI escape sequences");
 	if( bUseAltScreen ) {
 		ansi_fprintf(stdout, ANSI_END_ALT_SCREEN);
 	}

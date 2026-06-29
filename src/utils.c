@@ -170,7 +170,7 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 
 static struct termios originalTermios;
 static void reset_termios(void) {
-	DEBUG_MSG("Resetting terminal settings to original");
+	DEBUG_MSG("Resetting termios changes");
 	tcsetattr(fileno(stdin), TCSANOW, &originalTermios);
 }
 static void on_exit_app(void) { reset_termios(); }
