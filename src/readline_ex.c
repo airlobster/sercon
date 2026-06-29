@@ -245,7 +245,7 @@ void rlx_end(rlx_t rlx) {
  * @brief Change the prompt string for the readline_ex session.
  * @param rlx The readline_ex session handle.
  * @param newPrompt The new prompt string to display.
- * @note: previous prompt string will not be freed because it is owned and managed
+ * @note previous prompt string will not be freed because it is owned and managed
  * by the application itself.
  */
 void rlx_change_prompt(rlx_t rlx, const char* newPrompt) {
@@ -636,9 +636,14 @@ void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
 #endif
 
 /**
- * @brief Utility function for making a safe prompt for readline by marking ANSI escape sequences.
+ * @brief Utility function for creating a safe version of a readline prompt string
+ * by marking ANSI escape sequences.
  * @param prompt The original prompt string.
  * @param outSafePrompt The output safe prompt string.
+ * @note The caller is responsible for freeing the outSafePrompt string.
+ * @details This function scans the input prompt string for ANSI escape sequences,
+ * and wraps them with special markers (\001 and \002) so that readline can ignore
+ * them when calculating the prompt length for cursor positioning.
  */
 void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	static const size_t INITIAL_OUTPUT_BUFFER_SIZE = 128;
