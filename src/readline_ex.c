@@ -649,8 +649,8 @@ void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
 void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	typedef enum {
 		STATE_NORMAL,
-		STATE_ESC,
-		STATE_ESC_END
+		STATE_ANSI,
+		STATE_ANSI_END
 	} state_t;
 	static const size_t INITIAL_OUTPUT_BUFFER_SIZE = 128;
 	state_t state[16] = {0};
@@ -664,7 +664,7 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 		return;
 	}
 	state[statePos++] = STATE_NORMAL;
-	for(const char *c = prompt; *c; c++) {
+	for(register const char *c = prompt; *c; c++) {
 		if( pos >= currOutputSize ) {
 			// resize the output buffer if we exceed the current size
 			size_t newSize = MAX(currOutputSize * 2, INITIAL_OUTPUT_BUFFER_SIZE);
@@ -682,28 +682,28 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 				if( *c == '\033' ) {
 					safePrompt[pos++] = '\001';
 					ASSERT(statePos < array_size(state));
-					state[statePos++] = STATE_ESC;
+					state[statePos++] = STATE_ANSI;
 					--c;
 					break;
 				}
 				safePrompt[pos++] = *c;
 				break;
 			}
-			case STATE_ESC: {
+			case STATE_ANSI: {
 				safePrompt[pos++] = *c;
 				if( IS_ANSI_END_CHAR(*c) ) {
 					ASSERT(statePos > 0);
 					--statePos;
 					ASSERT(statePos < array_size(state));
-					state[statePos++] = STATE_ESC_END;
+					state[statePos++] = STATE_ANSI_END;
 				}
 				break;
 			}
-			case STATE_ESC_END: {
+			case STATE_ANSI_END: {
 				ASSERT(statePos > 0);
 				--statePos;
 				safePrompt[pos++] = '\002';
-				--c; // reprocess this character in the previous state
+				--c; // reprocess this character in the STATE_NORMAL state
 				break;
 			}
 		} // end of switch

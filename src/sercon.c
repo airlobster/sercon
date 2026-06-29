@@ -46,6 +46,7 @@ int firstConnectionError = true;
 typedef struct {
 	/** The file descriptors for polling. */
 	struct pollfd fds[2];
+	bool atNewLine;
 } terminal_context_t;
 
 static void add_ports_to_vocabulary_callback(const char* portName, void* userData) {
@@ -273,17 +274,40 @@ void rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 	}
 }
 
+// Function to handle incoming data from the serial port and print it to stdout
+static void handle_serial_port_data(terminal_context_t* termContext, const char* buffer, size_t length) {
+	rlx_pause(rlx);
+	for(size_t i = 0; i < length; i++) {
+		char c = buffer[i];
+		if( c == '\n' ) {
+			termContext->atNewLine = true; // next character will be preceeded by a timestamp
+			fputc('\n', stdout);
+		} else if( c == '\r' ) {
+			// ignore carriage return
+		} else {
+			if( termContext->atNewLine ) {
+				// print timestamp at the start of each new line (if so configured)
+				if( printTimestamps ) printTimestamp(stdout);
+				termContext->atNewLine = false;
+			}
+			fputc(c, stdout);
+		}
+	}
+	fflush(stdout);
+	rlx_resume(rlx, termContext->atNewLine);
+}
+
 // Main console loop to concurrently handle input from both the serial port and user input
 static void console() {
 	char buffer[128];
 	int fdStdin=fileno(stdin);
-	bool atNewLine = true; // used to track if the next character is at the start of a new line (for timestamping)
 
 	terminal_context_t termContext = {
 		.fds = {
 			{ .fd = fdPort, .events = POLLIN },
 			{ .fd = fdStdin, .events = POLLIN },
 		},
+		.atNewLine = true,
 	};
 
 	// create a readline_ex session for handling user input, command history and auto-completion
@@ -304,6 +328,7 @@ static void console() {
 	// set up for handling dynamic vocabulary updates)
 	enumSerialPorts(add_ports_to_vocabulary_callback, rlx);
 
+	// start the main loop to poll for input from both the serial port and user input
 	while( ! shouldAbort ) {
 		int ret = poll(termContext.fds, array_size(termContext.fds), pollTimeoutMs);
 
@@ -321,7 +346,7 @@ static void console() {
 				// STDIN was closed (EOF)
 				break;
 			}
-			// if we have a port specified but are not currently connected,
+			// if we have a port specified but we're not currently connected,
 			// it means we have lost the connection unexpectedly. retry to connect.
 			if( port && fdPort < 0 ) {
 				connect(&termContext, port, baud);
@@ -344,39 +369,17 @@ static void console() {
 			ssize_t bytesRead = read(termContext.fds[0].fd, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
 				// a_error("Error reading from serial port: %s\n", strerror(errno));
+				close(fdPort);
 				termContext.fds[0].fd = fdPort = -1; // mark the serial port as disconnected
 				continue;
 			}
-
-			rlx_pause(rlx);
-
-			buffer[bytesRead] = '\0';
-			for(const char* p = buffer; *p; p++) {
-				if( *p == '\n' ) {
-					atNewLine = true; // next character will be preceeded by a timestamp
-					fputc('\n', stdout);
-				} else if( *p == '\r' ) {
-					// ignore
-				} else {
-					if( atNewLine ) {
-						// print timestamp at the start of each new line (if so configured)
-						if( printTimestamps ) {
-							printTimestamp(stdout);
-						}
-						atNewLine = false;
-					}
-					fputc(*p, stdout);
-				}
-			} // end for
-			fflush(stdout);
-
-			rlx_resume(rlx, atNewLine);
+			handle_serial_port_data(&termContext, buffer, (size_t)bytesRead);
 		} // end serial port handling
 	} // end while
 }
 
 static void cli_args_callback(int pos, int opt, const char* optarg) {
-	(void)pos; // unused for now, but could be useful for positional arguments in the future
+	(void)pos;
 	switch( opt ) {
 		case 'l': {
 			print_ports_list();
