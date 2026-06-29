@@ -204,7 +204,9 @@ int termctl_add_fd(termctl_t termctl, int fd) {
  */
 int termctl_remove_fd(termctl_t termctl, int fd) {
 	ASSERT(termctl);
+	ASSERT(fd != fileno(stdin)); // cannot remove stdin from the termctl instance
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
+	if( fd == fileno(stdin) ) return 0;
 	for(size_t i=0; i < tc->nfds; i++) {
 		if( tc->fds[i].fd != fd ) continue;
 		// remove this fd by shifting the rest of the array
