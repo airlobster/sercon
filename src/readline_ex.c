@@ -314,11 +314,7 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 	if( ! line || ! *line ) return false;
 
 	int expansionResult = history_expand((char*)line, &expanded);
-	if( expansionResult < 0 ) {
-		// history expansion failed, or should be ignored
-		free(expanded);
-		return false;
-	} else {
+	if( expansionResult >= 0 ) {
 		line = expanded;
 	}
 
