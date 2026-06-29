@@ -69,21 +69,27 @@ static void print_ports_list() {
 static char* makePrompt(char** outPrompt) {
 	ASSERT(outPrompt);
 	if( ! isatty(fileno(stdin)) ) return *outPrompt; // no prompt if stdin is redirected!!
-	char* p = 0;
+	char *p = 0, *pSafe = 0;
 	bool connected = fdPort >= 0;
 	if( port ) {
 		const char* portNoPath = strrchr(port, '/') + 1;
 		if( connected ) {
-			ansi_asprintf(&p, ANSI_BLUE ANSI_ITALIC "%s:%d> " ANSI_RESET, portNoPath, baud);
+			// connected
+			ansi_asprintf(&p, ANSI_BLUE ANSI_ITALIC "%s:%d> ", portNoPath, baud);
 		} else {
-			ansi_asprintf(&p, ANSI_YELLOW ANSI_ITALIC "%s...> " ANSI_RESET, portNoPath);
+			// connection lost
+			ansi_asprintf(&p, ANSI_WARNING ANSI_ITALIC "%s...> ", portNoPath);
 		}
 	} else {
-		ansi_asprintf(&p, ANSI_BLUE ANSI_DIM ANSI_ITALIC "%s> " ANSI_RESET, "not-connected");
+		// disconnected
+		ansi_asprintf(&p, ANSI_BLUE ANSI_DIM ANSI_ITALIC "%s> ", "not-connected");
 	}
+	rlx_make_safe_prompt(p, &pSafe);
+	free(p);
+	// replace the old prompt with the new one, freeing the old prompt if necessary
 	if( *outPrompt ) free(*outPrompt);
-	*outPrompt = p;
-	return p;
+	*outPrompt = pSafe;
+	return pSafe;
 }
 
 static int printTimestamp(FILE* stream) {
@@ -102,11 +108,6 @@ static void disconnect(terminal_context_t* termContext) {
 	if( port ) {
 		free(port);
 		port = 0;
-	}
-	// update prompt
-	if( rlx && isatty(fileno(stdin)) ) {
-		makePrompt(&prompt);
-		rlx_change_prompt(rlx, prompt);
 	}
 }
 
@@ -134,11 +135,6 @@ static bool connect(terminal_context_t* termContext, const char* portName, int b
 	tcgetattr(fdPort, &t);
 	cfsetspeed(&t, baudRate);
 	tcsetattr(fdPort, TCSANOW, &t);
-	// update prompt
-	if( rlx && isatty(fileno(stdin)) ) {
-		makePrompt(&prompt);
-		rlx_change_prompt(rlx, prompt);
-	}
 	return true;
 }
 
@@ -281,7 +277,6 @@ static void console() {
 	char buffer[128];
 	int fdStdin=fileno(stdin);
 	bool atNewLine = true; // used to track if the next character is at the start of a new line (for timestamping)
-	bool interactive = isatty(fdStdin) && isatty(fileno(stdout));
 
 	terminal_context_t termContext = {
 		.fds = {
@@ -290,16 +285,12 @@ static void console() {
 		},
 	};
 
-	if( ! prompt ) {
-		makePrompt(&prompt);
-	}
-
 	// create a readline_ex session for handling user input, command history and auto-completion
 	const unsigned long opt =
 		(bPersistentHistory ? RLX_OPT_PERSIST_HISTORY : 0)
 		| (RLX_OPT_AUTOCOMPLETE_COMMANDS /*| RLX_OPT_AUTOCOMPLETE_HISTORY*/)
 		;
-	rlx = rlx_begin(appname, interactive ? prompt : 0, rlx_callback, maxHistoryEntries, 0, opt, &termContext);
+	rlx = rlx_begin(appname, 0, rlx_callback, maxHistoryEntries, 0, opt, &termContext);
 	if( ! rlx ) {
 		a_error("Error initiating RLX session\n");
 		exit(1);
@@ -333,6 +324,10 @@ static void console() {
 			if( port && fdPort < 0 ) {
 				connect(&termContext, port, baud);
 			}
+			// update the prompt periodically
+			// to reflect the current connection status (connected/disconnected)
+			makePrompt(&prompt);
+			rlx_change_prompt(rlx, prompt);
 			continue;
 		}
 
@@ -348,11 +343,6 @@ static void console() {
 			if( bytesRead < 0 ) {
 				// a_error("Error reading from serial port: %s\n", strerror(errno));
 				termContext.fds[0].fd = fdPort = -1; // mark the serial port as disconnected
-				if( isatty(fdStdin) ) {
-					// update prompt to reflect disconnected state
-					makePrompt(&prompt);
-					rlx_change_prompt(rlx, prompt);
-				}
 				continue;
 			}
 

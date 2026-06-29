@@ -118,6 +118,8 @@ bool rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry);
 void rlx_print_autocomplete_vocabulary(rlx_t h);
 #endif
 
+void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt);
+
 #ifdef __cplusplus
 }
 #endif

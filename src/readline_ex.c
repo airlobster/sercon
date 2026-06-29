@@ -34,8 +34,6 @@ typedef struct _rlx_internal_t {
 	void* userData;
 	/** Options for configuring the readline_ex session. */
 	unsigned long options;
-	/** The prompt string to display. */
-	const char* prompt;
 	/** The file path for the history file. */
 	char* historyFilePath;
 	/** The maximum number of history entries to keep. */
@@ -156,7 +154,6 @@ rlx_t rlx_begin(
 	rlx->callback = callback;
 	rlx->userData = userData;
 	rlx->options = options;
-	rlx->prompt = prompt;
 	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
 	rlx->maxHistoryEntries = MAX(maxHistoryEntries, 10);
 	rlx->savedLineBuffer = 0;
@@ -175,7 +172,7 @@ rlx_t rlx_begin(
 		}
 	}
 
-	rl_callback_handler_install(rlx->prompt, readline_callback_wrapper);
+	rl_callback_handler_install(prompt, readline_callback_wrapper);
 
 	// setup auto-complete
 	// (RLX_OPT_AUTOCOMPLETE_COMMANDS and RLX_OPT_AUTOCOMPLETE_HISTORY takes priority
@@ -255,10 +252,12 @@ void rlx_change_prompt(rlx_t rlx, const char* newPrompt) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 	ASSERT(newPrompt);
-	rlx->prompt = newPrompt;
-	fputc('\r', stdout); // move cursor to the beginning of the line
-	rl_replace_line("", 0); // clear any partial input from the user while waiting for serial input
-	rl_callback_handler_install(rlx->prompt, readline_callback_wrapper);
+	if( rl_prompt && newPrompt && strcmp(rl_prompt, newPrompt) == 0 ) {
+		// prompt is already set to the requested value, no need to change it
+		return;
+	}
+	rl_set_prompt(newPrompt);
+	rl_redisplay();
 }
 
 /**
@@ -635,3 +634,50 @@ void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
 	}
 }
 #endif
+
+/**
+ * @brief Make a safe prompt for readline by marking ANSI escape sequences.
+ * @param prompt The original prompt string.
+ * @param outSafePrompt The output safe prompt string.
+ */
+void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
+	static const size_t INITIAL_OUTPUT_BUFFER_SIZE = 128;
+	size_t currOutputSize = 0;
+	char *safePrompt = 0;
+	size_t pos = 0;;
+	int ansiEscapeSequence = 0;
+	ASSERT(outSafePrompt);
+	if( ! prompt ) {
+		*outSafePrompt = 0;
+		return;
+	}
+	for(const char *c = prompt; *c; c++) {
+		if( pos >= currOutputSize ) {
+			// resize the output buffer if we exceed the current size
+			currOutputSize = MAX(currOutputSize * 2, INITIAL_OUTPUT_BUFFER_SIZE);
+			safePrompt = realloc(safePrompt, currOutputSize + 1);
+			if( ! safePrompt ) {
+				DEBUG_MSG("Failed to allocate memory for safe prompt");
+				*outSafePrompt = 0;
+				return;
+			}
+		}
+		if( *c == '\033' ) {
+			ASSERT(ansiEscapeSequence == 0);
+			++ansiEscapeSequence;
+			safePrompt[pos++] = '\001'; // mark the start of an ANSI escape sequence for readline
+			safePrompt[pos++] = *c;
+		} else if( ansiEscapeSequence ) {
+			safePrompt[pos++] = *c;
+			if( isalpha(*c) ) {
+				safePrompt[pos++] = '\002'; // mark the end of an ANSI escape sequence for readline
+				--ansiEscapeSequence;
+				ASSERT(ansiEscapeSequence >= 0);
+			}
+		} else {
+			safePrompt[pos++] = *c;
+		}
+	}
+	safePrompt[pos] = '\0';
+	*outSafePrompt = safePrompt;
+}
