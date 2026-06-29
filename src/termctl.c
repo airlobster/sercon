@@ -5,7 +5,6 @@
 #include <poll.h>
 #include <string.h>
 #include "utils.h"
-#include "readline_ex.h"
 #include "termctl.h"
 
 /**

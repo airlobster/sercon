@@ -1,6 +1,8 @@
 #ifndef _TERMCTL_H
 #define _TERMCTL_H
 
+#include "readline_ex.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
