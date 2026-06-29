@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <poll.h>
 #include <string.h>
+#include <termios.h>
 #include "utils.h"
 #include "termctl.h"
 
@@ -44,12 +45,14 @@ typedef struct _termctl_internal_t {
  * @param length The length of the input line.
  * @param userData User data pointer.
  */
-static void rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
+static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
 	(void)h;
 	termctl_internal_t* tc = (termctl_internal_t*)userData;
 	ASSERT(tc);
-	if( line && rlx_process_command(tc->rlx, line) ) {
-		// command was recognized and processed by readline_ex. no further handling required.
+	if( ! line ) {
+		tc->stdin_eof = 1; // tell poll we're done reading from stdin (EOF)
+		tc->fds[0].fd = -1; // mark stdin as closed for polling
+	} else if( rlx_process_command(tc->rlx, line) ) {
 		return;
 	}
 	if( tc->user_input_callback ) {
@@ -81,7 +84,8 @@ termctl_t termctl_create(const char* appname, void* userData) {
 	tc->prompt = NULL;
 	tc->atNewLine = true;
 	tc->user_data = userData;
-	tc->rlx = rlx_begin(appname, NULL, rlx_callback, 200, NULL, RLX_OPT_AUTOCOMPLETE_COMMANDS, tc);
+	tc->rlx = rlx_begin(appname, NULL, termctl_rlx_callback, 200, NULL,
+		RLX_OPT_PERSIST_HISTORY| RLX_OPT_AUTOCOMPLETE_COMMANDS, tc);
 
 	if( ! tc->rlx ) {
 		DEBUG_MSG("Failed to initialize readline_ex");
@@ -175,12 +179,11 @@ rlx_t termctl_get_rlx(termctl_t termctl) {
 int termctl_add_fd(termctl_t termctl, int fd) {
 	ASSERT(termctl);
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
-	ASSERT(tc->fds);
 	// Check if the fd is already added
 	for(size_t i=0; i < tc->nfds; i++) {
 		if( tc->fds[i].fd == fd ) {
-			DEBUG_MSG("File descriptor %d is already added", fd);
-			return 0; // this fd was already added - do nothing
+			DEBUG_MSG("File descriptor %d has already been added", fd);
+			return 0;
 		}
 	}
 	tc->fds = (struct pollfd*)realloc(tc->fds, sizeof(struct pollfd) * (tc->nfds + 1));
@@ -189,7 +192,7 @@ int termctl_add_fd(termctl_t termctl, int fd) {
 		return 0;
 	}
 	tc->fds[tc->nfds].fd = fd;
-	tc->fds[tc->nfds].events = POLLIN | POLLERR | POLLHUP;
+	tc->fds[tc->nfds].events = POLLIN;
 	tc->nfds++;
 	return 1;
 }
@@ -240,7 +243,7 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
 		free(newPrompt);
 		tc->prompt = pSafe;
 	}
-	rlx_change_prompt(tc->rlx, newPrompt);
+	rlx_change_prompt(tc->rlx, tc->prompt);
 }
 
 /**
@@ -273,27 +276,19 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 			}
 			// update the prompt periodically
 			// to reflect the current connection status (connected/disconnected)
-			if( tc->prompt_callback ) {
-				if( tc->prompt ) {
-					free(tc->prompt);
-					tc->prompt = NULL;
-				}
-				termctl_update_prompt(tc);
-			}
+			termctl_update_prompt(tc);
 			continue; // continue polling
 		}
 
 		// Check if user input is available
-		if( tc->fds[0].revents ) {
-			tc->stdin_eof = (tc->fds[0].revents & (POLLHUP | POLLERR)) != 0;
+		if( tc->fds[0].revents & POLLIN ) {
 			// trigger readline_ex to read the input and call our RLX callback function
 			rlx_process_input(tc->rlx);
 		} // end stdin handling
 
 		// check for events on other file descriptors
-		rlx_pause(tc->rlx);
 		for(size_t i=1; i < tc->nfds; i++) {
-			if( ! tc->fds[i].revents ) continue; // no events from this fd
+			if( ! (tc->fds[i].revents & POLLIN) ) continue; // no events from this fd
 			ssize_t bytesRead = read(tc->fds[i].fd, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
 				// a_error("Error reading from serial port: %s\n", strerror(errno));
@@ -302,6 +297,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 				rc = TERMCTL_R_READERROR;
 				break;
 			}
+			rlx_pause(tc->rlx);
 			buffer[bytesRead] = '\0'; // null-terminate the buffer
 			for(const char *p = buffer; *p; ++p) {
 				if( *p == '\n' ) {
@@ -318,8 +314,8 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 				}
 			}
 			fflush(stdout);
+			rlx_resume(tc->rlx, tc->atNewLine);
 		} // end other fds handling
-		rlx_resume(tc->rlx, tc->atNewLine);
 	} // end while
 
 	return rc;
