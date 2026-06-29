@@ -72,7 +72,8 @@ static char* makePrompt(char** outPrompt) {
 	char *p = 0, *pSafe = 0;
 	if( port ) {
 		bool connected = fdPort >= 0;
-		const char* portNoPath = strrchr(port, '/') + 1;
+		const char* portNoPath = strrchr(port, '/');
+		portNoPath = portNoPath ? portNoPath : port;
 		if( connected ) {
 			// connected
 			ansi_asprintf(&p, ANSI_BLUE ANSI_ITALIC "%s:%d> ", portNoPath, baud);

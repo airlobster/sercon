@@ -88,7 +88,7 @@ static int ansi_vwrite(FILE* stream, FILE* ref_stream, const char* fmt, va_list 
 	for(const char* p = buffer; *p; ++p) {
 		if( pAnsiStart ) {
 			// currently in an ANSI sequence
-			if( isalpha(*p) ) {
+			if( IS_ANSI_END_CHAR(*p) ) {
 				// end of ANSI escape sequence has been reached.
 				// commit it to the output if ANSI is active, otherwise discard it
 				if( bAnsiActive ) {

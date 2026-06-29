@@ -51,6 +51,7 @@
 #define ANSI_SUCCESS            ANSI_GREEN
 #define ANSI_WARNING            ANSI_YELLOW
 
+#define IS_ANSI_END_CHAR(c) 		((c) >= 0x40 && (c) <= 0x7E && (c) != '[')
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -11,6 +11,7 @@
 #include "readline_ex.h"
 #include "command.h"
 #include "utils.h"
+#include "ansi.h"
 
 /**
  * @brief Node for a linked list of registered commands.
@@ -646,16 +647,23 @@ void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
  * them when calculating the prompt length for cursor positioning.
  */
 void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
+	typedef enum {
+		STATE_NORMAL,
+		STATE_ESC,
+		STATE_ESC_END
+	} state_t;
 	static const size_t INITIAL_OUTPUT_BUFFER_SIZE = 128;
+	state_t state[16] = {0};
+	size_t statePos = 0;
 	size_t currOutputSize = 0;
 	char *safePrompt = 0;
 	size_t pos = 0; // write position in the output buffer
-	int ansiEscapeSequence = 0; // count of nested ANSI escape sequences
 	ASSERT(outSafePrompt);
 	if( ! prompt ) {
 		*outSafePrompt = 0;
 		return;
 	}
+	state[statePos++] = STATE_NORMAL;
 	for(const char *c = prompt; *c; c++) {
 		if( pos >= currOutputSize ) {
 			// resize the output buffer if we exceed the current size
@@ -668,26 +676,38 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 			}
 			currOutputSize = newSize;
 		}
-		if( *c == '\033' ) {
-			// beginning of an ANSI escape sequence, mark it for readline to ignore
-			ASSERT(ansiEscapeSequence == 0);
-			++ansiEscapeSequence;
-			safePrompt[pos++] = '\001';
-			safePrompt[pos++] = *c;
-		} else if( ansiEscapeSequence ) {
-			// inside an ANSI escape sequence
-			safePrompt[pos++] = *c;
-			if( isalpha(*c) ) {
-				// end of an ANSI escape sequence, mark it for readline to ignore
-				safePrompt[pos++] = '\002';
-				--ansiEscapeSequence;
-				ASSERT(ansiEscapeSequence >= 0);
+		ASSERT(statePos > 0);
+		switch(state[statePos-1]) {
+			case STATE_NORMAL: {
+				if( *c == '\033' ) {
+					safePrompt[pos++] = '\001';
+					ASSERT(statePos < array_size(state));
+					state[statePos++] = STATE_ESC;
+					--c;
+					break;
+				}
+				safePrompt[pos++] = *c;
+				break;
 			}
-		} else {
-			// normal character, just copy it to the output buffer
-			safePrompt[pos++] = *c;
-		}
-	}
+			case STATE_ESC: {
+				safePrompt[pos++] = *c;
+				if( IS_ANSI_END_CHAR(*c) ) {
+					ASSERT(statePos > 0);
+					--statePos;
+					ASSERT(statePos < array_size(state));
+					state[statePos++] = STATE_ESC_END;
+				}
+				break;
+			}
+			case STATE_ESC_END: {
+				ASSERT(statePos > 0);
+				--statePos;
+				safePrompt[pos++] = '\002';
+				--c; // reprocess this character in the previous state
+				break;
+			}
+		} // end of switch
+	} // end of for loop
 	safePrompt[pos] = '\0';
 	*outSafePrompt = safePrompt;
 }
