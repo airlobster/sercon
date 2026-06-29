@@ -27,7 +27,7 @@ LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lreadline -lsqlite3 -lm
 ARTIFACTS_ROOT_DIR ?= $(shell pwd)
-BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build/$(FULL_VERSION)
+BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
 DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/doxygen
 SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
@@ -54,7 +54,7 @@ endif
 # build directories for different configurations, which is useful for managing
 # multiple builds without conflicts.
 # under this root directories we will have a separate debug and release directories.
-BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(PLATFORM)/$(ARCH)
+BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(FULL_VERSION)/$(PLATFORM)/$(ARCH)
 
 # select the appropriate include and library directories based on the platform and architecture.
 ifeq ($(PLATFORM), darwin)
@@ -175,7 +175,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 cleanall:
-	rm -rf $(BUILD_ROOT) $(DIST_DIR) Doxyfile* $(DOXYGEN_ARTIFACTS_DIR)
+	rm -rf $(BUILD_ROOT) $(DIST_DIR) $(DOXYGEN_ARTIFACTS_DIR) Doxyfile*
 
 test:
 	@./tests/test_linuxes
