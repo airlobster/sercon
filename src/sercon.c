@@ -70,8 +70,8 @@ static char* makePrompt(char** outPrompt) {
 	ASSERT(outPrompt);
 	if( ! isatty(fileno(stdin)) ) return *outPrompt; // no prompt if stdin is redirected!!
 	char *p = 0, *pSafe = 0;
-	bool connected = fdPort >= 0;
 	if( port ) {
+		bool connected = fdPort >= 0;
 		const char* portNoPath = strrchr(port, '/') + 1;
 		if( connected ) {
 			// connected
@@ -231,7 +231,7 @@ static void registered_commands_callback(
 #endif
 	}
 }
-static void setupTerminalCommands() {
+static void setupTerminalRegisteredCommands() {
 	static const rlx_registered_command_t commands[] = {
 		{'i', "history", "Show command history", registered_commands_callback},
 		{'c', "clear", "Clear history", registered_commands_callback},
@@ -296,7 +296,7 @@ static void console() {
 		exit(1);
 	}
 
-	setupTerminalCommands();
+	setupTerminalRegisteredCommands();
 
 	// add available ports to the autocomplete vocabulary for convenience
 	// (we do this after initializing RLX so that the readline state is properly set up for handling dynamic vocabulary updates)
