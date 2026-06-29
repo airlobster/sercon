@@ -221,6 +221,30 @@ int termctl_remove_fd(termctl_t termctl, int fd) {
 }
 
 /**
+ * @brief Update the prompt for a termctl instance.
+ * 
+ * @param tc The termctl internal instance.
+ */
+static void termctl_update_prompt(termctl_internal_t* tc) {
+	if( ! tc->prompt_callback ) {
+		return;
+	}
+	if( tc->prompt ) {
+		free(tc->prompt);
+		tc->prompt = NULL;
+	}
+	char* newPrompt = tc->prompt_callback(tc, tc->user_data);
+	if( newPrompt ) {
+		// create a safe version of the new prompt
+		char* pSafe = NULL;
+		rlx_make_safe_prompt(newPrompt, &pSafe);
+		free(newPrompt);
+		tc->prompt = pSafe;
+	}
+	rlx_change_prompt(tc->rlx, newPrompt);
+}
+
+/**
  * @brief Run the event loop for a termctl instance.
  * 
  * @param termctl The termctl instance.
@@ -255,12 +279,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 					free(tc->prompt);
 					tc->prompt = NULL;
 				}
-				char* newPrompt = tc->prompt_callback(tc, tc->user_data);
-				char* pSafe = NULL;
-				rlx_make_safe_prompt(newPrompt, &pSafe);
-				free(newPrompt);
-				tc->prompt = pSafe;
-				rlx_change_prompt(tc->rlx, pSafe);
+				termctl_update_prompt(tc);
 			}
 			continue; // continue polling
 		}
