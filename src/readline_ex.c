@@ -636,7 +636,7 @@ void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
 #endif
 
 /**
- * @brief Make a safe prompt for readline by marking ANSI escape sequences.
+ * @brief Utility function for making a safe prompt for readline by marking ANSI escape sequences.
  * @param prompt The original prompt string.
  * @param outSafePrompt The output safe prompt string.
  */
