@@ -67,13 +67,8 @@ static int connect(termctl_t tc, const char* portName, int baudRate) {
 	// disconnect(tc);
 	ASSERT(portName);
 	ASSERT(baudRate > 0);
-	ASSERT(fdPort < 0); // should only call connect() when not currently connected
-	if( fdPort > 0 ) {
-		a_error("Already connected to a port. Please disconnect first.\n");
-		return -1;
-	}
-	fdPort = open(portName, O_RDWR | O_NOCTTY);
-	if( fdPort < 0 ) {
+	int fd = open(portName, O_RDWR | O_NOCTTY);
+	if( fd < 0 ) {
 		if( firstConnectionError ) {
 			a_error("Error opening serial port '%s': %s\n", portName, strerror(errno));
 			firstConnectionError = false;
@@ -82,16 +77,14 @@ static int connect(termctl_t tc, const char* portName, int baudRate) {
 	}
 	firstConnectionError = true;
 	if( tc ) {
-		termctl_add_fd(tc, fdPort);
+		termctl_add_fd(tc, fd);
 	}
-	port = strdup(portName);
-	baud = baudRate;
 	// set baud rate
 	struct termios t;
-	tcgetattr(fdPort, &t);
+	tcgetattr(fd, &t);
 	cfsetspeed(&t, baudRate);
-	tcsetattr(fdPort, TCSANOW, &t);
-	return fdPort;
+	tcsetattr(fd, TCSANOW, &t);
+	return fd;
 }
 
 /**
@@ -104,8 +97,8 @@ static void disconnect(termctl_t tc) {
 		close(fdPort);
 		if( tc ) {
 			termctl_remove_fd(tc, fdPort);
-			fdPort = -1;
 		}
+		fdPort = -1;
 	}
 	if( port ) {
 		free(port);
@@ -118,17 +111,17 @@ static void disconnect(termctl_t tc) {
  *
  * @param tc The termctl instance.
  * @param connectionString The connection string in the format "PORT{:BAUD}".
- * @return bool True if the connection was successful, false otherwise.
+ * @return int The file descriptor of the opened port, or -1 on failure.
  */
-static bool applyConnectionString(termctl_t tc, const char *connectionString) {
+static int applyConnectionString(termctl_t tc, const char *connectionString) {
+	ASSERT(tc);
 	char portName[256];
 	int baudRate = 9600;
-	// ASSERT(tc);
 	ASSERT(connectionString);
 	int n = sscanf(connectionString, "%[^:]:%d", portName, &baudRate);
 	if( n < 1 ) {
 		a_error("Invalid port specification: %s\n", connectionString);
-		return false;
+		return -1;
 	}
 	return connect(tc, portName, MAX(baudRate, 9600));
 }
@@ -146,12 +139,7 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 			exit(0);
 		}
 		case 'p': {
-			char portName[256];
-			int baudRate = 9600;
-			if( sscanf(optarg, "%[^:]:%d", portName, &baudRate) > 0 ) {
-				port = strdup(portName);
-				baud = MAX(baud, 9600);
-			}
+			port = strdup(optarg);
 			break;
 		}
 		case 'T': {
@@ -242,7 +230,12 @@ static void registered_commands_callback(
 		}
 		case 'C': {
 			if( argc < 2 ) {
-				a_error("Usage: connect PORT{:BAUD}\n");
+				a_error("Usage: connect PORT\n");
+				break;
+			}
+			ASSERT(fdPort < 0); // should only call connect() when not currently connected
+			if( fdPort > 0 ) {
+				a_error("Already connected to a port. Please disconnect first.\n");
 				break;
 			}
 			applyConnectionString(tc, argv[1]);
@@ -339,7 +332,7 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* us
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
 	} else {
-		a_error("Not connected to any serial port. Use 'connect PORT{:BAUD}' to connect.\n");
+		a_error("Not connected to any serial port. Use 'connect <PORT>' to connect.\n");
 	}
 }
 
@@ -404,15 +397,17 @@ int main(int argc, char* argv[]) {
 	// if port was specified in the command-line, attempt to connect to it
 	// before entering the event loop
 	if( port ) {
-		if( ! connect(termctl, port, baud) ) {
-			a_error("Failed to connect to port: %s\n", port);
+		ASSERT(fdPort < 0); // should only call connect() when not currently connected
+		fdPort = applyConnectionString(termctl, port);
+		if( fdPort <= 0 ) {
+			a_error("Failed to connect to %s\n", port);
 		}
 	}
 
 	for(;;) {
 		termctl_result_t rc = termctl_event_loop(termctl);
 		if( rc == TERMCTL_R_READERROR ) {
-			fdPort = connect(termctl, port, baud);
+			fdPort = applyConnectionString(termctl, port);
 			if( fdPort > 0 ) {
 				termctl_add_fd(termctl, fdPort);
 			}
