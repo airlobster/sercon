@@ -130,6 +130,7 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 			exit(0);
 		}
 		case 'p': {
+			ASSERT(! port);
 			port = strdup(optarg);
 			break;
 		}
@@ -219,7 +220,7 @@ static void registered_commands_callback(
 			rlx_print_history(h);
 			break;
 		}
-		case 'C': {
+		case 'C': { // connect
 			if( argc < 2 ) {
 				a_error("Usage: connect PORT{:BAUD}\n");
 				break;
@@ -235,7 +236,7 @@ static void registered_commands_callback(
 			}
 			break;
 		}
-		case 'D': {
+		case 'D': { // disconnect
 			if( fdPort < 0 ) {
 				a_error("Not currently connected to any port\n");
 				break;
@@ -248,7 +249,7 @@ static void registered_commands_callback(
 		}
 		case 't': {
 			if( argc > 1 ) {
-				printTimestamps = strcasecmp(argv[1], "on") == 0;
+				printTimestamps = strcasecmp(argv[1], "on") == 0 || strcasecmp(argv[1], "yes") == 0;
 			}
 			a_success("Timestamps %s\n", printTimestamps ? "on" : "off");
 			break;
@@ -349,6 +350,7 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* us
  * @param userData User data pointer.
  */
 void newline_callback(termctl_t tc, void* userData) {
+	// print timestamp if enabled
 	if( printTimestamps ) {
 		cal_time_t t;
 		now(&t);
@@ -368,7 +370,7 @@ int reconnect_callback(termctl_t tc, void* userData) {
 	(void)userData;
 	ASSERT(tc);
 	ASSERT(port);
-	return fdPort = applyConnectionString(0, port);
+	return fdPort = applyConnectionString(tc, port);
 }
 
 /**

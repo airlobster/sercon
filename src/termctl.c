@@ -271,11 +271,13 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
  * @return termctl_result_t The result of the event loop.
  */
 termctl_result_t termctl_event_loop(termctl_t termctl) {
-	bool reconnect = false;
 	ASSERT(termctl);
+
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
 	char buffer[128];
+	bool reconnect = false;
 	termctl_result_t rc = TERMCTL_R_OK;
+
 	termctl_update_prompt(tc);
 	while( rc == TERMCTL_R_OK ) {
 		int ret = poll(tc->fds, tc->nfds, tc->poll_timeout_ms);
@@ -287,8 +289,10 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 			break;
 		}
 
-		// timeout?
+		// handle poll timeout.
+		// we take this opportunity to run periodic checkups
 		if( ret == 0 ) {
+			// if STDIN was closed, close this termctl session
 			if( tc->stdin_eof ) {
 				// end of session
 				rc = TERMCTL_R_OK;
@@ -302,8 +306,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 					reconnect = false;
 				}
 			}
-			// update the prompt periodically
-			// to reflect the current connection status (connected/disconnected)
+			// update the prompt to reflect the current connection status (connected/disconnected)
 			termctl_update_prompt(tc);
 			continue; // continue polling
 		}
@@ -318,13 +321,12 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 		for(size_t i=1; i < tc->nfds; i++) {
 			if( ! (tc->fds[i].revents & POLLIN) ) continue; // no events from this fd
 			ssize_t bytesRead = read(tc->fds[i].fd, buffer, sizeof(buffer) - 1);
-			if( bytesRead <= 0 ) {
+			if( bytesRead < 0 ) {
 				// error reading from the fd, remove it from the poll list
 				close(tc->fds[i].fd);
 				termctl_remove_fd(tc, tc->fds[i].fd);
 				reconnect = true;
 				termctl_update_prompt(tc);
-				break;
 			} else {
 				rlx_pause(tc->rlx);
 				buffer[bytesRead] = '\0'; // null-terminate the buffer
