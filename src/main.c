@@ -309,6 +309,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
  * @param tc The termctl instance.
  * @param userData User data pointer.
  * @return char* The prompt string.
+ * @details termctl will free the returned string after use, so it should be dynamically allocated.
  */
 static char* prompt_callback(termctl_t tc, void* userData) {
 	ASSERT(tc);
