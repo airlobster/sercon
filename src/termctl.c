@@ -261,7 +261,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
 	char buffer[128];
 	termctl_result_t rc = TERMCTL_R_OK;
-	for(;;) {
+	while( rc == TERMCTL_R_OK ) {
 		int ret = poll(tc->fds, tc->nfds, tc->poll_timeout_ms);
 
 		// Check for poll errors

@@ -409,6 +409,7 @@ int main(int argc, char* argv[]) {
 	for(;;) {
 		termctl_result_t rc = termctl_event_loop(termctl);
 		if( rc == TERMCTL_R_READERROR ) {
+			fdPort = -1;
 			fdPort = connect(termctl, port, baud);
 			if( fdPort > 0 ) {
 				termctl_add_fd(termctl, fdPort);
