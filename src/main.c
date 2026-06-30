@@ -340,17 +340,18 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* us
 	}
 }
 
-static int printTimestamp(FILE* stream) {
-	cal_time_t t;
-	now(&t);
-	return ansi_fprintf(stream, ANSI_INFO "[%02d:%02d:%02d.%03d] ",
-		t.hours, t.minutes, t.seconds, t.milliseconds);
-}
-
+/**
+ * @brief Newline callback function for a termctl instance.
+ *
+ * @param tc The termctl instance.
+ * @param userData User data pointer.
+ */
 void newline_callback(termctl_t tc, void* userData) {
-	(void)userData;
 	if( printTimestamps ) {
-		printTimestamp(stdout);
+		cal_time_t t;
+		now(&t);
+		ansi_fprintf(stdout, ANSI_INFO "[%02d:%02d:%02d.%03d] ",
+			t.hours, t.minutes, t.seconds, t.milliseconds);
 	}
 }
 
