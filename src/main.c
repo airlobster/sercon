@@ -345,6 +345,14 @@ static void on_exit_handler(void) {
 		termctl_destroy(termctl);
 		termctl = 0;
 	}
+	if( fdPort > 0 ) {
+		close(fdPort);
+		fdPort = -1;
+	}
+	if( port ) {
+		free(port);
+		port = 0;
+	}
 }
 
 int main(int argc, char* argv[]) {
