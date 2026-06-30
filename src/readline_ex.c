@@ -701,4 +701,5 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	}
 
 	*outSafePrompt = r_buffer_detach_data(buf);
+	r_buffer_destroy(buf);
 }
