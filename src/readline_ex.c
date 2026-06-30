@@ -318,15 +318,6 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 		line = expanded;
 	}
 
-	// // we convert the command line into argc/argv format for easier parsing by command handlers,
-	// // and then free the argv array after processing.
-	if( parse_command_line(line, &argc, &argv) > 0 ) {
-		if( (cmd = rlx_get_command(rlx, argv[0])) != 0 ) {
-			cmd->handler(rlx, cmd, argc, (const char**)argv, rlx->userData);
-		}
-		free_command_args(argc, argv);
-	}
-
 	if( ! (rlx->options & RLX_OPT_HISTORY_ALLOW_DUPLICATES) ) {
 		// add history entry while avoiding duplications
 		HIST_ENTRY* lastEntry = previous_history();
@@ -335,6 +326,15 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 		}
 	} else {
 		rlx_add_history_entry(rlx, line);
+	}
+
+	// // we convert the command line into argc/argv format for easier parsing by command handlers,
+	// // and then free the argv array after processing.
+	if( parse_command_line(line, &argc, &argv) > 0 ) {
+		if( (cmd = rlx_get_command(rlx, argv[0])) != 0 ) {
+			cmd->handler(rlx, cmd, argc, (const char**)argv, rlx->userData);
+		}
+		free_command_args(argc, argv);
 	}
 
 	if( expanded ) {
