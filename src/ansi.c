@@ -285,3 +285,16 @@ bool set_ansi_mode(const char* mode) {
 	}
 	return true;
 }
+
+/**
+ * @brief Gets the current ANSI mode as a string.
+ * @return const char* The current ANSI mode ("auto", "always", "never").
+ */
+const char* get_ansi_mode(void) {
+	switch( ANSI_mode ) {
+		case ANSI_MODE_AUTO: return "auto";
+		case ANSI_MODE_ALWAYS: return "always";
+		case ANSI_MODE_NEVER: return "never";
+	}
+	return "unknown";
+}

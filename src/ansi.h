@@ -71,6 +71,7 @@ extern ansi_mode_t ANSI_mode;
 void begin_ansi(bool bAltScreen);
 bool isAnsiActive(FILE* stream);
 bool set_ansi_mode(const char* mode);
+const char* get_ansi_mode(void);
 
 // Print formatted output to a stream, while respecting ANSI color codes
 // (i.e. only print them if the stream is a TTY or if forceANSI is true)

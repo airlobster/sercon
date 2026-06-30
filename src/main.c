@@ -257,6 +257,16 @@ static void registered_commands_callback(
 			a_success("Timestamps %s\n", printTimestamps ? "on" : "off");
 			break;
 		}
+		case 'R': {
+			if( argc > 1 ) {
+				if( ! set_ansi_mode(argv[1]) ) {
+					a_error("Invalid color mode: '%s'\n", argv[1]);
+					break;
+				}
+			}
+			a_success("ANSI color mode: %s\n", get_ansi_mode());
+			break;
+		}
 #ifdef _DEBUG_
 		case 'A': {
 			rlx_print_autocomplete_vocabulary(h);
@@ -282,6 +292,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 		{'C', "connect", "Connect to a serial port (usage: connect PORT{:BAUD})", registered_commands_callback},
 		{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
 		{'t', "timestamps", "Set/show timestamps state (on|off)", registered_commands_callback},
+		{'R', "colors", "Set/show ANSI color mode (auto|always|never)", registered_commands_callback},
 #ifdef _DEBUG_
 		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
 #endif
