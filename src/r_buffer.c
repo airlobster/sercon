@@ -60,3 +60,19 @@ char* r_buffer_detach_data(buffer_t buffer) {
 	b->capacity = 0;
 	return data;
 }
+
+void r_buffer_clear(buffer_t buffer) {
+	r_buffer_t* b = (r_buffer_t*)buffer;
+	ASSERT(b);
+	// reuse current allocated memory if possible
+	if( b->data ) {
+		b->data[0] = '\0'; // null-terminate the buffer
+	}
+	b->length = 0;
+}
+
+size_t r_buffer_size(buffer_t buffer) {
+	r_buffer_t* b = (r_buffer_t*)buffer;
+	ASSERT(b);
+	return b->length;
+}
