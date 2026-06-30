@@ -112,7 +112,7 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 
 #ifdef _DEBUG_
 	// in debug mode we do want to have an actual file we can debug with the sqlite3 shell
-	asprintf(&vocab->db_filename, "/tmp/.vocabulary.%d.db", getpid());
+	asprintf(&vocab->db_filename, "/tmp/sercon.vocabulary.%d.db", getpid());
 #else
 	vocab->db_filename = strdup(":memory:");
 #endif
