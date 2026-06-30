@@ -93,11 +93,10 @@ static int connect(termctl_t tc, const char* portName, int baudRate) {
  * @param tc The termctl instance.
  */
 static void disconnect(termctl_t tc) {
+	ASSERT(tc);
 	if( fdPort > 0 ) {
 		close(fdPort);
-		if( tc ) {
-			termctl_remove_fd(tc, fdPort);
-		}
+		termctl_remove_fd(tc, fdPort);
 		fdPort = -1;
 	}
 	if( port ) {
@@ -230,12 +229,11 @@ static void registered_commands_callback(
 		}
 		case 'C': {
 			if( argc < 2 ) {
-				a_error("Usage: connect PORT\n");
+				a_error("Usage: connect PORT{:BAUD}\n");
 				break;
 			}
-			ASSERT(fdPort < 0); // should only call connect() when not currently connected
 			if( fdPort > 0 ) {
-				a_error("Already connected to a port. Please disconnect first.\n");
+				a_error("Already connected. Please disconnect first.\n");
 				break;
 			}
 			fdPort = applyConnectionString(tc, argv[1]);
