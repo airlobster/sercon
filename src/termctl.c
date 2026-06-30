@@ -318,31 +318,33 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 		for(size_t i=1; i < tc->nfds; i++) {
 			if( ! (tc->fds[i].revents & POLLIN) ) continue; // no events from this fd
 			ssize_t bytesRead = read(tc->fds[i].fd, buffer, sizeof(buffer) - 1);
-			if( bytesRead < 0 ) {
+			if( bytesRead <= 0 ) {
 				// error reading from the fd, remove it from the poll list
 				close(tc->fds[i].fd);
 				termctl_remove_fd(tc, tc->fds[i].fd);
 				reconnect = true;
-				continue;
-			}
-			rlx_pause(tc->rlx);
-			buffer[bytesRead] = '\0'; // null-terminate the buffer
-			for(const char *p = buffer; *p; ++p) {
-				if( *p == '\n' ) {
-					fputc(*p, stdout);
-					tc->atNewLine = true;
-				} else if( *p == '\r' ) {
-					// ignore carriage return, as we handle newlines with '\n'
-				} else {
-					if( tc->atNewLine && tc->newline_callback ) {
-						tc->newline_callback(tc, tc->user_data);
+				termctl_update_prompt(tc);
+				break;
+			} else {
+				rlx_pause(tc->rlx);
+				buffer[bytesRead] = '\0'; // null-terminate the buffer
+				for(const char *p = buffer; *p; ++p) {
+					if( *p == '\n' ) {
+						fputc(*p, stdout);
+						tc->atNewLine = true;
+					} else if( *p == '\r' ) {
+						// ignore carriage return, as we handle newlines with '\n'
+					} else {
+						if( tc->atNewLine && tc->newline_callback ) {
+							tc->newline_callback(tc, tc->user_data);
+						}
+						fputc(*p, stdout);
+						tc->atNewLine = false;
 					}
-					fputc(*p, stdout);
-					tc->atNewLine = false;
 				}
+				fflush(stdout);
+				rlx_resume(tc->rlx, tc->atNewLine);
 			}
-			fflush(stdout);
-			rlx_resume(tc->rlx, tc->atNewLine);
 		} // end other fds handling
 	} // end while
 

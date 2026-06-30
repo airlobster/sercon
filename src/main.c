@@ -64,20 +64,12 @@ static void print_ports_list() {
  * @return int The file descriptor of the opened port, or -1 on failure.
  */
 static int connect(termctl_t tc, const char* portName, int baudRate) {
-	// disconnect(tc);
+	(void)tc;
 	ASSERT(portName);
 	ASSERT(baudRate > 0);
 	int fd = open(portName, O_RDWR | O_NOCTTY);
 	if( fd < 0 ) {
-		if( firstConnectionError ) {
-			a_error("Error opening serial port '%s': %s\n", portName, strerror(errno));
-			firstConnectionError = false;
-		}
 		return -1;
-	}
-	firstConnectionError = true;
-	if( tc ) {
-		termctl_add_fd(tc, fd);
 	}
 	// set baud rate
 	struct termios t;
@@ -92,17 +84,18 @@ static int connect(termctl_t tc, const char* portName, int baudRate) {
  *
  * @param tc The termctl instance.
  */
-static void disconnect(termctl_t tc) {
-	ASSERT(tc);
-	if( fdPort > 0 ) {
-		close(fdPort);
-		termctl_remove_fd(tc, fdPort);
-		fdPort = -1;
-	}
+static bool disconnect(termctl_t tc) {
+	(void)tc;
 	if( port ) {
 		free(port);
 		port = 0;
 	}
+	if( fdPort > 0 ) {
+		close(fdPort);
+		fdPort = -1;
+		return true;
+	}
+	return false;
 }
 
 /**
@@ -113,7 +106,6 @@ static void disconnect(termctl_t tc) {
  * @return int The file descriptor of the opened port, or -1 on failure.
  */
 static int applyConnectionString(termctl_t tc, const char *connectionString) {
-	ASSERT(tc);
 	char portName[256];
 	int baudRate = 9600;
 	ASSERT(connectionString);
@@ -239,6 +231,7 @@ static void registered_commands_callback(
 			fdPort = applyConnectionString(tc, argv[1]);
 			if( fdPort > 0 ) {
 				port = strdup(argv[1]);
+				termctl_add_fd(tc, fdPort);
 			}
 			break;
 		}
@@ -247,7 +240,10 @@ static void registered_commands_callback(
 				a_error("Not currently connected to any port\n");
 				break;
 			}
-			disconnect(tc);
+			int fd = fdPort;
+			if( disconnect(tc) ) {
+				termctl_remove_fd(tc, fd);
+			}
 			break;
 		}
 		case 't': {
@@ -372,7 +368,7 @@ int reconnect_callback(termctl_t tc, void* userData) {
 	(void)userData;
 	ASSERT(tc);
 	ASSERT(port);
-	return applyConnectionString(tc, port);
+	return fdPort = applyConnectionString(0, port);
 }
 
 /**
@@ -426,7 +422,9 @@ int main(int argc, char* argv[]) {
 	// before entering the event loop
 	if( port ) {
 		ASSERT(fdPort < 0); // should only call connect() when not currently connected
-		if( (fdPort = applyConnectionString(termctl, port)) <= 0 ) {
+		if( (fdPort = applyConnectionString(termctl, port)) > 0 ) {
+			termctl_add_fd(termctl, fdPort);
+		} else {
 			a_error("Failed to connect to %s\n", port);
 		}
 	}
