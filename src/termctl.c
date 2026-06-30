@@ -39,7 +39,7 @@ typedef struct _termctl_internal_t {
 
 /**
  * @brief Callback function for readline_ex.
- * 
+ *
  * @param h The readline_ex handle.
  * @param line The input line.
  * @param length The length of the input line.
@@ -66,7 +66,7 @@ static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void*
 
 /**
  * @brief Create a new termctl instance.
- * 
+ *
  * @param appname Name of the application.
  * @param userData User data pointer.
  * @return termctl_t A new termctl instance, or NULL on failure.
@@ -105,7 +105,7 @@ termctl_t termctl_create(const char* appname, void* userData) {
 
 /**
  * @brief Destroy a termctl instance.
- * 
+ *
  * @param termctl The termctl instance to destroy.
  */
 void termctl_destroy(termctl_t termctl) {
@@ -125,7 +125,7 @@ void termctl_destroy(termctl_t termctl) {
 
 /**
  * @brief Set the prompt callback function for a termctl instance.
- * 
+ *
  * @param termctl The termctl instance.
  * @param callback The prompt callback function.
  */
@@ -137,7 +137,7 @@ void termctl_set_prompt_callback(termctl_t termctl, termctl_prompt_callback_t ca
 
 /**
  * @brief Set the newline callback function for a termctl instance.
- * 
+ *
  * @param termctl The termctl instance.
  * @param callback The newline callback function.
  */
@@ -149,7 +149,7 @@ void termctl_set_newline_callback(termctl_t termctl, termctl_newline_callback_t 
 
 /**
  * @brief Set the user input callback function for a termctl instance.
- * 
+ *
  * @param termctl The termctl instance.
  * @param callback The user input callback function.
  */
@@ -161,7 +161,7 @@ void termctl_set_user_input_callback(termctl_t termctl, termctl_user_input_callb
 
 /**
  * @brief Get the rlx handle from a termctl instance.
- * 
+ *
  * @param termctl The termctl instance.
  * @return rlx_t The rlx handle.
  * @details This function allows access to the underlying readline_ex context.
@@ -174,7 +174,7 @@ rlx_t termctl_get_rlx(termctl_t termctl) {
 
 /**
  * @brief Add a file descriptor to the termctl instance for polling.
- * 
+ *
  * @param termctl The termctl instance.
  * @param fd The file descriptor to add.
  * @param events The events to monitor.
@@ -203,7 +203,7 @@ int termctl_add_fd(termctl_t termctl, int fd) {
 
 /**
  * @brief Remove a file descriptor from the termctl instance.
- * 
+ *
  * @param termctl The termctl instance.
  * @param fd The file descriptor to remove.
  * @return int 1 on success, 0 on failure.
@@ -228,7 +228,7 @@ int termctl_remove_fd(termctl_t termctl, int fd) {
 
 /**
  * @brief Update the prompt for a termctl instance.
- * 
+ *
  * @param tc The termctl internal instance.
  */
 static void termctl_update_prompt(termctl_internal_t* tc) {
@@ -252,7 +252,7 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
 
 /**
  * @brief Run the event loop for a termctl instance.
- * 
+ *
  * @param termctl The termctl instance.
  * @return termctl_result_t The result of the event loop.
  */

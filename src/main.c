@@ -20,7 +20,7 @@ termctl_t termctl = 0;
 
 /**
  * @brief Update the prompt for a termctl instance.
- * 
+ *
  * @param tc The internal termctl instance.
  */
 static void add_ports_to_vocabulary_callback(const char* portName, void* userData) {
@@ -31,7 +31,7 @@ static void add_ports_to_vocabulary_callback(const char* portName, void* userDat
 
 /**
  * @brief Print a serial port name.
- * 
+ *
  * @param portName The name of the serial port.
  * @param userData User data pointer.
  */
@@ -53,7 +53,7 @@ static void print_ports_list() {
 
 /**
  * @brief Connect to a serial port.
- * 
+ *
  * @param tc The termctl instance.
  * @param portName The name of the serial port.
  * @param baudRate The baud rate for the connection.
@@ -92,7 +92,7 @@ static int connect(termctl_t tc, const char* portName, int baudRate) {
 
 /**
  * @brief Disconnect from the current serial port.
- * 
+ *
  * @param tc The termctl instance.
  */
 static void disconnect(termctl_t tc) {
@@ -111,7 +111,7 @@ static void disconnect(termctl_t tc) {
 
 /**
  * @brief Apply a connection string to connect to a serial port.
- * 
+ *
  * @param tc The termctl instance.
  * @param connectionString The connection string in the format "PORT{:BAUD}".
  * @return bool True if the connection was successful, false otherwise.
@@ -131,7 +131,7 @@ static bool applyConnectionString(termctl_t tc, const char *connectionString) {
 
 /**
  * @brief CLI argument callback function.
- * 
+ *
  * @param tc The internal termctl instance.
  */
 static void cli_args_callback(int pos, int opt, const char* optarg) {
@@ -171,7 +171,7 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 
 /**
  * @brief Parse command-line arguments.
- * 
+ *
  * @param argc The argument count.
  * @param argv The argument vector.
  */
@@ -195,7 +195,7 @@ static void parse_cli_args(int argc, char *argv[])
 
 /**
  * @brief Callback function for registered commands.
- * 
+ *
  * @param h The rlx handle.
  * @param cmd The registered command.
  * @param argc The argument count.
@@ -267,7 +267,7 @@ static void registered_commands_callback(
 
 /**
  * @brief Setup the registered commands for the terminal.
- * 
+ *
  * @param termctl The termctl instance.
  */
 static void setupTerminalRegisteredCommands(termctl_t termctl) {
@@ -293,7 +293,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 
 /**
  * @brief Prompt callback function for a termctl instance.
- * 
+ *
  * @param tc The termctl instance.
  * @param userData User data pointer.
  * @return char* The prompt string.
@@ -321,7 +321,7 @@ static char* prompt_callback(termctl_t tc, void* userData) {
 
 /**
  * @brief User input callback function for a termctl instance.
- * 
+ *
  * @param tc The termctl instance.
  * @param line The input line.
  * @param length The length of the input line.

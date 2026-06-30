@@ -23,7 +23,7 @@ typedef struct _termctl_internal_t* termctl_t;
 
 /**
  * @brief Callback function type for updating the prompt.
- * 
+ *
  * @param tc The termctl instance.
  * @param userData User data pointer.
  * @return char* The new prompt string.
@@ -32,7 +32,7 @@ typedef char* (*termctl_prompt_callback_t)(termctl_t tc, void* userData);
 
 /**
  * @brief Callback function type for handling newlines.
- * 
+ *
  * @param tc The termctl instance.
  * @param userData User data pointer.
  */
@@ -40,7 +40,7 @@ typedef void (*termctl_newline_callback_t)(termctl_t tc, void* userData);
 
 /**
  * @brief Callback function type for handling user input.
- * 
+ *
  * @param tc The termctl instance.
  * @param line The input line.
  * @param length The length of the input line.
