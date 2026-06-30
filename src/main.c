@@ -19,12 +19,10 @@ int baud = 9600;
 bool printTimestamps = true;
 char* port = 0;
 int fdPort = -1;
-bool firstConnectionError = true;
 termctl_t termctl = 0;
 
 /**
  * @brief Update the prompt for a termctl instance.
- *
  * @param tc The internal termctl instance.
  */
 static void add_ports_to_vocabulary_callback(const char* portName, void* userData) {
@@ -35,11 +33,10 @@ static void add_ports_to_vocabulary_callback(const char* portName, void* userDat
 
 /**
  * @brief Print a serial port name.
- *
  * @param portName The name of the serial port.
  * @param userData User data pointer.
  */
-static void print_port_callback(const char* portName, void* userData) {
+static void enum_ports_print_callback(const char* portName, void* userData) {
 	(void)userData;
 	ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 }
@@ -49,7 +46,7 @@ static void print_port_callback(const char* portName, void* userData) {
  */
 static void print_ports_list() {
 	ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
-	int n = enumSerialPorts(print_port_callback, 0);
+	int n = enumSerialPorts(enum_ports_print_callback, 0);
 	if( ! n ) {
 		ansi_fprintf(stdout, ANSI_ITALIC "  No serial ports found\n");
 	}
@@ -57,7 +54,6 @@ static void print_ports_list() {
 
 /**
  * @brief Connect to a serial port.
- *
  * @param tc The termctl instance.
  * @param portName The name of the serial port.
  * @param baudRate The baud rate for the connection.
@@ -81,7 +77,6 @@ static int connect(termctl_t tc, const char* portName, int baudRate) {
 
 /**
  * @brief Disconnect from the current serial port.
- *
  * @param tc The termctl instance.
  */
 static bool disconnect(termctl_t tc) {
@@ -100,7 +95,6 @@ static bool disconnect(termctl_t tc) {
 
 /**
  * @brief Apply a connection string to connect to a serial port.
- *
  * @param tc The termctl instance.
  * @param connectionString The connection string in the format "PORT{:BAUD}".
  * @return int The file descriptor of the opened port, or -1 on failure.
@@ -119,8 +113,7 @@ static int applyConnectionString(termctl_t tc, const char *connectionString) {
 
 /**
  * @brief CLI argument callback function.
- *
- * @param tc The internal termctl instance.
+ * @param tc The termctl instance.
  */
 static void cli_args_callback(int pos, int opt, const char* optarg) {
 	(void)pos;
@@ -158,7 +151,6 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 
 /**
  * @brief Parse command-line arguments.
- *
  * @param argc The argument count.
  * @param argv The argument vector.
  */
@@ -182,7 +174,6 @@ static void parse_cli_args(int argc, char *argv[])
 
 /**
  * @brief Callback function for registered commands.
- *
  * @param h The rlx handle.
  * @param cmd The registered command.
  * @param argc The argument count.
@@ -275,7 +266,6 @@ static void registered_commands_callback(
 
 /**
  * @brief Setup the registered commands for the terminal.
- *
  * @param termctl The termctl instance.
  */
 static void setupTerminalRegisteredCommands(termctl_t termctl) {
@@ -302,7 +292,6 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 
 /**
  * @brief Prompt callback function for a termctl instance.
- *
  * @param tc The termctl instance.
  * @param userData User data pointer.
  * @return char* The prompt string.
@@ -328,7 +317,6 @@ static char* prompt_callback(termctl_t tc, void* userData) {
 
 /**
  * @brief User input callback function for a termctl instance.
- *
  * @param tc The termctl instance.
  * @param line The input line.
  * @param length The length of the input line.
@@ -345,23 +333,20 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* us
 
 /**
  * @brief Newline callback function for a termctl instance.
- *
  * @param tc The termctl instance.
  * @param userData User data pointer.
  */
 void newline_callback(termctl_t tc, void* userData) {
-	// print timestamp if enabled
-	if( printTimestamps ) {
-		cal_time_t t;
-		now(&t);
-		ansi_fprintf(stdout, ANSI_INFO "[%02d:%02d:%02d.%03d] ",
-			t.hours, t.minutes, t.seconds, t.milliseconds);
-	}
+	(void)tc;
+	if( ! printTimestamps ) return;
+	cal_time_t t;
+	now(&t);
+	ansi_fprintf(stdout, ANSI_INFO "[%02d:%02d:%02d.%03d] ",
+		t.hours, t.minutes, t.seconds, t.milliseconds);
 }
 
 /**
  * @brief Reconnect callback function for a termctl instance.
- *
  * @param tc The termctl instance.
  * @param userData User data pointer.
  * @return fd if successful, -1 if failed.
@@ -416,8 +401,8 @@ int main(int argc, char* argv[]) {
 	termctl_set_user_input_callback(termctl, user_input_callback);
 	termctl_set_newline_callback(termctl, newline_callback);
 	termctl_set_reconnect_callback(termctl, reconnect_callback);
-	setupTerminalRegisteredCommands(termctl);
 
+	setupTerminalRegisteredCommands(termctl);
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
 
 	// if port was specified in the command-line, attempt to connect to it
