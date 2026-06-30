@@ -1,6 +1,17 @@
 #ifndef _TERMCTL_H
 #define _TERMCTL_H
 
+/**
+ * @file termctl.h
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2026-06-30
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
 #include "readline_ex.h"
 
 #ifdef __cplusplus
