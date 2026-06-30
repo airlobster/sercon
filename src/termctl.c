@@ -27,6 +27,8 @@ typedef struct _termctl_internal_t {
 	termctl_newline_callback_t newline_callback;
 	/**< User input callback function */
 	termctl_user_input_callback_t user_input_callback;
+	/**< Reconnect callback function */
+	termctl_reconnect_callback_t reconnect_callback;
 	/**< Readline_ex context */
 	rlx_t rlx;
 	/**< Current prompt string */
@@ -160,6 +162,18 @@ void termctl_set_user_input_callback(termctl_t termctl, termctl_user_input_callb
 }
 
 /**
+ * @brief Set the reconnect callback function for a termctl instance.
+ *
+ * @param termctl The termctl instance.
+ * @param callback The reconnect callback function.
+ */
+void termctl_set_reconnect_callback(termctl_t termctl, termctl_reconnect_callback_t callback) {
+	ASSERT(termctl);
+	termctl_internal_t* tc = (termctl_internal_t*)termctl;
+	tc->reconnect_callback = callback;
+}
+
+/**
  * @brief Get the rlx handle from a termctl instance.
  *
  * @param termctl The termctl instance.
@@ -257,6 +271,7 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
  * @return termctl_result_t The result of the event loop.
  */
 termctl_result_t termctl_event_loop(termctl_t termctl) {
+	bool reconnect = false;
 	ASSERT(termctl);
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
 	char buffer[128];
@@ -279,6 +294,14 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 				rc = TERMCTL_R_OK;
 				break;
 			}
+			if( reconnect && tc->reconnect_callback ) {
+				// retry connecting to the serial port if it was disconnected
+				int fd = tc->reconnect_callback(tc, tc->user_data);
+				if( fd > 0 ) {
+					termctl_add_fd(tc, fd);
+					reconnect = false;
+				}
+			}
 			// update the prompt periodically
 			// to reflect the current connection status (connected/disconnected)
 			termctl_update_prompt(tc);
@@ -296,11 +319,11 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 			if( ! (tc->fds[i].revents & POLLIN) ) continue; // no events from this fd
 			ssize_t bytesRead = read(tc->fds[i].fd, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
-				// a_error("Error reading from serial port: %s\n", strerror(errno));
+				// error reading from the fd, remove it from the poll list
 				close(tc->fds[i].fd);
 				termctl_remove_fd(tc, tc->fds[i].fd);
-				rc = TERMCTL_R_READERROR;
-				break;
+				reconnect = true;
+				continue;
 			}
 			rlx_pause(tc->rlx);
 			buffer[bytesRead] = '\0'; // null-terminate the buffer

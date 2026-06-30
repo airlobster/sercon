@@ -24,7 +24,6 @@ extern "C" {
 typedef enum {
 	TERMCTL_R_OK = 0,
 	TERMCTL_R_POLLERROR = 1,
-	TERMCTL_R_READERROR = 2,
 } termctl_result_t;
 
 /**
@@ -59,12 +58,22 @@ typedef void (*termctl_newline_callback_t)(termctl_t tc, void* userData);
  */
 typedef void (*termctl_user_input_callback_t)(termctl_t tc, const char* line, size_t length, void* userData);
 
+/**
+ * @brief Callback function type for handling reconnection attempts.
+ *
+ * @param tc The termctl instance.
+ * @param userData User data pointer.
+ * @return fd if successful, -1 if failed.
+ */
+typedef int (*termctl_reconnect_callback_t)(termctl_t tc, void* userData);
+
 termctl_t termctl_create(const char* appname, void* userData);
 void termctl_destroy(termctl_t termctl);
 
 void termctl_set_prompt_callback(termctl_t termctl, termctl_prompt_callback_t callback);
 void termctl_set_newline_callback(termctl_t termctl, termctl_newline_callback_t callback);
 void termctl_set_user_input_callback(termctl_t termctl, termctl_user_input_callback_t callback);
+void termctl_set_reconnect_callback(termctl_t termctl, termctl_reconnect_callback_t callback);
 
 int termctl_add_fd(termctl_t termctl, int fd);
 int termctl_remove_fd(termctl_t termctl, int fd);

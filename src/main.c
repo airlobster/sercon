@@ -238,7 +238,10 @@ static void registered_commands_callback(
 				a_error("Already connected to a port. Please disconnect first.\n");
 				break;
 			}
-			applyConnectionString(tc, argv[1]);
+			fdPort = applyConnectionString(tc, argv[1]);
+			if( fdPort > 0 ) {
+				port = strdup(argv[1]);
+			}
 			break;
 		}
 		case 'D': {
@@ -302,16 +305,13 @@ static char* prompt_callback(termctl_t tc, void* userData) {
 	ASSERT(tc);
 	if( ! isatty(fileno(stdin)) ) return 0; // no prompt if stdin is redirected!!
 	char *p = 0;
-	if( port ) {
-		bool connected = fdPort >= 0;
-		const char* portNoPath = basename(port);
-		if( connected ) {
-			// connected
-			ansi_asprintf(&p, ANSI_SUCCESS "%s:%d> ", portNoPath, baud);
-		} else {
-			// connection lost
-			ansi_asprintf(&p, ANSI_ERROR "%s...> ", portNoPath);
-		}
+	if( fdPort >= 0 ) {
+		// connected
+		ASSERT(port);
+		ansi_asprintf(&p, ANSI_SUCCESS "%s> ", port);
+	} else if( port ) {
+		// connection lost
+		ansi_asprintf(&p, ANSI_ERROR "%s...> ", port);
 	} else {
 		// disconnected
 		ansi_asprintf(&p, ANSI_INFO "%s> ", "not-connected");
@@ -351,6 +351,13 @@ void newline_callback(termctl_t tc, void* userData) {
 	}
 }
 
+int reconnect_callback(termctl_t tc, void* userData) {
+	(void)userData;
+	ASSERT(tc);
+	ASSERT(port);
+	return applyConnectionString(tc, port);
+}
+
 /**
  * @brief Exit handler for the application.
  */
@@ -388,10 +395,14 @@ int main(int argc, char* argv[]) {
 		a_error("Failed to create termctl instance.\n");
 		return 1;
 	}
+
+	// set callbacks for termctl
 	termctl_set_prompt_callback(termctl, prompt_callback);
 	termctl_set_user_input_callback(termctl, user_input_callback);
 	termctl_set_newline_callback(termctl, newline_callback);
+	termctl_set_reconnect_callback(termctl, reconnect_callback);
 	setupTerminalRegisteredCommands(termctl);
+
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
 
 	// if port was specified in the command-line, attempt to connect to it
@@ -404,17 +415,5 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	for(;;) {
-		termctl_result_t rc = termctl_event_loop(termctl);
-		if( rc == TERMCTL_R_READERROR ) {
-			fdPort = applyConnectionString(termctl, port);
-			if( fdPort > 0 ) {
-				termctl_add_fd(termctl, fdPort);
-			}
-			continue;
-		}
-		break;
-	}
-
-	return 0;
+	return termctl_event_loop(termctl);
 }
