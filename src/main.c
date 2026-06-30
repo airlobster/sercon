@@ -11,6 +11,10 @@
 #include "ansi.h"
 #include "termctl.h"
 
+#ifndef VERSION
+#define VERSION "0.0.0.0"
+#endif
+
 int baud = 9600;
 bool printTimestamps = true;
 char* port = 0;
@@ -336,6 +340,20 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* us
 	}
 }
 
+static int printTimestamp(FILE* stream) {
+	cal_time_t t;
+	now(&t);
+	return ansi_fprintf(stream, ANSI_INFO "[%02d:%02d:%02d.%03d] ",
+		t.hours, t.minutes, t.seconds, t.milliseconds);
+}
+
+void newline_callback(termctl_t tc, void* userData) {
+	(void)userData;
+	if( printTimestamps ) {
+		printTimestamp(stdout);
+	}
+}
+
 /**
  * @brief Exit handler for the application.
  */
@@ -373,6 +391,7 @@ int main(int argc, char* argv[]) {
 	}
 	termctl_set_prompt_callback(termctl, prompt_callback);
 	termctl_set_user_input_callback(termctl, user_input_callback);
+	termctl_set_newline_callback(termctl, newline_callback);
 	setupTerminalRegisteredCommands(termctl);
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
 
