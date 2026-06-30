@@ -361,6 +361,13 @@ void newline_callback(termctl_t tc, void* userData) {
 	}
 }
 
+/**
+ * @brief Reconnect callback function for a termctl instance.
+ *
+ * @param tc The termctl instance.
+ * @param userData User data pointer.
+ * @return fd if successful, -1 if failed.
+ */
 int reconnect_callback(termctl_t tc, void* userData) {
 	(void)userData;
 	ASSERT(tc);
@@ -419,8 +426,7 @@ int main(int argc, char* argv[]) {
 	// before entering the event loop
 	if( port ) {
 		ASSERT(fdPort < 0); // should only call connect() when not currently connected
-		fdPort = applyConnectionString(termctl, port);
-		if( fdPort <= 0 ) {
+		if( (fdPort = applyConnectionString(termctl, port)) <= 0 ) {
 			a_error("Failed to connect to %s\n", port);
 		}
 	}
