@@ -21,6 +21,10 @@
 #define ANSI_DIM                ANSI_CSI "2m"
 #define ANSI_ITALIC             ANSI_CSI "3m"
 #define ANSI_UNDERLINE          ANSI_CSI "4m"
+#define ANSI_BLINK              ANSI_CSI "5m"
+#define ANSI_REVERSE            ANSI_CSI "7m"
+#define ANSI_HIDDEN             ANSI_CSI "8m"
+#define ANSI_STRIKETHROUGH      ANSI_CSI "9m"
 
 #define ANSI_RED                ANSI_CSI "31m"
 #define ANSI_GREEN              ANSI_CSI "32m"

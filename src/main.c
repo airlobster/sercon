@@ -317,13 +317,13 @@ static char* prompt_callback(termctl_t tc, void* userData) {
 	if( fdPort >= 0 ) {
 		// connected
 		ASSERT(port);
-		ansi_asprintf(&p, ANSI_SUCCESS "%s> ", port);
+		ansi_asprintf(&p, ANSI_SUCCESS ANSI_ITALIC "%s> ", port);
 	} else if( port ) {
 		// connection lost
-		ansi_asprintf(&p, ANSI_ERROR "%s...> ", port);
+		ansi_asprintf(&p, ANSI_ERROR ANSI_ITALIC "%s...> ", port);
 	} else {
 		// disconnected
-		ansi_asprintf(&p, ANSI_INFO "%s> ", "not-connected");
+		ansi_asprintf(&p, ANSI_INFO ANSI_ITALIC "%s> ", "not-connected");
 	}
 	return p;
 }
