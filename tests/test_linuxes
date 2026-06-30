@@ -26,7 +26,7 @@ function test_linux() {
 		printf "\x1b[0m"
 
 		docker run --rm -it --privileged -v ~/sercon:/sercon "$image_name" \
-			bash -c "echo ports | make run -- -H"
+			bash -c "echo ports | make run"
 	)
 	local status=$?
 	return $status

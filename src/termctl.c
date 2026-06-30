@@ -56,11 +56,11 @@ static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void*
 	if( ! line ) {
 		tc->stdin_eof = 1; // tell poll we're done reading from stdin (EOF)
 		tc->fds[0].fd = -1; // mark stdin as closed for polling
-	} else if( rlx_process_command(tc->rlx, line) ) {
-		return;
-	}
-	if( tc->user_input_callback ) {
-		tc->user_input_callback((termctl_t)tc, line, length, tc->user_data);
+	} else if( ! rlx_process_command(tc->rlx, line) ) {
+		// command not handled by readline_ex, pass it to the user input callback if set
+		if( tc->user_input_callback ) {
+			tc->user_input_callback((termctl_t)tc, line, length, tc->user_data);
+		}
 	}
 }
 
