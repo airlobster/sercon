@@ -1,5 +1,8 @@
 #include <stddef.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "utils.h"
 #include "serlist.h"
 #include "command.h"
@@ -40,7 +43,7 @@ int enumSerialPorts(void(*callback)(const char* port, void* userData), void* use
 	asprintf(&paths, "%s:%s", def_paths, getenv(ENV_NAME) ? getenv(ENV_NAME) : "");
 	parse_path_list(paths, &nPaths, &path_list);
 	for(int i=0; i < nPaths; ++i) {
-		n += cglob(path_list[i], callback, userData);
+		n += cglob(path_list[i], CGLOB_FILE_CHAR_DEVICE, callback, userData);
 		free(path_list[i]);
 	}
 	free(path_list);

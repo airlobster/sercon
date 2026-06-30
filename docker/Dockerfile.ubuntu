@@ -5,6 +5,7 @@ RUN apt-get update -y && apt-get install -y \
   less \
   curl \
 	tree \
+	gdb \
   software-properties-common \
   unminimize \
   man-db \
