@@ -5,6 +5,7 @@
 #include <time.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <glob.h>
 #include <math.h>
@@ -125,7 +126,10 @@ int cglob(const char* pattern, unsigned long options, cglob_callback_t callback,
 		for( size_t i = 0; i < glob_result.gl_pathc; ++i ) {
 			struct stat st;
 			bool pass = false;
-			if( stat(glob_result.gl_pathv[i], &st) != 0 ) continue;
+			if( stat(glob_result.gl_pathv[i], &st) != 0 ) {
+				DEBUG_MSG("Failed to stat file: %s (%s)", glob_result.gl_pathv[i], strerror(errno));
+				continue;
+			}
 			pass |= (options & CGLOB_FILE_REGULAR) && S_ISREG(st.st_mode);
 			pass |= (options & CGLOB_FILE_DIRECTORY) && S_ISDIR(st.st_mode);
 			pass |= (options & CGLOB_FILE_SYMLINK) && S_ISLNK(st.st_mode);

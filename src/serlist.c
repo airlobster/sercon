@@ -40,7 +40,8 @@ int enumSerialPorts(void(*callback)(const char* port, void* userData), void* use
 	char** path_list = 0;
 	int nPaths = 0, n = 0;
 	ASSERT(callback);
-	asprintf(&paths, "%s:%s", def_paths, getenv(ENV_NAME) ? getenv(ENV_NAME) : "");
+	const char* envPats = getenv(ENV_NAME);
+	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
 	parse_path_list(paths, &nPaths, &path_list);
 	for(int i=0; i < nPaths; ++i) {
 		n += cglob(path_list[i], CGLOB_FILE_CHAR_DEVICE, callback, userData);
