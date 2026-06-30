@@ -27,7 +27,7 @@ void debug_msg(const char* file, int line, const char* fmt, ...);
  * @brief Assert a condition and print a debug message if the assertion fails.
  * @param cond The condition to assert.
  */
-#define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: '%s'", #cond); abort(); }
+#define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: '%s'", #cond); exit(-1); }
 #else
 #define DEBUG_MSG(fmt, ...) ((void)0)
 #define ASSERT(cond) ((void)0)

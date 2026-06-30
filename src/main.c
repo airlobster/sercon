@@ -123,7 +123,7 @@ static void disconnect(termctl_t tc) {
 static bool applyConnectionString(termctl_t tc, const char *connectionString) {
 	char portName[256];
 	int baudRate = 9600;
-	ASSERT(tc);
+	// ASSERT(tc);
 	ASSERT(connectionString);
 	int n = sscanf(connectionString, "%[^:]:%d", portName, &baudRate);
 	if( n < 1 ) {
@@ -146,8 +146,11 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 			exit(0);
 		}
 		case 'p': {
-			if( ! applyConnectionString(0, optarg) ) {
-				exit(1);
+			char portName[256];
+			int baudRate = 9600;
+			if( sscanf(optarg, "%[^:]:%d", portName, &baudRate) > 0 ) {
+				port = strdup(portName);
+				baud = MAX(baud, 9600);
 			}
 			break;
 		}
@@ -377,6 +380,8 @@ static void on_exit_handler(void) {
 int main(int argc, char* argv[]) {
 	const char* appname = basename(argv[0]);
 
+	atexit(on_exit_handler);
+
 	parse_cli_args(argc, argv);
 	begin_ansi(false);
 
@@ -396,8 +401,6 @@ int main(int argc, char* argv[]) {
 	setupTerminalRegisteredCommands(termctl);
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
 
-	atexit(on_exit_handler);
-
 	// if port was specified in the command-line, attempt to connect to it
 	// before entering the event loop
 	if( port ) {
@@ -409,7 +412,6 @@ int main(int argc, char* argv[]) {
 	for(;;) {
 		termctl_result_t rc = termctl_event_loop(termctl);
 		if( rc == TERMCTL_R_READERROR ) {
-			fdPort = -1;
 			fdPort = connect(termctl, port, baud);
 			if( fdPort > 0 ) {
 				termctl_add_fd(termctl, fdPort);
