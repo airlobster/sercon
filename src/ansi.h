@@ -84,6 +84,7 @@ int ansi_vfprintf(FILE* stream, const char* fmt, va_list args);
 int ansi_asprintf(char** out, const char* fmt, ...);
 
 // helpers
+int a_normal(const char* fmt, ...);
 int a_info(const char* fmt, ...);
 int a_error(const char* fmt, ...);
 int a_warning(const char* fmt, ...);

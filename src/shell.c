@@ -18,6 +18,7 @@
 int sc_shell(const char* argv[], const char* input) {
 	int pStdin[2]={-1,-1}, pStdout[2]={-1,-1}, pStderr[2]={-1,-1};
 	char buffer[64];
+	int ret = 0;
 
 	if( ! argv || ! argv[0] ) {
 		a_error("No command provided to shell\n");
@@ -74,11 +75,11 @@ int sc_shell(const char* argv[], const char* input) {
 
 		int lastChar = 0;
 		int fdsLeft = array_size(fds);
-		while( fdsLeft > 0 ) {
-			int ret = poll(fds, array_size(fds), POLL_TIMEOUT);
+		while( fdsLeft ) {
+			ret = poll(fds, array_size(fds), POLL_TIMEOUT);
 			if( ret < 0 ) {
 				perror("poll failed");
-				return -1;
+				break;
 			}
 
 			// read child's STDOUT
@@ -86,11 +87,11 @@ int sc_shell(const char* argv[], const char* input) {
 				ssize_t bytesRead = read(pStdout[0], buffer, sizeof(buffer) - 1);
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
-					fprintf(stdout, "%s", buffer);
+					a_normal("%s", buffer);
 					lastChar = buffer[bytesRead - 1];
 				} else {
 					fds[0].fd = -1; // Mark this fd as closed
-					fdsLeft--;
+					--fdsLeft;
 				}
 			}
 
@@ -103,7 +104,7 @@ int sc_shell(const char* argv[], const char* input) {
 					lastChar = buffer[bytesRead - 1];
 				} else {
 					fds[1].fd = -1; // Mark this fd as closed
-					fdsLeft--;
+					--fdsLeft;
 				}
 			}
 		} // end poll loop
@@ -118,5 +119,5 @@ int sc_shell(const char* argv[], const char* input) {
 		wait(NULL); // Wait for child process to finish
 	}
 
-	return 0;
+	return ret;
 }

@@ -181,6 +181,28 @@ int ansi_asprintf(char** out, const char* fmt, ...) {
 }
 
 /**
+ * @brief Prints normal text without any ANSI styling.
+ * @param fmt The format string.
+ * @param ... The variable arguments.
+ * @return int The number of characters printed.
+ */
+int a_normal(const char* fmt, ...) {
+	char* buf;
+	va_list args;
+	int n;
+
+	asprintf(&buf, "%s", fmt);
+
+	va_start(args, fmt);
+	n = ansi_vfprintf(stdout, buf, args);
+	va_end(args);
+
+	free(buf);
+
+	return n;
+}
+
+/**
  * @brief Prints an informational message with ANSI styling.
  * @param fmt The format string.
  * @param ... The variable arguments.
