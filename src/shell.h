@@ -2,10 +2,8 @@
 #define _SHELL_H
 
 /**
- * @brief Execute a shell command.
- * @param argv The argument vector for the command.
- * @param input Optional input to pass to the command's stdin.
- * @return int The exit status of the command.
+ * @file shell.h
+ * @brief Shell command execution interface.
  */
 
 #ifdef __cplusplus
