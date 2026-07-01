@@ -47,12 +47,14 @@ static void enum_ports_print_callback(const char* portName, void* userData) {
 void shell_stdout_callback(const char* output, size_t length, void* user_data) {
 	(void)user_data;
 	(void)length;
+	ASSERT(user_data);
 	a_normal("%s", output);
 }
 
 void shell_stderr_callback(const char* output, size_t length, void* user_data) {
 	(void)user_data;
 	(void)length;
+	ASSERT(user_data);
 	a_error("%s", output);
 }
 
