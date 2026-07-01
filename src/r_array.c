@@ -109,6 +109,30 @@ void* r_array_get(r_array_t array, size_t index) {
 }
 
 /**
+ * @brief Remove an element from the dynamic array.
+ * @param array The dynamic array.
+ * @param index The index of the element to remove.
+ * @return bool True if the element was removed successfully, false otherwise.
+ */
+bool r_array_remove(r_array_t array, size_t index) {
+	r_array_internal_t* a = (r_array_internal_t*)array;
+	ASSERT(a);
+	ASSERT(index < a->size);
+	if( index >= a->size ) {
+		DEBUG_MSG("ERROR: Index out of bounds in r_array_remove");
+		return false;
+	}
+	if( a->dtor ) {
+		a->dtor(a->elements[index]);
+	}
+	for( size_t i = index; i < a->size - 1; ++i ) {
+		a->elements[i] = a->elements[i + 1];
+	}
+	a->elements[--a->size] = 0; // Null-terminate the array
+	return true;
+}
+
+/**
  * @brief Get the number of elements in the dynamic array.
  * @param array The dynamic array.
  * @return size_t The number of elements in the array.
