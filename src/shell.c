@@ -21,7 +21,7 @@ static void close_pipe(int pipefd[2]) {
 
 /**
  * @brief Execute a shell command.
- * @param argv The argument vector for the command.
+ * @param argv The argument vector for the command. It is assumed that argv's last element is NULL.
  * @param input Optional input to pass to the command's stdin.
  * @return int The exit status of the command.
  */
