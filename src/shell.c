@@ -7,7 +7,7 @@
 #include "shell.h"
 #include "ansi.h"
 
-#define POLL_TIMEOUT 1000 // milliseconds
+#define POLL_TIMEOUT (1000) // milliseconds
 #define POLL_MASK (POLLIN | POLLHUP | POLLERR)
 
 static void close_pipe(int pipefd[2]) {
