@@ -25,18 +25,25 @@ function test_linux() {
 		docker build --progress=plain -t "$image_name" -f "$dockerfile" .
 		printf "\x1b[0m"
 
-		cat "${SCENARIO}" \
-			| docker run --rm  -i --privileged -v ~/sercon:/sercon "$image_name" bash -c "make run"
+		for SCENARIO in "${SCENARIOS[@]}"; do
+			cat "${SCENARIO}" \
+				| docker run --rm  -i --privileged -v ~/sercon:/sercon "$image_name" bash -c "make run"
+		done
 	)
 	local status=$?
 	return $status
 }
 
 
-cd $(dirname "$0")
+# build scenarios array from command line arguments
+SCENARIOS=()
+while [ -n "$1" ]; do
+	SCENARIOS+=( "$(realpath "$1")" )
+	shift
+done
+[ ${#SCENARIOS[@]} -gt 0 ] || error "No scenarios provided. Usage: $0 <scenario1> <scenario2> ..."
 
-SCENARIO="${PWD}/scenario.txt"
-[ -f "$SCENARIO" ] || error "Scenario file not found: $SCENARIO"
+cd $(dirname "$0")
 
 # Find the root of the repository by looking for a Makefile
 while [ ! -f "Makefile" ]; do
