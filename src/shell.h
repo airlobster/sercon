@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-int shell(const char* argv[]);
+int shell(const char* argv[], const char* input);
 
 #ifdef __cplusplus
 }

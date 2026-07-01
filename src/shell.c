@@ -2,12 +2,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/poll.h>
+#include <string.h>
 #include "utils.h"
 #include "shell.h"
 #include "ansi.h"
 
 
-int shell(const char* argv[]) {
+int shell(const char* argv[], const char* input) {
 	int pStdin[2], pStdout[2], pStderr[2];
 	char buffer[128];
 
@@ -45,7 +46,10 @@ int shell(const char* argv[]) {
 		close(pStdout[1]); // Close write end of stdout pipe
 		close(pStderr[1]); // Close write end of stderr pipe
 
-		close(pStdin[1]); // Close write end of stdin pipe as we won't be writing to it
+		if( input ) {
+			write(pStdin[1], input, strlen(input));
+		}
+		close(pStdin[1]);
 
 		struct pollfd fds[] = {
 			{ .fd = pStdout[0], .events = POLLIN },
