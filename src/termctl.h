@@ -4,12 +4,12 @@
 /**
  * @file termctl.h
  * @author your name (you@domain.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2026-06-30
- * 
+ *
  * @copyright Copyright (c) 2026
- * 
+ *
  */
 
 #include "readline_ex.h"
