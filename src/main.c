@@ -11,6 +11,7 @@
 #include "ansi.h"
 #include "termctl.h"
 #include "settings.h"
+#include "shell.h"
 
 #ifndef VERSION
 #define VERSION "0.0.0.0"
@@ -211,8 +212,19 @@ static void registered_commands_callback(
 	ASSERT(h);
 	switch( cmd->id ) {
 		case 'h': {
-			ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available commands:\n");
-			rlx_print_registered_commands(h);
+			if( argc == 1 ) {
+				ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available commands:\n");
+				rlx_print_registered_commands(h);
+			} else {
+				for(int i=1; i<argc; ++i) {
+					const rlx_registered_command_t* c = rlx_get_command(h, argv[i]);
+					if( c ) {
+						ansi_fprintf(stdout, "%-10s - %s\n", c->command, c->description);
+					} else {
+						a_error("Unknown command: %s\n", argv[i]);
+					}
+				}
+			}
 			break;
 		}
 		case 'p': {
@@ -290,6 +302,14 @@ static void registered_commands_callback(
 			run_script(tc, argv[1]);
 			break;
 		}
+		case 'B': {
+			if( argc < 2 ) {
+				a_error("Usage: shell COMMAND\n");
+				break;
+			}
+			shell(argv + 1);
+			break;
+		}
 #ifdef _DEBUG_
 		case 'A': {
 			rlx_print_autocomplete_vocabulary(h);
@@ -320,6 +340,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 		{'t', "timestamps", "Set/show timestamps state (on|off)", registered_commands_callback},
 		{'R', "colors", "Set/show ANSI color mode (auto|always|never)", registered_commands_callback},
 		{'s', "script", "Run a script file (usage: script PATH)", registered_commands_callback},
+		{'B', "shell", "Run a shell command (usage: shell COMMAND)", registered_commands_callback},
 #ifdef _DEBUG_
 		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
 		{'S', "settings", "Show current settings (debugging only)", registered_commands_callback},

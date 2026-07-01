@@ -176,7 +176,9 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		r_array_add(atokens, r_buffer_detach_data(token));
 	}
 
-	*argc = r_array_size(atokens);
+	r_array_add(atokens, NULL); // null-terminate the argument vector
+
+	*argc = r_array_size(atokens) - 1; // exclude the null terminator
 	*argv = (char**)r_array_detach_elements(atokens);
 
 	r_array_destroy(atokens);
