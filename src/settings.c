@@ -6,19 +6,27 @@
 #include "utils.h"
 
 typedef struct _settings_node_t {
-	char* key;
-	char* value;
-	struct _settings_node_t *next, *prev;
+	char* key; /**< The key of the setting. */
+	char* value; /**< The value of the setting. */
+	struct _settings_node_t *next, *prev; /**< Pointers to the next and previous nodes in the linked list. */
 } settings_node_t;
 
 typedef struct {
-		char* appname;
-		char* filename;
-		settings_node_t *head, *tail;
-		size_t size;
+		char* appname; /**< The name of the application. */
+		char* filename; /**< The path to the settings file. */
+		settings_node_t *head, *tail; /**< Pointers to the head and tail of the linked list of settings. */
+		size_t size; /**< The number of settings. */
 } settings_impl_t;
 
-settings_node_t* find_node(settings_impl_t* s, const char* key) {
+/**
+ * @brief Find a settings node by key.
+ * @param s The settings implementation instance.
+ * @param key The key to search for.
+ * @return The settings node if found, NULL otherwise.
+ */
+static settings_node_t* find_node(settings_impl_t* s, const char* key) {
+	ASSERT(s);
+	ASSERT(key);
 	settings_node_t* node = s->head;
 	while( node ) {
 		if( strcmp(node->key, key) == 0 ) {
@@ -29,6 +37,10 @@ settings_node_t* find_node(settings_impl_t* s, const char* key) {
 	return NULL;
 }
 
+/**
+ * @brief Get the home directory of the current user.
+ * @return The home directory path as a string.
+ */
 settings_t settings_init(const char* appname) {
 	settings_impl_t* s = (settings_impl_t*)malloc(sizeof(settings_impl_t));
 	if( ! s ) {
@@ -48,6 +60,10 @@ settings_t settings_init(const char* appname) {
 	return (settings_t)s;
 }
 
+/**
+ * @brief Free a settings instance.
+ * @param settings The settings instance to free.
+ */
 void settings_free(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
@@ -58,6 +74,12 @@ void settings_free(settings_t settings) {
 	free(s);
 }
 
+/**
+ * @brief Get the value of a setting by key.
+ * @param settings The settings instance.
+ * @param key The key of the setting.
+ * @return The value of the setting if found, NULL otherwise.
+ */
 const char* settings_get(settings_t settings, const char* key) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
@@ -68,6 +90,13 @@ const char* settings_get(settings_t settings, const char* key) {
 	return NULL;
 }
 
+/**
+ * @brief Set the value of a setting by key.
+ * @param settings The settings instance.
+ * @param key The key of the setting.
+ * @param value The value to set.
+ * @return true if the setting was set successfully, false otherwise.
+ */
 bool settings_set(settings_t settings, const char* key, const char* value) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
@@ -93,6 +122,11 @@ bool settings_set(settings_t settings, const char* key, const char* value) {
 	return true;
 }
 
+/**
+ * @brief Save the settings to the settings file.
+ * @param settings The settings instance.
+ * @return true if the settings were saved successfully, false otherwise.
+ */
 bool settings_save(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
@@ -111,6 +145,11 @@ bool settings_save(settings_t settings) {
 	return true;
 }
 
+/**
+ * @brief Load the settings from the settings file.
+ * @param settings The settings instance.
+ * @return true if the settings were loaded successfully, false otherwise.
+ */
 bool settings_load(settings_t settings) {
 	char line[1024];
 	ASSERT(settings);
@@ -139,6 +178,12 @@ bool settings_load(settings_t settings) {
 	return true;
 }
 
+/**
+ * @brief Delete a setting by key.
+ * @param settings The settings instance.
+ * @param key The key of the setting to delete.
+ * @return true if the setting was deleted successfully, false otherwise.
+ */
 bool settings_delete(settings_t settings, const char* key) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
@@ -163,6 +208,10 @@ bool settings_delete(settings_t settings, const char* key) {
 	return false;
 }
 
+/**
+ * @brief Clear all settings.
+ * @param settings The settings instance.
+ */
 void settings_clear(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
@@ -178,6 +227,10 @@ void settings_clear(settings_t settings) {
 	s->size = 0;
 }
 
+/**
+ * @brief Print all settings to stdout.
+ * @param settings The settings instance.
+ */
 void settings_print(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
@@ -186,6 +239,11 @@ void settings_print(settings_t settings) {
 	}
 }
 
+/**
+ * @brief Get the number of settings.
+ * @param settings The settings instance.
+ * @return The number of settings.
+ */
 size_t settings_size(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;

@@ -1,6 +1,11 @@
 #ifndef _SETTINGS_H_
 #define _SETTINGS_H_
 
+/**
+ * @file settings.h
+ * @brief Settings management for the application.
+ */
+
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -8,6 +13,9 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Opaque type for settings instance.
+ */
 typedef void* settings_t;
 
 settings_t settings_init(const char* appname);
