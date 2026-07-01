@@ -9,6 +9,15 @@
 
 #define POLL_TIMEOUT 1000 // milliseconds
 
+static void close_pipe(int pipefd[2]) {
+	for(int i = 0; i < 2; ++i) {
+		if( pipefd[i] != -1 ) {
+			close(pipefd[i]);
+			pipefd[i] = -1;
+		}
+	}
+}
+
 /**
  * @brief Execute a shell command.
  * @param argv The argument vector for the command.
@@ -28,12 +37,9 @@ int sc_shell(const char* argv[], const char* input) {
 	// create pipes for stdin, stdout, and stderr
 	if( pipe(pStdin) != 0 || pipe(pStdout) != 0 || pipe(pStderr) != 0 ) {
 		perror("pipe failed");
-		pStdin[0] != -1 && close(pStdin[0]);
-		pStdin[1] != -1 && close(pStdin[1]);
-		pStdout[0] != -1 && close(pStdout[0]);
-		pStdout[1] != -1 && close(pStdout[1]);
-		pStderr[0] != -1 && close(pStderr[0]);
-		pStderr[1] != -1 && close(pStderr[1]);
+		close_pipe(pStdin);
+		close_pipe(pStdout);
+		close_pipe(pStderr);
 		return -1;
 	}
 
@@ -87,8 +93,8 @@ int sc_shell(const char* argv[], const char* input) {
 				ssize_t bytesRead = read(pStdout[0], buffer, sizeof(buffer) - 1);
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
-					a_normal("%s", buffer);
 					lastChar = buffer[bytesRead - 1];
+					a_normal("%s", buffer);
 				} else {
 					fds[0].fd = -1; // Mark this fd as closed
 					--fdsLeft;
@@ -100,8 +106,8 @@ int sc_shell(const char* argv[], const char* input) {
 				ssize_t bytesRead = read(pStderr[0], buffer, sizeof(buffer) - 1);
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
-					a_error("%s", buffer);
 					lastChar = buffer[bytesRead - 1];
+					a_error("%s", buffer);
 				} else {
 					fds[1].fd = -1; // Mark this fd as closed
 					--fdsLeft;
