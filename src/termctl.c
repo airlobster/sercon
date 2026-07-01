@@ -267,6 +267,16 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
 }
 
 /**
+	@brief Inject input into the termctl session.
+	@param termctl The termctl session handle.
+	@param input The input string to inject.
+*/
+void termctl_inject_input(termctl_t termctl, const char* input) {
+	ASSERT(termctl);
+	rlx_inject_input(termctl_get_rlx(termctl), input);
+}
+
+/**
  * @brief Run the event loop for a termctl instance.
  *
  * @param termctl The termctl instance.
@@ -360,14 +370,4 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 	r_array_destroy(retryArray);
 
 	return rc;
-}
-
-/**
-	@brief Inject input into the termctl session.
-	@param termctl The termctl session handle.
-	@param input The input string to inject.
-*/
-void termctl_inject_input(termctl_t termctl, const char* input) {
-	ASSERT(termctl);
-	rlx_inject_input(termctl_get_rlx(termctl), input);
 }
