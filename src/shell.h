@@ -10,7 +10,15 @@
 extern "C" {
 #endif
 
-int sc_shell(const char* argv[], const char* input);
+typedef void (*shell_output_callback_t)(const char* output, size_t length, void* user_data);
+
+int sc_shell(
+	const char* argv[],
+	const char* input,
+	shell_output_callback_t stdout_callback,
+	shell_output_callback_t stderr_callback,
+	void* user_data
+);
 
 #ifdef __cplusplus
 }

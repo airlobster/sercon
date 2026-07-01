@@ -44,6 +44,18 @@ static void enum_ports_print_callback(const char* portName, void* userData) {
 	ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 }
 
+void shell_stdout_callback(const char* output, size_t length, void* user_data) {
+	(void)user_data;
+	(void)length;
+	a_normal("%s", output);
+}
+
+void shell_stderr_callback(const char* output, size_t length, void* user_data) {
+	(void)user_data;
+	(void)length;
+	a_error("%s", output);
+}
+
 /**
  * @brief Print the list of available serial ports.
  */
@@ -308,7 +320,10 @@ static void registered_commands_callback(
 				break;
 			}
 			ASSERT(argv[argc] == NULL); // ensure argv is null-terminated
-			sc_shell(argv + 1, 0);
+			int err = sc_shell(argv + 1, 0, shell_stdout_callback, shell_stderr_callback, tc);
+			if( err ) {
+				a_error("Shell command failed with exit code %d\n", err);
+			}
 			break;
 		}
 #ifdef _DEBUG_

@@ -2,10 +2,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/poll.h>
+#include <sys/errno.h>
 #include <string.h>
 #include "utils.h"
 #include "shell.h"
-#include "ansi.h"
 
 #define POLL_TIMEOUT (1000) // milliseconds
 #define POLL_MASK (POLLIN | POLLHUP | POLLERR)
@@ -23,15 +23,25 @@ static void close_pipe(int pipefd[2]) {
  * @brief Execute a shell command.
  * @param argv The argument vector for the command. It is assumed that argv's last element is NULL.
  * @param input Optional input to pass to the command's stdin.
- * @return int The exit status of the command.
+ * @param stdout_callback Callback function for handling stdout output.
+ * @param stderr_callback Callback function for handling stderr output.
+ * @param user_data User-defined data to pass to the callback functions.
+ * @return int The exit status of the command, or -1 if sc_shell itself fails.
  */
-int sc_shell(const char* argv[], const char* input) {
+int sc_shell(
+		const char* argv[],
+		const char* input,
+		shell_output_callback_t stdout_callback,
+		shell_output_callback_t stderr_callback,
+		void* user_data
+	) {
 	int pStdin[2]={-1,-1}, pStdout[2]={-1,-1}, pStderr[2]={-1,-1};
 	char buffer[64];
 	int ret = 0;
+	int childExitCode = -1;
 
+	ASSERT(argv && argv[0]);
 	if( ! argv || ! argv[0] ) {
-		a_error("No command provided to shell\n");
 		return -1;
 	}
 
@@ -97,7 +107,9 @@ int sc_shell(const char* argv[], const char* input) {
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
 					lastChar = buffer[bytesRead - 1];
-					a_normal("%s", buffer);
+					if( stdout_callback ) {
+						stdout_callback(buffer, bytesRead, user_data);
+					}
 				} else {
 					fds[0].fd = -1; // Mark this fd as closed
 					--fdsLeft;
@@ -110,7 +122,9 @@ int sc_shell(const char* argv[], const char* input) {
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
 					lastChar = buffer[bytesRead - 1];
-					a_error("%s", buffer);
+					if( stderr_callback ) {
+						stderr_callback(buffer, bytesRead, user_data);
+					}
 				} else {
 					fds[1].fd = -1; // Mark this fd as closed
 					--fdsLeft;
@@ -125,8 +139,16 @@ int sc_shell(const char* argv[], const char* input) {
 		close(pStdout[0]);
 		close(pStderr[0]);
 
-		wait(NULL); // Wait for child process to finish
+		int childExitStatus = 0;
+		if( waitpid(pid, &childExitStatus, 0) == -1 ) {
+			DEBUG_MSG("waitpid failed: %s", strerror(errno));
+		} else if( WIFEXITED(childExitStatus) ) {
+			childExitCode = WEXITSTATUS(childExitStatus);
+			DEBUG_MSG("Child exited with code %d", childExitCode);
+		} else if( WIFSIGNALED(childExitStatus) ) {
+			DEBUG_MSG("Child terminated by signal %d", WTERMSIG(childExitStatus));
+		}
 	}
 
-	return ret;
+	return childExitCode;
 }
