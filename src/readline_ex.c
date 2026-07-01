@@ -670,7 +670,7 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	} state_t;
 	state_t state[16] = {0};
 	size_t statePos = 0;
-	buffer_t buf = r_buffer_create();
+	buffer_t buf = r_buffer_create(0);
 
 	ASSERT(outSafePrompt);
 

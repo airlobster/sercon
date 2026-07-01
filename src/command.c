@@ -35,7 +35,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	parse_state_t state[32] = {0}; // state stack
 	int statePos = 0; // current position in the state stack
 	char quote = 0; // current quote character when in PS_QUOTED state
-	buffer_t token = r_buffer_create(); // buffer for the current token
+	buffer_t token = r_buffer_create(0); // buffer for the current token
 	unsigned int integerValue = 0; // used for parsing octal and hex escape sequences
 	int nExpectedDigits = 0; // number of expected digits for octal or hex escape sequences
 

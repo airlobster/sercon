@@ -3,17 +3,21 @@
 #include "r_buffer.h"
 #include "utils.h"
 
+#define DEFAULT_MAX_SIZE (512)
+
 typedef struct _r_buffer_t {
 	char* data;
 	size_t length;
 	size_t capacity;
+	size_t max_size;
 } r_buffer_t;
 
-buffer_t r_buffer_create() {
+buffer_t r_buffer_create(size_t max_size) {
 	r_buffer_t* b = (r_buffer_t*)malloc(sizeof(struct _r_buffer_t));
 	b->data = NULL;
 	b->length = 0;
 	b->capacity = 0;
+	b->max_size = max_size ? max_size : DEFAULT_MAX_SIZE;
 	return b;
 }
 
@@ -30,6 +34,7 @@ void r_buffer_destroy(buffer_t buffer) {
 void r_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	r_buffer_t* b = (r_buffer_t*)buffer;
 	ASSERT(b);
+	ASSERT(b->length + length <= b->max_size);
 	if( b->length + length >= b->capacity ) {
 		size_t newCapacity = MAX(b->capacity * 2, b->length + length);
 		char* newData = (char*)realloc(b->data, newCapacity + 1);
