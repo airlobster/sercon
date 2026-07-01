@@ -15,7 +15,7 @@
  */
 int shell(const char* argv[], const char* input) {
 	int pStdin[2], pStdout[2], pStderr[2];
-	char buffer[128];
+	char buffer[64];
 
 	if( ! argv || ! argv[0] ) {
 		a_error("No command provided to shell\n");
