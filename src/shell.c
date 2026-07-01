@@ -61,6 +61,7 @@ int shell(const char* argv[], const char* input) {
 			{ .fd = pStderr[0], .events = POLLIN }
 		};
 
+		int lastChar = 0;
 		for(;;) {
 			int ret = poll(fds, array_size(fds), -1);
 			if( ret < 0 ) {
@@ -74,6 +75,7 @@ int shell(const char* argv[], const char* input) {
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
 					fprintf(stdout, "%s", buffer);
+					lastChar = buffer[bytesRead - 1];
 				} else {
 					break; // EOF on stdout
 				}
@@ -85,11 +87,16 @@ int shell(const char* argv[], const char* input) {
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
 					a_error("%s", buffer);
+					lastChar = buffer[bytesRead - 1];
 				} else {
 					break; // EOF on stderr
 				}
 			}
 		} // end poll loop
+
+		if( lastChar != '\n' ) {
+			fputc('\n', stdout);
+		}
 
 		close(pStdout[0]);
 		close(pStderr[0]);
