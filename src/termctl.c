@@ -288,7 +288,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
 	char buffer[128];
 	termctl_result_t rc = TERMCTL_R_OK;
-	r_array_t retryArray = r_array_create(0, NULL);
+	r_array_t retrySet = r_array_create(0, NULL);
 
 	while( rc == TERMCTL_R_OK ) {
 		termctl_update_prompt(tc);
@@ -305,21 +305,22 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 		// handle poll timeout.
 		// we take this opportunity to run periodic checkups
 		if( ret == 0 ) {
-			// if STDIN was closed, close this termctl session
+			// if STDIN was closed, close this termctl session.
+			// (tc->stdin_eof is set in termctl_rlx_callback() when it detects EOF on stdin)
 			if( tc->stdin_eof ) {
-				// end of session
+				// end session
 				rc = TERMCTL_R_OK;
 				break;
 			}
 			// attempt to reconnect any disconnected fds
-			for(size_t i=0; i < r_array_size(retryArray); i++) {
-				int fd = (int)(intptr_t)r_array_get(retryArray, i);
+			for(size_t i=0; i < r_array_size(retrySet); i++) {
+				int fd = (int)(intptr_t)r_array_get(retrySet, i);
 				ASSERT(fd > 0);
 				int newFd = tc->reconnect_callback(tc, fd, tc->user_data);
 				if( newFd > 0 ) {
 					termctl_add_fd(tc, newFd);
 					// remove the fd from the retry set
-					r_array_remove(retryArray, i);
+					r_array_remove(retrySet, i);
 					--i; // adjust index since we removed an element
 				}
 			}
@@ -337,10 +338,11 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 			if( ! (tc->fds[i].revents & POLLIN) ) continue; // no events from this fd
 			ssize_t bytesRead = read(tc->fds[i].fd, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
-				// error reading from the fd:
-				// add it to the retry-set and remove it from the poll list
+				// error reading from this fd:
+				// remove it from the poll list and add it to the retry-set
+				// (if a reconnect callback is set)
 				if( tc->reconnect_callback ) {
-					r_array_add(retryArray, (void*)(intptr_t)tc->fds[i].fd);
+					r_array_add(retrySet, (void*)(intptr_t)tc->fds[i].fd);
 				}
 				close(tc->fds[i].fd);
 				termctl_remove_fd(tc, tc->fds[i].fd);
@@ -367,7 +369,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 		} // end other fds handling
 	} // end while
 
-	r_array_destroy(retryArray);
+	r_array_destroy(retrySet);
 
 	return rc;
 }
