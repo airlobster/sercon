@@ -663,6 +663,10 @@ void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
  * them when calculating the prompt length for cursor positioning.
  */
 void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
+#define PUSH(s)		ASSERT(statePos < array_size(state)); state[statePos++] = (s)
+#define POP()			ASSERT(statePos > 0); state[--statePos]
+#define PEEK()		state[statePos-1]
+#define UNGET()		--c
 	typedef enum {
 		STATE_NORMAL,
 		STATE_ANSI,
@@ -679,17 +683,16 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 		return;
 	}
 
-	state[statePos++] = STATE_NORMAL;
+	PUSH(STATE_NORMAL);
 
 	for(register const char *c = prompt; *c; c++) {
 		ASSERT(statePos > 0);
-		switch(state[statePos-1]) {
+		switch(PEEK()) {
 			case STATE_NORMAL: {
 				if( *c == '\033' ) {
 					r_buffer_append(buf, "\001", 1);
-					ASSERT(statePos < array_size(state));
-					state[statePos++] = STATE_ANSI;
-					--c;
+					PUSH(STATE_ANSI);
+					UNGET(); // reprocess this character in the STATE_ANSI state
 					break;
 				}
 				r_buffer_append(buf, c, 1);
@@ -698,28 +701,31 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 			case STATE_ANSI: {
 				r_buffer_append(buf, c, 1);
 				if( IS_ANSI_END_CHAR(*c) ) {
-					ASSERT(statePos > 0);
-					--statePos;
-					ASSERT(statePos < array_size(state));
-					state[statePos++] = STATE_ANSI_END;
+					POP();
+					PUSH(STATE_ANSI_END);
 				}
 				break;
 			}
 			case STATE_ANSI_END: {
-				ASSERT(statePos > 0);
-				--statePos;
+				POP();
 				r_buffer_append(buf, "\002", 1);
-				--c; // reprocess this character in the STATE_NORMAL state
+				UNGET(); // reprocess this character in the STATE_NORMAL state
 				break;
 			}
 		} // end of switch
 	} // end of for loop
 
 	// if we ended in the STATE_ANSI_END state, we need to close the ANSI sequence with \002
-	if( state[statePos-1] == STATE_ANSI_END ) {
+	ASSERT(statePos > 0);
+	if( PEEK() == STATE_ANSI_END ) {
 		r_buffer_append(buf, "\002", 1);
 	}
 
 	*outSafePrompt = r_buffer_detach_data(buf);
 	r_buffer_destroy(buf);
+
+#undef PUSH
+#undef POP
+#undef PEEK
+#undef UNGET
 }
