@@ -278,8 +278,9 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 	bool reconnect = false;
 	termctl_result_t rc = TERMCTL_R_OK;
 
-	termctl_update_prompt(tc);
 	while( rc == TERMCTL_R_OK ) {
+		termctl_update_prompt(tc);
+
 		int ret = poll(tc->fds, tc->nfds, tc->poll_timeout_ms);
 
 		// Check for poll errors
@@ -306,8 +307,6 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 					reconnect = false;
 				}
 			}
-			// update the prompt to reflect the current connection status (connected/disconnected)
-			termctl_update_prompt(tc);
 			continue; // continue polling
 		}
 
