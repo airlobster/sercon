@@ -7,24 +7,45 @@
 #include "shell.h"
 #include "ansi.h"
 
+#define POLL_TIMEOUT 1000 // milliseconds
+
 /**
  * @brief Execute a shell command.
  * @param argv The argument vector for the command.
  * @param input Optional input to pass to the command's stdin.
  * @return int The exit status of the command.
  */
-int shell(const char* argv[], const char* input) {
+int sc_shell(const char* argv[], const char* input) {
 	int pStdin[2], pStdout[2], pStderr[2];
 	char buffer[64];
+	int err = 0;
 
 	if( ! argv || ! argv[0] ) {
 		a_error("No command provided to shell\n");
 		return -1;
 	}
 
-	pipe(pStdin);
-	pipe(pStdout);
-	pipe(pStderr);
+	err = pipe(pStdin);
+	if( err ) {
+		perror("pipe failed");
+		return -1;
+	}
+	err = pipe(pStdout);
+	if( err ) {
+		close(pStdin[0]);
+		close(pStdin[1]);
+		perror("pipe failed");
+		return -1;
+	}
+	err = pipe(pStderr);
+	if( err ) {
+		close(pStdin[0]);
+		close(pStdin[1]);
+		close(pStdout[0]);
+		close(pStdout[1]);
+		perror("pipe failed");
+		return -1;
+	}
 
 	pid_t pid = fork();
 	if( pid == 0 ) {
@@ -51,19 +72,21 @@ int shell(const char* argv[], const char* input) {
 		close(pStdout[1]); // Close write end of stdout pipe
 		close(pStderr[1]); // Close write end of stderr pipe
 
+		// Write input to child's stdin if provided
 		if( input ) {
 			write(pStdin[1], input, strlen(input));
 		}
 		close(pStdin[1]);
 
 		struct pollfd fds[] = {
-			{ .fd = pStdout[0], .events = POLLIN },
-			{ .fd = pStderr[0], .events = POLLIN }
+			{ .fd = pStdout[0], .events = POLLIN| POLLHUP | POLLERR },
+			{ .fd = pStderr[0], .events = POLLIN | POLLHUP | POLLERR }
 		};
 
 		int lastChar = 0;
-		for(;;) {
-			int ret = poll(fds, array_size(fds), -1);
+		int fdsLeft = array_size(fds);
+		while( fdsLeft > 0 ) {
+			int ret = poll(fds, array_size(fds), POLL_TIMEOUT);
 			if( ret < 0 ) {
 				perror("poll failed");
 				return -1;
@@ -77,7 +100,8 @@ int shell(const char* argv[], const char* input) {
 					fprintf(stdout, "%s", buffer);
 					lastChar = buffer[bytesRead - 1];
 				} else {
-					break; // EOF on stdout
+					fds[0].fd = -1; // Mark this fd as closed
+					fdsLeft--;
 				}
 			}
 
@@ -89,7 +113,8 @@ int shell(const char* argv[], const char* input) {
 					a_error("%s", buffer);
 					lastChar = buffer[bytesRead - 1];
 				} else {
-					break; // EOF on stderr
+					fds[1].fd = -1; // Mark this fd as closed
+					fdsLeft--;
 				}
 			}
 		} // end poll loop

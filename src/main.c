@@ -307,7 +307,7 @@ static void registered_commands_callback(
 				a_error("Usage: shell COMMAND\n");
 				break;
 			}
-			shell(argv + 1, 0);
+			sc_shell(argv + 1, 0);
 			break;
 		}
 #ifdef _DEBUG_
