@@ -126,15 +126,23 @@ bool settings_set(settings_t settings, const char* key, const char* value) {
  * @brief Save the settings to the settings file.
  * @param settings The settings instance.
  * @return true if the settings were saved successfully, false otherwise.
+ * @details This function saves the settings to a temporary file first,
+ * and then renames it to the actual settings file. This ensures that the
+ * settings file is not corrupted if the program crashes during the save operation.
  */
 bool settings_save(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
 	ASSERT(s->filename);
 	ASSERT(s->appname);
-	FILE* file = fopen(s->filename, "w");
+
+	char* tempname = 0;
+	asprintf(&tempname, "%s.tmp", s->filename);
+
+	FILE* file = fopen(tempname, "w");
 	if( ! file ) {
-		DEBUG_MSG("Failed to open settings file for writing: %s", s->filename);
+		DEBUG_MSG("Failed to open settings file for writing: %s", tempname);
+		free(tempname);
 		return false;
 	}
 	fprintf(file, "# Settings file for %s\n\n", s->appname);
@@ -142,6 +150,14 @@ bool settings_save(settings_t settings) {
 		fprintf(file, "%s=%s\n", node->key, node->value);
 	}
 	fclose(file);
+
+	if( rename(tempname, s->filename) != 0 ) {
+		DEBUG_MSG("Failed to rename temporary settings file: %s", tempname);
+		free(tempname);
+		return false;
+	}
+
+	free(tempname);
 	return true;
 }
 
