@@ -246,6 +246,7 @@ int termctl_remove_fd(termctl_t termctl, int fd) {
  * @param tc The termctl internal instance.
  */
 static void termctl_update_prompt(termctl_internal_t* tc) {
+	ASSERT(tc);
 	if( ! tc->prompt_callback ) {
 		return;
 	}
@@ -275,8 +276,9 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
 	char buffer[128];
-	bool reconnect = false;
 	termctl_result_t rc = TERMCTL_R_OK;
+	int retrySet[100] = {0};
+	size_t retrySetLength = 0;
 
 	while( rc == TERMCTL_R_OK ) {
 		termctl_update_prompt(tc);
@@ -299,12 +301,20 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 				rc = TERMCTL_R_OK;
 				break;
 			}
-			if( reconnect && tc->reconnect_callback ) {
-				// retry connecting to the serial port if it was disconnected
-				int fd = tc->reconnect_callback(tc, tc->user_data);
-				if( fd > 0 ) {
-					termctl_add_fd(tc, fd);
-					reconnect = false;
+			// attempt to reconnect any disconnected fds
+			for(size_t i=0; i < retrySetLength; i++) {
+				int fd = retrySet[i];
+				ASSERT(fd > 0);
+				int newFd = tc->reconnect_callback(tc, fd, tc->user_data);
+				if( newFd > 0 ) {
+					termctl_add_fd(tc, newFd);
+					// remove the fd from the retry set
+					for(size_t j=i; j < retrySetLength - 1; j++) {
+						retrySet[j] = retrySet[j + 1];
+					}
+					--retrySetLength;
+					ASSERT(retrySetLength >= 0);
+					--i; // adjust index since we removed an element
 				}
 			}
 			continue; // continue polling
@@ -321,11 +331,14 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 			if( ! (tc->fds[i].revents & POLLIN) ) continue; // no events from this fd
 			ssize_t bytesRead = read(tc->fds[i].fd, buffer, sizeof(buffer) - 1);
 			if( bytesRead < 0 ) {
-				// error reading from the fd, remove it from the poll list
+				// error reading from the fd:
+				// add it to the retry-set and remove it from the poll list
+				if( tc->reconnect_callback ) {
+					ASSERT(retrySetLength < array_size(retrySet));
+					retrySet[retrySetLength++] = tc->fds[i].fd;
+				}
 				close(tc->fds[i].fd);
 				termctl_remove_fd(tc, tc->fds[i].fd);
-				reconnect = true;
-				termctl_update_prompt(tc);
 			} else {
 				rlx_pause(tc->rlx);
 				buffer[bytesRead] = '\0'; // null-terminate the buffer

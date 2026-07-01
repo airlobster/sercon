@@ -255,8 +255,8 @@ static void registered_commands_callback(
 					break;
 				}
 			}
-			settings_set(settings, "ansi_color_mode", get_ansi_mode());
-			a_success("ANSI color mode: %s\n", get_ansi_mode());
+			settings_set(settings, "color_mode", get_ansi_mode());
+			a_success("Color mode: %s\n", get_ansi_mode());
 			break;
 		}
 #ifdef _DEBUG_
@@ -360,8 +360,9 @@ void newline_callback(termctl_t tc, void* userData) {
  * @param userData User data pointer.
  * @return fd if successful, -1 if failed.
  */
-int reconnect_callback(termctl_t tc, void* userData) {
+int reconnect_callback(termctl_t tc, int fd, void* userData) {
 	(void)userData;
+	(void)fd;
 	ASSERT(tc);
 	ASSERT(port);
 	return fdPort = applyConnectionString(tc, port);
@@ -392,10 +393,10 @@ static void on_exit_handler(void) {
 
 static void apply_loaded_settings() {
 	ASSERT(settings);
-	const char* ansi_mode = settings_get(settings, "ansi_color_mode");
-	if( ansi_mode ) {
-		DEBUG_MSG("Loaded ANSI color mode from settings: %s", ansi_mode);
-		set_ansi_mode(ansi_mode);
+	const char* color_mode = settings_get(settings, "color_mode");
+	if( color_mode ) {
+		DEBUG_MSG("Loaded color mode from settings: %s", color_mode);
+		set_ansi_mode(color_mode);
 	}
 	const char* timestamps = settings_get(settings, "timestamps");
 	if( timestamps ) {

@@ -62,10 +62,11 @@ typedef void (*termctl_user_input_callback_t)(termctl_t tc, const char* line, si
  * @brief Callback function type for handling reconnection attempts.
  *
  * @param tc The termctl instance.
+ * @param fd The file descriptor to reconnect.
  * @param userData User data pointer.
  * @return fd if successful, -1 if failed.
  */
-typedef int (*termctl_reconnect_callback_t)(termctl_t tc, void* userData);
+typedef int (*termctl_reconnect_callback_t)(termctl_t tc, int fd, void* userData);
 
 termctl_t termctl_create(const char* appname, void* userData);
 void termctl_destroy(termctl_t termctl);
