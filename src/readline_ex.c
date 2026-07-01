@@ -664,7 +664,7 @@ void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
  */
 void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 #define PUSH(s)		ASSERT(statePos < array_size(state)); state[statePos++] = (s)
-#define POP()			ASSERT(statePos > 0); state[--statePos]
+#define POP()			ASSERT(statePos > 0); --statePos
 #define PEEK()		state[statePos-1]
 #define UNGET()		--c
 	typedef enum {

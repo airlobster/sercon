@@ -2,3 +2,4 @@ help
 vocabulary
 ports
 settings
+shell cat Makefile

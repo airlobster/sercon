@@ -8,6 +8,7 @@
 #include "ansi.h"
 
 #define POLL_TIMEOUT 1000 // milliseconds
+#define POLL_MASK (POLLIN | POLLHUP | POLLERR)
 
 static void close_pipe(int pipefd[2]) {
 	for(int i = 0; i < 2; ++i) {
@@ -61,6 +62,7 @@ int sc_shell(const char* argv[], const char* input) {
 		execvp(argv[0], (char * const *)argv);
 
 		perror("execvp failed");
+
 		exit(1);
 	} else {
 		// PARENT PROCESS
@@ -75,21 +77,22 @@ int sc_shell(const char* argv[], const char* input) {
 		close(pStdin[1]);
 
 		struct pollfd fds[] = {
-			{ .fd = pStdout[0], .events = POLLIN| POLLHUP | POLLERR },
-			{ .fd = pStderr[0], .events = POLLIN | POLLHUP | POLLERR }
+			{ .fd = pStdout[0], .events = POLL_MASK },
+			{ .fd = pStderr[0], .events = POLL_MASK }
 		};
 
 		int lastChar = 0;
 		int fdsLeft = array_size(fds);
 		while( fdsLeft ) {
 			ret = poll(fds, array_size(fds), POLL_TIMEOUT);
+
 			if( ret < 0 ) {
 				perror("poll failed");
 				break;
 			}
 
 			// read child's STDOUT
-			if( fds[0].revents & POLLIN ) {
+			if( fds[0].revents & POLL_MASK ) {
 				ssize_t bytesRead = read(pStdout[0], buffer, sizeof(buffer) - 1);
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
@@ -102,7 +105,7 @@ int sc_shell(const char* argv[], const char* input) {
 			}
 
 			// read child's STDERR
-			if( fds[1].revents & POLLIN ) {
+			if( fds[1].revents & POLL_MASK ) {
 				ssize_t bytesRead = read(pStderr[0], buffer, sizeof(buffer) - 1);
 				if( bytesRead > 0 ) {
 					buffer[bytesRead] = '\0';
