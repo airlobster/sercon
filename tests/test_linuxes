@@ -25,7 +25,7 @@ function test_linux() {
 		docker build --progress=plain -t "$image_name" -f "$dockerfile" .
 		printf "\x1b[0m"
 
-		printf "ports\nvocabulary\nhelp\n" \
+		cat "${SCENARIO}" \
 			| docker run --rm  -i --privileged -v ~/sercon:/sercon "$image_name" bash -c "make run"
 	)
 	local status=$?
@@ -34,6 +34,10 @@ function test_linux() {
 
 
 cd $(dirname "$0")
+
+SCENARIO="${PWD}/scenario.txt"
+[ -f "$SCENARIO" ] || error "Scenario file not found: $SCENARIO"
+
 # Find the root of the repository by looking for a Makefile
 while [ ! -f "Makefile" ]; do
 	cd ..
