@@ -29,7 +29,7 @@ LIBS := -lreadline -lsqlite3 -lm
 ARTIFACTS_ROOT_DIR ?= $(shell pwd)
 BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
-DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/doxygen/$(FULL_VERSION)
+DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/doxygen
 SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
 
 BUILD ?= debug
@@ -133,15 +133,15 @@ readme:
 	@$(OPENER) $(README)
 
 doxygen:
-	@rm -rf $(DOXYGEN_ARTIFACTS_DIR)
-	@mkdir -p $(DOXYGEN_ARTIFACTS_DIR)
+	@rm -rf $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)
+	@mkdir -p $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)
 	@doxygen -g
 	@sed -E -i '' 's|^INPUT.+|INPUT = src|g' Doxyfile
 	@sed -E -i '' 's|^GENERATE_HTML.+|GENERATE_HTML = YES|g' Doxyfile
 	@sed -E -i '' 's|^SEARCHENGINE.+|SEARCHENGINE = YES|g' Doxyfile
-	@sed -E -i '' 's|^OUTPUT_DIRECTORY.+|OUTPUT_DIRECTORY = "$(DOXYGEN_ARTIFACTS_DIR)"|g' Doxyfile
+	@sed -E -i '' 's|^OUTPUT_DIRECTORY.+|OUTPUT_DIRECTORY = "$(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)"|g' Doxyfile
 	@doxygen Doxyfile
-	@$(OPENER) $(DOXYGEN_ARTIFACTS_DIR)/html/index.html
+	@$(OPENER) $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)/html/index.html
 	@rm -rf Doxyfile*
 
 # open the GitHub repository in the default browser
@@ -172,7 +172,7 @@ uninstall:
 	@printf "$(COLOR_SUCCESS)** Uninstalled $(TARGET) and its man page from $(PREFIX)$(COLOR_RESET)\n"
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)
 
 cleanall:
 	rm -rf $(BUILD_ROOT) $(DIST_DIR) $(DOXYGEN_ARTIFACTS_DIR) Doxyfile*
