@@ -80,6 +80,7 @@ int termctl_add_fd(termctl_t termctl, int fd);
 int termctl_remove_fd(termctl_t termctl, int fd);
 
 rlx_t termctl_get_rlx(termctl_t termctl);
+void termctl_inject_input(termctl_t termctl, const char* input);
 
 termctl_result_t termctl_event_loop(termctl_t termctl);
 

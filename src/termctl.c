@@ -364,3 +364,13 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 
 	return rc;
 }
+
+/**
+	@brief Inject input into the termctl session.
+	@param termctl The termctl session handle.
+	@param input The input string to inject.
+*/
+void termctl_inject_input(termctl_t termctl, const char* input) {
+	ASSERT(termctl);
+	rlx_inject_input(termctl_get_rlx(termctl), input);
+}

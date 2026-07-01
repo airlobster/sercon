@@ -96,6 +96,29 @@ static bool disconnect(termctl_t tc) {
 }
 
 /**
+ * @brief Run a script file.
+ * @param tc The termctl instance.
+ * @param scriptPath The path to the script file.
+ * @return bool True if the script was run successfully, false otherwise.
+ */
+bool run_script(termctl_t tc, const char* scriptPath) {
+	ASSERT(tc);
+	ASSERT(scriptPath);
+	FILE* scriptFile = fopen(scriptPath, "r");
+	if( ! scriptFile ) {
+		a_error("Failed to open script file: %s\n", scriptPath);
+		return false;
+	}
+	for(;;) {
+		char line[1024];
+		if( ! fgets(line, sizeof(line), scriptFile) ) break;
+		termctl_inject_input(tc, line);
+	}
+	fclose(scriptFile);
+	return true;
+}
+
+/**
  * @brief Apply a connection string to connect to a serial port.
  * @param tc The termctl instance.
  * @param connectionString The connection string in the format "PORT{:BAUD}".
@@ -259,6 +282,14 @@ static void registered_commands_callback(
 			a_success("Color mode: %s\n", get_ansi_mode());
 			break;
 		}
+		case 's': {
+			if( argc < 2 ) {
+				a_error("Usage: script PATH\n");
+				break;
+			}
+			run_script(tc, argv[1]);
+			break;
+		}
 #ifdef _DEBUG_
 		case 'A': {
 			rlx_print_autocomplete_vocabulary(h);
@@ -288,6 +319,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 		{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
 		{'t', "timestamps", "Set/show timestamps state (on|off)", registered_commands_callback},
 		{'R', "colors", "Set/show ANSI color mode (auto|always|never)", registered_commands_callback},
+		{'s', "script", "Run a script file (usage: script PATH)", registered_commands_callback},
 #ifdef _DEBUG_
 		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
 		{'S', "settings", "Show current settings (debugging only)", registered_commands_callback},

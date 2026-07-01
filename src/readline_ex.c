@@ -124,6 +124,10 @@ static void readline_callback_wrapper(char* line) {
 	}
 }
 
+static int event_hook(void) {
+	return 0;
+}
+
 /**
 	@brief Begin a readline_ex session.
 	@param appname The name of the application.
@@ -164,6 +168,8 @@ rlx_t rlx_begin(
 	rlx->ownsCompletionVocabulary = true;
 	rlx->isPaused = false;
 
+	history_max_entries = rlx->maxHistoryEntries;
+
 	// if the option to persist history is enabled, we will load the history from the file on startup
 	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
 		read_history(rlx->historyFilePath);
@@ -195,6 +201,8 @@ rlx_t rlx_begin(
 	}
 
 	using_history();
+
+	rl_event_hook = event_hook;
 
 	return (rlx_t)rlx;
 }
@@ -389,6 +397,18 @@ void rlx_resume(rlx_t rlx, bool redisplayPrompt) {
 	free(rlx->savedLineBuffer);
 	rlx->savedLineBuffer = 0;
 	rlx->isPaused = false;
+}
+
+/**
+	@brief Inject input into the readline_ex session.
+	@param h The readline_ex session handle.
+	@param input The input string to inject.
+	@details Send a copy of the input string to the readline_ex session as if it was typed by the user.
+*/
+void rlx_inject_input(rlx_t h, const char* input) {
+	ASSERT(h);
+	if( ! input ) return;
+	readline_callback_wrapper(strdup(input));
 }
 
 /**
