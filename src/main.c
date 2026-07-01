@@ -307,6 +307,7 @@ static void registered_commands_callback(
 				a_error("Usage: shell COMMAND\n");
 				break;
 			}
+			ASSERT(argv[argc] == NULL); // ensure argv is null-terminated
 			sc_shell(argv + 1, 0);
 			break;
 		}
