@@ -29,7 +29,7 @@ LIBS := -lreadline -lsqlite3 -lm
 ARTIFACTS_ROOT_DIR ?= $(shell pwd)
 BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
 DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
-DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/doxygen
+DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/doxygen/$(FULL_VERSION)
 SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
 
 BUILD ?= debug
