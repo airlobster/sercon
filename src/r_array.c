@@ -3,6 +3,7 @@
 #include "r_array.h"
 
 #define PAGE_SIZE (16)
+#define DEFAULT_MAX_ENTRIES (1024*2)
 
 /**
  * @brief Internal structure representing a dynamic array.
@@ -38,7 +39,7 @@ r_array_t r_array_create(size_t maxEntries, r_array_dtor_t dtor) {
 	a->elements = 0;
 	a->capacity = 0;
 	a->size = 0;
-	a->maxEntries = maxEntries;
+	a->maxEntries = maxEntries ? maxEntries : DEFAULT_MAX_ENTRIES;
 	a->dtor = dtor ? dtor : null_dtor;
 
 	return (r_array_t)a;

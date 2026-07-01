@@ -34,7 +34,10 @@ void r_buffer_destroy(buffer_t buffer) {
 void r_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	r_buffer_t* b = (r_buffer_t*)buffer;
 	ASSERT(b);
-	ASSERT(b->length + length <= b->max_size);
+	if( b->max_size && b->length + length >= b->max_size ) {
+		DEBUG_MSG("Buffer overflow: cannot append data to buffer");
+		return;
+	}
 	if( b->length + length >= b->capacity ) {
 		size_t newCapacity = MAX(b->capacity * 2, b->length + length);
 		char* newData = (char*)realloc(b->data, newCapacity + 1);

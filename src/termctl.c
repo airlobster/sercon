@@ -278,7 +278,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
 	char buffer[128];
 	termctl_result_t rc = TERMCTL_R_OK;
-	r_array_t retryArray = r_array_create(100, NULL);
+	r_array_t retryArray = r_array_create(0, NULL);
 
 	while( rc == TERMCTL_R_OK ) {
 		termctl_update_prompt(tc);
