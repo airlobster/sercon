@@ -10,6 +10,7 @@
 #include "serlist.h"
 #include "ansi.h"
 #include "termctl.h"
+#include "settings.h"
 
 #ifndef VERSION
 #define VERSION "0.0.0.0"
@@ -20,6 +21,7 @@ bool printTimestamps = true;
 char* port = 0;
 int fdPort = -1;
 termctl_t termctl = 0;
+settings_t settings = 0;
 
 /**
  * @brief Update the prompt for a termctl instance.
@@ -242,6 +244,7 @@ static void registered_commands_callback(
 			if( argc > 1 ) {
 				printTimestamps = strcasecmp(argv[1], "on") == 0 || strcasecmp(argv[1], "yes") == 0;
 			}
+			settings_set(settings, "timestamps", printTimestamps ? "on" : "off");
 			a_success("Timestamps %s\n", printTimestamps ? "on" : "off");
 			break;
 		}
@@ -252,12 +255,17 @@ static void registered_commands_callback(
 					break;
 				}
 			}
+			settings_set(settings, "ansi_color_mode", get_ansi_mode());
 			a_success("ANSI color mode: %s\n", get_ansi_mode());
 			break;
 		}
 #ifdef _DEBUG_
 		case 'A': {
 			rlx_print_autocomplete_vocabulary(h);
+			break;
+		}
+		case 'S': {
+			settings_print(settings);
 			break;
 		}
 #endif
@@ -282,6 +290,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 		{'R', "colors", "Set/show ANSI color mode (auto|always|never)", registered_commands_callback},
 #ifdef _DEBUG_
 		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
+		{'S', "settings", "Show current settings (debugging only)", registered_commands_callback},
 #endif
 		{0, 0, 0, 0} // end marker
 	};
@@ -375,15 +384,35 @@ static void on_exit_handler(void) {
 		free(port);
 		port = 0;
 	}
+	if( settings ) {
+		settings_free(settings);
+		settings = 0;
+	}
+}
+
+static void apply_loaded_settings() {
+	ASSERT(settings);
+	const char* ansi_mode = settings_get(settings, "ansi_color_mode");
+	if( ansi_mode ) {
+		DEBUG_MSG("Loaded ANSI color mode from settings: %s", ansi_mode);
+		set_ansi_mode(ansi_mode);
+	}
+	const char* timestamps = settings_get(settings, "timestamps");
+	if( timestamps ) {
+		DEBUG_MSG("Loaded timestamps setting from settings: %s", timestamps);
+		printTimestamps = strcasecmp(timestamps, "on") == 0 || strcasecmp(timestamps, "yes") == 0;
+	}
 }
 
 int main(int argc, char* argv[]) {
 	const char* appname = basename(argv[0]);
 
+	settings = settings_init(appname);
 	atexit(on_exit_handler);
 
 	parse_cli_args(argc, argv);
 	begin_ansi(false);
+	apply_loaded_settings();
 
 	// print banner (only if stdin is a terminal)
 	if( isatty(fileno(stdin)) ) {
