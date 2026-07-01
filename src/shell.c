@@ -16,34 +16,23 @@
  * @return int The exit status of the command.
  */
 int sc_shell(const char* argv[], const char* input) {
-	int pStdin[2], pStdout[2], pStderr[2];
+	int pStdin[2]={-1,-1}, pStdout[2]={-1,-1}, pStderr[2]={-1,-1};
 	char buffer[64];
-	int err = 0;
 
 	if( ! argv || ! argv[0] ) {
 		a_error("No command provided to shell\n");
 		return -1;
 	}
 
-	err = pipe(pStdin);
-	if( err ) {
+	// create pipes for stdin, stdout, and stderr
+	if( pipe(pStdin) != 0 || pipe(pStdout) != 0 || pipe(pStderr) != 0 ) {
 		perror("pipe failed");
-		return -1;
-	}
-	err = pipe(pStdout);
-	if( err ) {
-		close(pStdin[0]);
-		close(pStdin[1]);
-		perror("pipe failed");
-		return -1;
-	}
-	err = pipe(pStderr);
-	if( err ) {
-		close(pStdin[0]);
-		close(pStdin[1]);
-		close(pStdout[0]);
-		close(pStdout[1]);
-		perror("pipe failed");
+		pStdin[0] != -1 && close(pStdin[0]);
+		pStdin[1] != -1 && close(pStdin[1]);
+		pStdout[0] != -1 && close(pStdout[0]);
+		pStdout[1] != -1 && close(pStdout[1]);
+		pStderr[0] != -1 && close(pStderr[0]);
+		pStderr[1] != -1 && close(pStderr[1]);
 		return -1;
 	}
 
