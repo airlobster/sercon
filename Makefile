@@ -14,7 +14,7 @@ endif
 
 # versioning: get the short git commit hash if available, otherwise use 'unknown'
 GIT_COMMIT_HASH=$(shell git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
-VERSION ?= 1.2.1
+VERSION ?= 1.3.0
 FULL_VERSION := $(VERSION).$(GIT_COMMIT_HASH)
 
 CC := cc
