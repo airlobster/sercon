@@ -73,7 +73,7 @@ int sc_shell_v(
 
 		execvp(argv[0], (char * const *)argv);
 
-		perror("execvp failed");
+		perror("Shell command failed");
 
 		exit(1);
 	} // end child process
