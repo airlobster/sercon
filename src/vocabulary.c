@@ -145,3 +145,9 @@ void vocab_print(vocabulary_t vocab) {
 	}
 }
 #endif
+
+void vocab_reset(vocabulary_t vocab) {
+	ASSERT(vocab);
+	destroy_words_list(vocab);
+	r_btree_reset(vocab->words_tree);
+}
