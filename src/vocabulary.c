@@ -2,45 +2,18 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include <sqlite3.h>
 #include "vocabulary.h"
 #include "utils.h"
+#include "r_btree.h"
 
 /**
  * @brief The internal structure of a vocabulary.
  */
 typedef struct _vocabulary_internal_t {
-	char* db_filename; /**< The filename of the database. */
 	unsigned long options; /**< Options for the vocabulary. */
-	sqlite3* db; /**< The SQLite database handle. */
-	size_t size; /**< The number of words in the vocabulary. */
+	r_btree_t words_tree; /**< The binary tree for fast word lookup. */
 	char** words_list; /**< The list of words in the vocabulary. */
-	bool dirty; /**< Indicates if the vocabulary has been modified. */
-	size_t max_capacity; /**< The maximum number of words the vocabulary can hold. */
 } vocabulary_internal_t;
-
-#ifdef _DEBUG_
-#define DB_ERROR(vocab) DEBUG_MSG("DB error: %s", sqlite3_errmsg(vocab->db))
-#else
-#define DB_ERROR(vocab) ((void)0)
-#endif
-
-/**
- * @brief Initializes the database for the vocabulary.
- * @param vocab The vocabulary whose database is to be initialized.
- * @return int SQLITE_OK on success, or an SQLite error code on failure.
- */
-static int init_schema(vocabulary_internal_t* vocab) {
-	static const char sql[] =
-		"CREATE TABLE IF NOT EXISTS words ("
-		"word TEXT PRIMARY KEY NOT NULL"
-		");";
-	int rc = sqlite3_exec(vocab->db, sql, 0, 0, 0);
-	if( rc != SQLITE_OK ) {
-		DB_ERROR(vocab);
-	}
-	return rc;
-}
 
 /**
  * @brief Destroys the words-list cache.
@@ -70,30 +43,8 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	}
 
 	vocab->options = options;
-	vocab->db = 0;
-	vocab->size = 0;
-	vocab->dirty = true;
 	vocab->words_list = 0;
-	vocab->max_capacity = max_capacity;
-
-#ifdef _DEBUG_
-	// in debug mode we do want to have an actual file we can debug with the sqlite3 shell
-	asprintf(&vocab->db_filename, "/tmp/sercon.vocabulary.%d.db", getpid());
-#else
-	vocab->db_filename = strdup(":memory:");
-#endif
-
-	if( sqlite3_open(vocab->db_filename, &vocab->db) != SQLITE_OK ) {
-		DB_ERROR(vocab);
-		vocab_destroy(vocab);
-		return 0; // failed to open database
-	}
-
-	if( init_schema(vocab) != SQLITE_OK ) {
-		DB_ERROR(vocab);
-		vocab_destroy(vocab);
-		return 0; // failed to initialize database
-	}
+	vocab->words_tree = r_btree_create((r_btree_compare_func_t)strcmp, free);
 
 	return vocab;
 }
@@ -105,12 +56,7 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 void vocab_destroy(vocabulary_t vocab) {
 	ASSERT(vocab);
 	destroy_words_list(vocab);
-	if( vocab->db ) {
-		sqlite3_close(vocab->db);
-	}
-	if( vocab->db_filename ) {
-		free(vocab->db_filename);
-	}
+	r_btree_destroy(vocab->words_tree);
 	free(vocab);
 }
 
@@ -122,26 +68,18 @@ void vocab_destroy(vocabulary_t vocab) {
  * @note Assumes the given word is a valid null-terminated trimmed string. Empty words are ignored.
  */
 bool vocab_add_word(vocabulary_t vocab, const char* word) {
-	static const char sql[] =
-		"INSERT INTO words (word) VALUES (?) "
-		// "ON CONFLICT(word) DO UPDATE SET timestamp = CURRENT_TIMESTAMP;"
-		;
 	ASSERT(vocab);
 	ASSERT(word && *word);
-	ASSERT(vocab->db);
-	sqlite3_stmt *stmt;
-	sqlite3_prepare_v2(vocab->db, sql, -1, &stmt, 0);
-	sqlite3_bind_text(stmt, 1, word, -1, SQLITE_STATIC);
-	int rc = sqlite3_step(stmt);
-	sqlite3_finalize(stmt);
-	if( rc == SQLITE_DONE ) {
-		vocab->dirty = true;
-		vocab->size++;
-		return true;
-	} else if( rc != SQLITE_CONSTRAINT ) {
-		DB_ERROR(vocab);
+	char* word_copy = strdup(word);
+	if( ! word_copy ) {
+		DEBUG_MSG("Failed to allocate memory for word copy");
+		return false; // allocation failed
 	}
-	return false;
+	if( ! r_btree_add(vocab->words_tree, word_copy) ) {
+		free(word_copy);
+		return false;
+	}
+	return true;
 }
 
 /**
@@ -151,27 +89,20 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
  */
 size_t vocab_size(vocabulary_t vocab) {
 	ASSERT(vocab);
-	ASSERT(vocab->db);
-	return vocab->size;
+	return r_btree_size(vocab->words_tree);
 }
 
 /**
  * @brief Callback function for enumerating words in the database.
+ * @param data The data passed to the callback (the word).
  * @param user_data User data passed to the callback.
- * @param argc The number of columns in the result.
- * @param argv The values of the columns.
- * @param azColName The names of the columns.
- * @return int 0 to continue, non-zero to abort.
  */
-static int enum_words_callback(void* user_data, int argc, char** argv, char** azColName) {
-	(void)azColName; // unused parameter
-	if( argc > 0 && argv[0] ) {
-		char*** words_ptr = (char***)user_data;
-		ASSERT(words_ptr && *words_ptr);
-		**words_ptr = strdup(argv[0]); // duplicate the word
-		(*words_ptr)++;
-	}
-	return 0; // (continue)
+static void enum_words_callback(void* data, void* user_data) {
+	ASSERT(user_data);
+	char*** words_ptr = (char***)user_data;
+	ASSERT(*words_ptr);
+	**words_ptr = strdup((const char*)data); // duplicate the word
+	(*words_ptr)++;
 }
 
 /**
@@ -181,29 +112,18 @@ static int enum_words_callback(void* user_data, int argc, char** argv, char** az
  * @note The returned array is owned by the vocabulary and should not be freed by the caller.
  */
 char** vocab_get_words(vocabulary_t vocab) {
-	static const char sql[] = "SELECT word FROM words ORDER BY word ASC;";
 	ASSERT(vocab);
-	ASSERT(vocab->db);
-	if( vocab->words_list && ! vocab->dirty ) {
-		return vocab->words_list; // return cached list
-	}
-	// allocate memory for the words list
-	char** words = (char**)malloc(sizeof(char*) * (vocab->size+1));
+	size_t size = r_btree_size(vocab->words_tree);
+	char** words = (char**)malloc(sizeof(char*) * (size+1));
 	if( ! words ) return 0; // allocation failed
 	char** words_ptr = words;
-	// fetch words from the database
-	int rc = sqlite3_exec(vocab->db, sql, enum_words_callback, &words_ptr, 0);
-	if( rc != SQLITE_OK ) {
-		DB_ERROR(vocab);
-		free(words);
-		return 0; // error occurred
-	}
+	// fetch words from the binary tree
+	r_btree_traverse(vocab->words_tree, (r_btree_traverse_func_t)enum_words_callback, &words_ptr);
 	// null-terminate the array
-	words[vocab->size] = 0;
+	words[size] = 0;
 	// replace the cached words list
 	destroy_words_list(vocab);
 	vocab->words_list = words;
-	vocab->dirty = false;
 	return vocab->words_list;
 }
 
@@ -214,10 +134,10 @@ char** vocab_get_words(vocabulary_t vocab) {
  */
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
-	printf("Auto-Complete Vocabulary (size: %zu):\n", vocab->size);
+	printf("Auto-Complete Vocabulary (size: %zu):\n", r_btree_size(vocab->words_tree));
 	char** words = vocab_get_words(vocab);
 	for(char** w = words; w && *w; w++) {
-		printf("%*ld: %s\n", numdigits(vocab->size, 0), w - words + 1, *w);
+		printf("%*ld: %s\n", numdigits(r_btree_size(vocab->words_tree), 0), w - words + 1, *w);
 	}
 }
 #endif
