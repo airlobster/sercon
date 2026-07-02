@@ -290,6 +290,8 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 	termctl_result_t rc = TERMCTL_R_OK;
 	r_array_t retrySet = r_array_create(0, NULL);
 
+	rlx_rebuild_completion_vocabulary(termctl_get_rlx(termctl));
+
 	while( rc == TERMCTL_R_OK ) {
 		termctl_update_prompt(tc);
 

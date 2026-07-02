@@ -211,6 +211,10 @@ rlx_t rlx_begin(
 		rl_bind_key('\t', rl_insert);
 	}
 
+	if( rlx->completionVocabulary ) {
+		rlx_rebuild_completion_vocabulary(rlx);
+	}
+
 	using_history();
 
 	rl_event_hook = event_hook;
@@ -597,6 +601,24 @@ static char** rlx_custom_completion(const char* text, int start, int end) {
 }
 
 /**
+ * @brief Rebuild the autocomplete vocabulary by invoking all registered autocomplete callbacks.
+ * @param rlx The readline_ex session handle.
+ */
+void rlx_rebuild_completion_vocabulary(rlx_t rlx) {
+	ASSERT(rlx);
+	ASSERT(rlx->completionVocabulary);
+	ASSERT(rlx->autocompleteCallbacks);
+	vocab_reset(rlx->completionVocabulary);
+	// invoke auto-complete chain of callbacks to build the vocabulary
+	for(size_t i=0; i < r_array_size(rlx->autocompleteCallbacks); i++) {
+		rlx_vocabulary_build_callback_t callback =
+			(rlx_vocabulary_build_callback_t)r_array_get(rlx->autocompleteCallbacks, i);
+		ASSERT(callback);
+		callback((rlx_t)rlx, rlx->context);
+	}
+}
+
+/**
  * @brief Custom completion generator for readline_ex.
  * @param text The text to complete.
  * @param state The state of the completion.
@@ -608,29 +630,29 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 	ASSERT(rlx->completionVocabulary);
 	ASSERT(rlx->autocompleteCallbacks);
 
-	static const char** completionList = 0;
+	static r_array_t completionList = 0;
 	static size_t vocabIndex = 0;
 	static size_t textLen = 0;
 
 	// first call for a given completion, we need to build the list of possible completions
 	if( state == 0 ) {
-		vocab_reset(rlx->completionVocabulary);
-		// invoke auto-complete chain of callbacks to build the vocabulary
-		for(size_t i=0; i < r_array_size(rlx->autocompleteCallbacks); i++) {
-			rlx_vocabulary_build_callback_t callback =
-				(rlx_vocabulary_build_callback_t)r_array_get(rlx->autocompleteCallbacks, i);
-			ASSERT(callback);
-			callback((rlx_t)rlx, rlx->context);
+		rlx_rebuild_completion_vocabulary(rlx);
+		// replace the previous completion list with the new one from the vocabulary
+		if( completionList ) {
+			// since this array has no dtor function set, only the array itself will be freed,
+			// while leaving the elements (strings) intact, which is what we want since they are owned by the vocabulary.
+			r_array_destroy(completionList);
+			completionList = 0;
 		}
-		completionList = (const char**)vocab_get_words(rlx->completionVocabulary);
+		completionList = vocab_get_words(rlx->completionVocabulary);
 		ASSERT(completionList);
 		vocabIndex = 0;
 		textLen = strlen(text);
 	}
 
 	// search through the vocabulary for the next matching the input text
-	while( completionList[vocabIndex] ) {
-		const char* candidate = completionList[vocabIndex++];
+	while( vocabIndex < r_array_size(completionList) ) {
+		const char* candidate = (const char*)r_array_get(completionList, vocabIndex++);
 		if( strncmp(candidate, text, textLen) == 0 ) {
 			return strdup(candidate);
 		}

@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include "r_array.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +24,7 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity);
 void vocab_destroy(vocabulary_t vocab);
 bool vocab_add_word(vocabulary_t vocab, const char* word);
 size_t vocab_size(vocabulary_t vocab);
-char** vocab_get_words(vocabulary_t vocab);
+r_array_t vocab_get_words(vocabulary_t vocab);
 void vocab_reset(vocabulary_t vocab);
 
 #ifdef _DEBUG_

@@ -145,6 +145,7 @@ void r_btree_destroy(r_btree_t tree) {
  */
 bool r_btree_add(r_btree_t tree, void* data) {
 	ASSERT(tree);
+	ASSERT(data);
 	r_btree_state_t* bt = (r_btree_state_t*)tree;
 	return r_btree_add_node(bt, &bt->root, data);
 }
@@ -196,4 +197,27 @@ bool r_btree_exists(r_btree_t tree, const void* data) {
 	r_btree_state_t* bt = (r_btree_state_t*)tree;
 	r_btree_node_t* node = r_btree_find_node(bt, bt->root, data);
 	return node != NULL;
+}
+
+static void to_array_callback(void* data, void* context) {
+		r_array_t array = (r_array_t)context;
+		ASSERT(array);
+		r_array_add(array, data);
+}
+
+/**
+ * @brief Converts the binary tree to an array.
+ * @param tree The binary tree to convert.
+ * @return An array containing the data from the binary tree in sorted order.
+ * @details The words in the returned array are owned by the vocabulary and should not be freed.
+ * That's why we don't set a dtor function for the returned array.
+ */
+r_array_t r_btree_to_array(r_btree_t tree) {
+	r_array_t array = r_array_create(0, 0);
+	if( ! array ) {
+		DEBUG_MSG("Failed to create array for r_btree_to_array");
+		return NULL;
+	}
+	r_btree_traverse(tree, to_array_callback, array);
+	return array;
 }

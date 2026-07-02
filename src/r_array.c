@@ -71,6 +71,8 @@ void r_array_destroy(r_array_t array) {
 bool r_array_add(r_array_t array, void* element) {
 	r_array_internal_t* a = (r_array_internal_t*)array;
 	ASSERT(a);
+	ASSERT(element);
+	if( ! element ) return false;
 	// limit reached?
 	if( a->maxEntries && a->size >= a->maxEntries ) {
 		DEBUG_MSG("ERROR: Maximum number of entries reached in r_array_add");

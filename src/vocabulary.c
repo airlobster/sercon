@@ -103,41 +103,13 @@ void vocab_reset(vocabulary_t vocab) {
 }
 
 /**
- * @brief Callback function for enumerating words.
- * @param data The data passed to the callback (the word).
- * @param context Context data passed to the callback.
- */
-static void enum_words_callback(void* data, void* context) {
-	ASSERT(context);
-	char*** words_ptr = (char***)context;
-	ASSERT(*words_ptr);
-	**words_ptr = strdup((const char*)data); // duplicate the word
-	(*words_ptr)++;
-}
-
-/**
  * @brief Gets all the words in the vocabulary.
  * @param vocab The vocabulary to get the words from.
- * @return char** A null-terminated array of words.
- * @note The returned array is owned by the vocabulary and should not be freed by the caller.
+ * @return r_array_t An array of words.
  */
-char** vocab_get_words(vocabulary_t vocab) {
+r_array_t vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
-	size_t size = r_btree_size(vocab->words_tree);
-	char** words = (char**)malloc(sizeof(char*) * (size+1));
-	if( ! words ) {
-		DEBUG_MSG("Failed to allocate memory for words list");
-		return NULL; // allocation failed
-	}
-	char** words_ptr = words;
-	// fetch words from the binary tree
-	r_btree_traverse(vocab->words_tree, (r_btree_traverse_func_t)enum_words_callback, &words_ptr);
-	// null-terminate the array
-	words[size] = 0;
-	// replace the cached words list
-	destroy_words_list(vocab);
-	vocab->words_list = words;
-	return vocab->words_list;
+	return r_btree_to_array(vocab->words_tree);
 }
 
 #ifdef _DEBUG_
@@ -147,11 +119,20 @@ char** vocab_get_words(vocabulary_t vocab) {
  */
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
-	printf("Auto-Complete Vocabulary (size: %zu):\n", r_btree_size(vocab->words_tree));
-	char** words = vocab_get_words(vocab);
-	if( ! words ) return;
-	for(char** w = words; w && *w; w++) {
-		printf("%*ld: %s\n", numdigits(r_btree_size(vocab->words_tree), 0), w - words + 1, *w);
+	r_array_t a = r_btree_to_array(vocab->words_tree);
+	if( ! a ) return;
+	size_t n = r_array_size(a);
+	if( ! n ) {
+		printf("Vocabulary not set yet\n");
+		r_array_destroy(a);
+		return;
 	}
+	printf("Auto-Complete Vocabulary (size: %zu):\n", n);
+	fflush(stdout);
+	const char* const* words = (const char* const*)r_array_elements(a);
+	for(const char* const* w = words; *w; w++) {
+		printf("%*zu: %s\n", numdigits(n, 0), w - words + 1, *w);
+	}
+	r_array_destroy(a);
 }
 #endif
