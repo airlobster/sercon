@@ -603,16 +603,17 @@ static char** rlx_custom_completion(const char* text, int start, int end) {
  * @return The next completion match.
  */
 static char* rlx_custom_completion_generator(const char* text, int state) {
+	rlx_internal_t* rlx = &rlxStatic;
+	ASSERT(rlx->isInitialized);
+	ASSERT(rlx->completionVocabulary);
+	ASSERT(rlx->autocompleteCallbacks);
+
 	static const char** completionList = 0;
 	static size_t vocabIndex = 0;
 	static size_t textLen = 0;
-	rlx_internal_t* rlx = &rlxStatic;
-	ASSERT(rlx->isInitialized);
-	ASSERT( rlx->completionVocabulary);
 
 	// first call for a given completion, we need to build the list of possible completions
 	if( state == 0 ) {
-		ASSERT(rlx->autocompleteCallbacks);
 		vocab_reset(rlx->completionVocabulary);
 		// invoke auto-complete chain of callbacks to build the vocabulary
 		for(size_t i=0; i < r_array_size(rlx->autocompleteCallbacks); i++) {
@@ -621,7 +622,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 			ASSERT(callback);
 			callback((rlx_t)rlx, rlx->context);
 		}
-		completionList = (const char**)vocab_get_words(rlxStatic.completionVocabulary);
+		completionList = (const char**)vocab_get_words(rlx->completionVocabulary);
 		ASSERT(completionList);
 		vocabIndex = 0;
 		textLen = strlen(text);
