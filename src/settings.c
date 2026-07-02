@@ -141,7 +141,7 @@ bool settings_save(settings_t settings) {
 
 	FILE* file = fopen(tempname, "w");
 	if( ! file ) {
-		DEBUG_MSG("Failed to open settings file for writing: %s", tempname);
+		DEBUG_MSG("Failed to create settings temporary file: %s", tempname);
 		free(tempname);
 		return false;
 	}
@@ -183,9 +183,18 @@ bool settings_load(settings_t settings) {
 		for(end = start; *end && ! isspace(*end) && *end != '=' && *end != '#'; end++) {}
 		if( start == end ) continue;
 		key = strndup(start, end - start);
+		if( ! key ) {
+			DEBUG_MSG("Failed to allocate memory for key");
+			continue;
+		}
 		for(start = end; isspace(*start) || *start == '=' || *start == '#'; start++) {}
 		for(end = start; *end && *end != '\n' && *end != '#'; end++) {}
 		value = strndup(start, end - start);
+		if( ! value ) {
+			DEBUG_MSG("Failed to allocate memory for value");
+			free(key);
+			continue;
+		}
 		settings_set(settings, key, value);
 		free(key);
 		free(value);
