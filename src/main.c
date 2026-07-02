@@ -450,8 +450,6 @@ static void autocomplete_callback(rlx_t rlx, void* context) {
 	ASSERT(rlx);
 	// add ports to the autocomplete vocabulary
 	enumSerialPorts(add_words_to_vocabulary_callback, termctl);
-	// add files
-	enum_files(NULL, add_words_to_vocabulary_callback, termctl);
 }
 
 /**
