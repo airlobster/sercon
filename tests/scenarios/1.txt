@@ -2,4 +2,4 @@ help
 vocabulary
 ports
 settings
-shell cat Makefile
+shell bash -c 'echo -n "DATE: " && date'
