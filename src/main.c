@@ -351,6 +351,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 		{'i', "history", "Show command history", registered_commands_callback},
 		{'c', "clear", "Clear history", registered_commands_callback},
 		{'h', "help", "Show this help message", registered_commands_callback},
+		{'q', "exit", "Exit the program", registered_commands_callback},
 		{'q', "quit", "Exit the program", registered_commands_callback},
 		{'v', "version", "Show version information", registered_commands_callback},
 		{'p', "ports", "List available serial ports", registered_commands_callback},
@@ -502,6 +503,7 @@ int main(int argc, char* argv[]) {
 	// print banner (only if stdin is a terminal)
 	if( isatty(fileno(stdin)) ) {
 		ansi_fprintf(stdout, ANSI_BOLD "%s - A Serial-Ports Console (v%s)\n", appname, VERSION);
+		ansi_fprintf(stdout, "(Type 'help' for a list of commands, and 'quit' to exit)\n");
 	}
 
 	termctl = termctl_create(appname, 0);
