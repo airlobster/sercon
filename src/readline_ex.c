@@ -450,6 +450,16 @@ void rlx_process_input(rlx_t rlx) {
 }
 
 /**
+	@brief Get the current input line from the readline_ex session.
+	@param rlx The readline_ex session handle.
+	@return The current input line, or NULL if there is no input line.
+*/
+const char* rlx_get_current_line(rlx_t h) {
+	ASSERT(h);
+	return rl_line_buffer;
+}
+
+/**
 	@brief Reset the command history for the readline_ex session.
 	@param rlx The readline_ex session handle.
 */

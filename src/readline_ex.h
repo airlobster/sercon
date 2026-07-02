@@ -103,6 +103,7 @@ void rlx_change_prompt(rlx_t h, const char* newPrompt);
 // typically from an event loop or select/poll/epoll callback
 void rlx_process_input(rlx_t h);
 
+const char* rlx_get_current_line(rlx_t h);
 void rlx_inject_input(rlx_t h, const char* input);
 
 // registered commands
