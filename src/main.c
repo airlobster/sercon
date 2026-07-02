@@ -25,8 +25,9 @@ termctl_t termctl = 0;
 settings_t settings = 0;
 
 /**
- * @brief Update the prompt for a termctl instance.
- * @param tc The internal termctl instance.
+ * @brief Add a port to the autocomplete vocabulary.
+ * @param portName The name of the serial port.
+ * @param context User data pointer.
  */
 static void add_ports_to_vocabulary_callback(const char* portName, void* context) {
 	termctl_t tc = (termctl_t)context;
@@ -479,6 +480,7 @@ static void apply_loaded_settings() {
 static void autocomplete_callback(rlx_t rlx, void* context) {
 	(void)context;
 	ASSERT(rlx);
+	// add ports to the autocomplete vocabulary
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
 }
 
