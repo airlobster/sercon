@@ -45,7 +45,7 @@ const char* getHomeDir() {
 /**
  * @brief Get the number of digits in an integer.
  * @param v The integer.
- * @param base The numerical base. (e.g., 10 for decimal, 16 for hexadecimal. If 0, defaults to 10.)
+ * @param base The numerical base. (e.g., 10 for decimal, 16 for hexadecimal. If 0, defaults to 10).
  * @return The number of digits.
  */
 int numdigits(long long v, unsigned short base) {

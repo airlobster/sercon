@@ -430,8 +430,8 @@ int reconnect_callback(termctl_t tc, int fd, void* context) {
 static void autocomplete_callback(rlx_t rlx, void* context) {
 	(void)context;
 	ASSERT(rlx);
-	// add ports to the autocomplete vocabulary
 	r_array_t ports = enumSerialPorts();
+	if( ! ports ) return;
 	for(size_t i=0; i < r_array_size(ports); ++i) {
 		const char* portName = r_array_get(ports, i);
 		rlx_add_autocomplete_vocabulary_entry(rlx, portName);

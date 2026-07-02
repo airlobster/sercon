@@ -38,10 +38,16 @@ INITIALIZER(static void warn_about_overriding_env_patterns()) {
  */
 r_array_t enumSerialPorts() {
 	r_array_t ports = r_array_create(0, free);
+	if( ! ports ) return NULL;
 	char* paths = 0;
 	const char* envPats = getenv(ENV_NAME);
 	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
 	r_array_t path_array = parse_path_list(paths);
+	if( ! path_array ) {
+		free(paths);
+		r_array_destroy(ports);
+		return NULL;
+	}
 	for(size_t i=0; i < r_array_size(path_array); ++i) {
 		cglob_iterator_t g = globIterator(r_array_get(path_array, i), CGLOB_FILE_CHAR_DEVICE);
 		for(const char* path = nextGlob(g); path; path = nextGlob(g)) {

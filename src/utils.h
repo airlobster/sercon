@@ -17,17 +17,8 @@ extern "C" {
 #endif
 
 #ifdef _DEBUG_
-/**
- * @brief Print a debug message with file and line information.
- * @param fmt The format string.
- * @param ... The format arguments.
- */
 #define DEBUG_MSG(fmt, ...) debug_msg(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
 void debug_msg(const char* file, int line, const char* fmt, ...);
-/**
- * @brief Assert a condition and print a debug message if the assertion fails.
- * @param cond The condition to assert.
- */
 #define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: '%s'", #cond); exit(-1); }
 #else
 #define DEBUG_MSG(fmt, ...) ((void)0)
