@@ -24,27 +24,6 @@ int fdPort = -1;
 termctl_t termctl = 0;
 settings_t settings = 0;
 
-/**
- * @brief Callback function for shell command enumeration.
- * @param command The shell command.
- * @param context User data pointer.
- */
-static void add_words_to_vocabulary_callback(const char* word, void* context) {
-	termctl_t tc = (termctl_t)context;
-	ASSERT(tc);
-	rlx_add_autocomplete_vocabulary_entry(termctl_get_rlx(tc), word);
-}
-
-/**
- * @brief Print a serial port name.
- * @param portName The name of the serial port.
- * @param context User data pointer.
- */
-static void enum_ports_print_callback(const char* portName, void* context) {
-	(void)context;
-	ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
-}
-
 void shell_stdout_callback(const char* output, size_t length, void* context) {
 	(void)context;
 	(void)length;
@@ -64,10 +43,12 @@ void shell_stderr_callback(const char* output, size_t length, void* context) {
  */
 static void print_ports_list() {
 	ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
-	int n = enumSerialPorts(enum_ports_print_callback, 0);
-	if( ! n ) {
-		ansi_fprintf(stdout, ANSI_ITALIC "  No serial ports found\n");
+	r_array_t ports = enumSerialPorts();
+	for(size_t i=0; i < r_array_size(ports); ++i) {
+		const char* portName = r_array_get(ports, i);
+		ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 	}
+	r_array_destroy(ports);
 }
 
 /**
@@ -450,7 +431,12 @@ static void autocomplete_callback(rlx_t rlx, void* context) {
 	(void)context;
 	ASSERT(rlx);
 	// add ports to the autocomplete vocabulary
-	enumSerialPorts(add_words_to_vocabulary_callback, termctl);
+	r_array_t ports = enumSerialPorts();
+	for(size_t i=0; i < r_array_size(ports); ++i) {
+		const char* portName = r_array_get(ports, i);
+		rlx_add_autocomplete_vocabulary_entry(rlx, portName);
+	}
+	r_array_destroy(ports);
 }
 
 /**

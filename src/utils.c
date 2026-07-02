@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <math.h>
 #include "utils.h"
-#include "r_array.h"
 
 /**
  * @brief Get the current time.
@@ -107,20 +106,13 @@ void debug_msg(const char* file, int line, const char* fmt, ...) {
 #endif
 
 /**
- * @brief Parse a colon-separated list of paths and populate argc and argv.
+ * @brief Parse a colon-separated list of paths and return them as an r_array_t.
  *
  * @param pathlist The colon-separated list of paths.
- * @param argc Pointer to store the number of paths.
- * @param argv Pointer to store the array of paths.
- * @return int The number of paths parsed.
- * @note The caller is responsible for freeing the memory allocated for argv and its contents.
+ * @return r_array_t An array of paths.
  */
-int parse_path_list(const char* pathlist, int* argc, char*** argv) {
+r_array_t parse_path_list(const char* pathlist) {
 	ASSERT(pathlist);
-	ASSERT(argc);
-	ASSERT(argv);
-	*argc = 0;
-	*argv = 0;
 	r_array_t paths_array = r_array_create(0, free);
 	const char* start = pathlist, *end = pathlist;
 	while( *start ) {
@@ -136,10 +128,7 @@ int parse_path_list(const char* pathlist, int* argc, char*** argv) {
 		}
 		start = (*end) ? end + 1 : end;
 	}
-	*argc = r_array_size(paths_array);
-	*argv = (char**)r_array_detach_elements(paths_array);
-	r_array_destroy(paths_array);
-	return *argc;
+	return paths_array;
 }
 
 

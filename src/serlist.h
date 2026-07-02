@@ -6,11 +6,13 @@
  * @brief Header file for enumerating serial ports.
  */
 
+#include "r_array.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int enumSerialPorts(void(*callback)(const char* port, void* context), void* context);
+r_array_t enumSerialPorts();
 
 #ifdef __cplusplus
 }

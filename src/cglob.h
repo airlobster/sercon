@@ -1,6 +1,17 @@
 #ifndef _CGLOB_H
 #define _CGLOB_H
 
+/**
+ * @file cglob.h
+ * @brief Cross-platform globbing library for C.
+ *
+ * This library provides a simple interface for performing file globbing
+ * operations in a cross-platform manner. It supports various file types
+ * and allows users to iterate over matching files based on specified patterns.
+ *
+ * @note This library is designed to be used in both C and C++ projects.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

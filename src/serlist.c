@@ -34,26 +34,22 @@ INITIALIZER(static void warn_about_overriding_env_patterns()) {
  * @brief Enumerates the available serial ports on the system.
  * @param callback The callback function to be called for each available serial port.
  * @param context User-defined data to be passed to the callback function.
- * @return int The number of available serial ports.
+ * @return r_array_t An array of available serial ports.
  */
-int enumSerialPorts(void(*callback)(const char* port, void* context), void* context) {
+r_array_t enumSerialPorts() {
+	r_array_t ports = r_array_create(0, free);
 	char* paths = 0;
-	char** path_list = 0;
-	int nPaths = 0, n = 0;
-	ASSERT(callback);
 	const char* envPats = getenv(ENV_NAME);
 	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
-	parse_path_list(paths, &nPaths, &path_list);
-	for(int i=0; i < nPaths; ++i) {
-		cglob_iterator_t g = globIterator(path_list[i], CGLOB_FILE_CHAR_DEVICE);
+	r_array_t path_array = parse_path_list(paths);
+	for(size_t i=0; i < r_array_size(path_array); ++i) {
+		cglob_iterator_t g = globIterator(r_array_get(path_array, i), CGLOB_FILE_CHAR_DEVICE);
 		for(const char* path = nextGlob(g); path; path = nextGlob(g)) {
-			callback(path, context);
-			++n;
+			r_array_add(ports, strdup(path));
 		}
 		freeGlobIterator(g);
-		free(path_list[i]);
 	}
-	free(path_list);
+	r_array_destroy(path_array);
 	free(paths);
-	return n;
+	return ports;
 }
