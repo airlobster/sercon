@@ -25,14 +25,14 @@ termctl_t termctl = 0;
 settings_t settings = 0;
 
 /**
- * @brief Add a port to the autocomplete vocabulary.
- * @param portName The name of the serial port.
+ * @brief Callback function for shell command enumeration.
+ * @param command The shell command.
  * @param context User data pointer.
  */
-static void add_ports_to_vocabulary_callback(const char* portName, void* context) {
+static void add_words_to_vocabulary_callback(const char* word, void* context) {
 	termctl_t tc = (termctl_t)context;
 	ASSERT(tc);
-	rlx_add_autocomplete_vocabulary_entry(termctl_get_rlx(tc), portName);
+	rlx_add_autocomplete_vocabulary_entry(termctl_get_rlx(tc), word);
 }
 
 /**
@@ -441,6 +441,20 @@ int reconnect_callback(termctl_t tc, int fd, void* context) {
 }
 
 /**
+ * @brief Autocomplete callback function for a termctl instance.
+ * @param rlx The rlx instance.
+ * @param context User data pointer.
+ */
+static void autocomplete_callback(rlx_t rlx, void* context) {
+	(void)context;
+	ASSERT(rlx);
+	// add ports to the autocomplete vocabulary
+	enumSerialPorts(add_words_to_vocabulary_callback, termctl);
+	// add files
+	enum_files(NULL, add_words_to_vocabulary_callback, termctl);
+}
+
+/**
  * @brief Exit handler for the application.
  */
 static void on_exit_handler(void) {
@@ -474,24 +488,6 @@ static void apply_loaded_settings() {
 	if( timestamps ) {
 		DEBUG_MSG("Loaded timestamps setting from settings: %s", timestamps);
 		printTimestamps = strcasecmp(timestamps, "on") == 0 || strcasecmp(timestamps, "yes") == 0;
-	}
-}
-
-static void shell_commands_callback(const char* command, void* context) {
-	(void)context;
-	rlx_t rlx = (rlx_t)context;
-	rlx_add_autocomplete_vocabulary_entry(rlx, command);
-}
-
-static void autocomplete_callback(rlx_t rlx, void* context) {
-	(void)context;
-	ASSERT(rlx);
-	// add ports to the autocomplete vocabulary
-	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
-	// if the user is currently typing a shell command, add shell commands to the vocabulary
-	const char* curr_line = rlx_get_current_line(rlx);
-	if( curr_line && strncmp(curr_line, "shell ", 6) == 0 ) {
-		enum_shell_commands(shell_commands_callback, rlx);
 	}
 }
 

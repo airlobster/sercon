@@ -28,10 +28,9 @@ int sc_shell(
 	void* context
 );
 
-int enum_shell_commands(
-	void(*callback)(const char* command, void* context),
-	void* context
-);
+int enum_shell_commands(void(*callback)(const char* command, void* context), void* context);
+
+int enum_files(const char* prefix, void(*callback)(const char* filename, void* context), void* context);
 
 #ifdef __cplusplus
 }

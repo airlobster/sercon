@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/poll.h>
@@ -136,8 +135,8 @@ int sc_shell_v(
 		}
 	} // end poll loop
 
-	if( lastChar != '\n' ) {
-		fputc('\n', stdout);
+	if( lastChar != '\n' && stdout_callback ) {
+		stdout_callback("\n", 1, context);
 	}
 
 	close(pStdout[0]);
@@ -235,5 +234,23 @@ int enum_shell_commands(void(*callback)(const char* command, void* context), voi
 		callback(r_buffer_get_data(state.token), context);
 	}
 	r_buffer_destroy(state.token);
+	return ret;
+}
+
+int enum_files(const char* prefix, void(*callback)(const char* filename, void* context), void* context) {
+	enum_shell_commands_state_t state = {
+		.token=r_buffer_create(0),
+		.callback=callback,
+		.context=context
+	};
+	char* command = 0;
+	asprintf(&command, "ls %s", prefix ? prefix : "");
+	int ret = sc_shell(command, NULL, enum_shell_commands_callback, NULL, &state);
+	// handle the last token if any
+	if( ret == 0 && callback && r_buffer_size(state.token) > 0 ) {
+		callback(r_buffer_get_data(state.token), context);
+	}
+	r_buffer_destroy(state.token);
+	free(command);
 	return ret;
 }
