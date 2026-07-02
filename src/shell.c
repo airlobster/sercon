@@ -64,7 +64,7 @@ int sc_shell(
 		dup2(pStdin[0], STDIN_FILENO);
 		dup2(pStdout[1], STDOUT_FILENO);
 		dup2(pStderr[1], STDERR_FILENO);
-	
+
 		close(pStdin[0]); // Close original read end of stdin pipe
 		close(pStdout[1]); // Close original write end of stdout pipe
 		close(pStderr[1]); // Close original write end of stderr pipe
