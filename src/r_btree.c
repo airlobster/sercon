@@ -71,6 +71,7 @@ static bool r_btree_add_node(r_btree_state_t* bt, r_btree_node_t** node, void* d
  */
 static void r_btree_traverse_node(r_btree_state_t* bt, r_btree_node_t* node, r_btree_traverse_func_t traverse_func, void* context) {
 	ASSERT(bt);
+	ASSERT(traverse_func);
 	if( ! node ) return;
 	r_btree_traverse_node(bt, node->left, traverse_func, context);
 	traverse_func(node->data, context);
@@ -86,6 +87,7 @@ static void r_btree_traverse_node(r_btree_state_t* bt, r_btree_node_t* node, r_b
  */
 static r_btree_node_t* r_btree_find_node(r_btree_state_t* bt, r_btree_node_t* node, const void* data) {
 	ASSERT(bt);
+	ASSERT(bt->compare_func);
 	if( ! node ) return NULL;
 	int cmp = bt->compare_func(data, node->data);
 	if( cmp == 0 ) {

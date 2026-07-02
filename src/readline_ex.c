@@ -602,6 +602,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 
 	// first call for a given completion, we need to build the list of possible completions
 	if( state == 0 ) {
+		ASSERT(rlx->autocompleteCallbacks);
 		// invoke auto-complete chain of callbacks to build the vocabulary
 		for(size_t i=0; i < r_array_size(rlx->autocompleteCallbacks); i++) {
 			rlx_vocabulary_build_callback_t callback =

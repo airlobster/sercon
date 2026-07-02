@@ -26,7 +26,7 @@ static void destroy_words_list(vocabulary_internal_t* vocab) {
 		free(*w);
 	}
 	free(vocab->words_list);
-	vocab->words_list = 0;
+	vocab->words_list = NULL;
 }
 
 /**
@@ -39,11 +39,11 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	vocabulary_internal_t* vocab = (vocabulary_internal_t*)malloc(sizeof(vocabulary_internal_t));
 	if( ! vocab ) {
 		DEBUG_MSG("Failed to allocate memory for vocabulary");
-		return 0; // allocation failed
+		return NULL; // allocation failed
 	}
 
 	vocab->options = options;
-	vocab->words_list = 0;
+	vocab->words_list = NULL;
 	vocab->words_tree = r_btree_create((r_btree_compare_func_t)strcmp, free);
 
 	return vocab;
