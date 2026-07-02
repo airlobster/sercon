@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
+#include <readline/readline.h>
 #include "utils.h"
 #include "getopt_ex.h"
 #include "serlist.h"
@@ -488,8 +489,11 @@ static void autocomplete_callback(rlx_t rlx, void* context) {
 	ASSERT(rlx);
 	// add ports to the autocomplete vocabulary
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
-	// add registered commands to the autocomplete vocabulary
-	enum_shell_commands(shell_commands_callback, rlx);
+	// if the user is typing a shell command, add shell commands to the vocabulary
+	const char* curr_line = rl_line_buffer;
+	if( curr_line && strncmp(curr_line, "shell ", 6) == 0 ) {
+		enum_shell_commands(shell_commands_callback, rlx);
+	}
 }
 
 int main(int argc, char* argv[]) {
