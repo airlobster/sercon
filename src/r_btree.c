@@ -21,6 +21,7 @@ typedef struct _r_btree_state_t {
  * @param node The node to destroy.
  */
 static void r_btree_destroy_node(r_btree_state_t* bt, r_btree_node_t* node) {
+	ASSERT(bt);
 	if( ! node ) return;
 	r_btree_destroy_node(bt, node->left);
 	r_btree_destroy_node(bt, node->right);
@@ -69,6 +70,7 @@ static bool r_btree_add_node(r_btree_state_t* bt, r_btree_node_t** node, void* d
  * @param user_data User data to pass to the traverse function.
  */
 static void r_btree_traverse_node(r_btree_state_t* bt, r_btree_node_t* node, r_btree_traverse_func_t traverse_func, void* user_data) {
+	ASSERT(bt);
 	if( ! node ) return;
 	r_btree_traverse_node(bt, node->left, traverse_func, user_data);
 	traverse_func(node->data, user_data);
@@ -83,6 +85,7 @@ static void r_btree_traverse_node(r_btree_state_t* bt, r_btree_node_t* node, r_b
  * @return The node containing the data, or NULL if not found.
  */
 static r_btree_node_t* r_btree_find_node(r_btree_state_t* bt, r_btree_node_t* node, const void* data) {
+	ASSERT(bt);
 	if( ! node ) return NULL;
 	int cmp = bt->compare_func(data, node->data);
 	if( cmp == 0 ) {

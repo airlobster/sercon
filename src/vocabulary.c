@@ -93,9 +93,9 @@ size_t vocab_size(vocabulary_t vocab) {
 }
 
 /**
- * @brief Callback function for enumerating words in the database.
+ * @brief Callback function for enumerating words.
  * @param data The data passed to the callback (the word).
- * @param user_data User data passed to the callback.
+ * @param user_data Context data passed to the callback.
  */
 static void enum_words_callback(void* data, void* user_data) {
 	ASSERT(user_data);
@@ -115,7 +115,10 @@ char** vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
 	size_t size = r_btree_size(vocab->words_tree);
 	char** words = (char**)malloc(sizeof(char*) * (size+1));
-	if( ! words ) return 0; // allocation failed
+	if( ! words ) {
+		DEBUG_MSG("Failed to allocate memory for words list");
+		return NULL; // allocation failed
+	}
 	char** words_ptr = words;
 	// fetch words from the binary tree
 	r_btree_traverse(vocab->words_tree, (r_btree_traverse_func_t)enum_words_callback, &words_ptr);
@@ -136,6 +139,7 @@ void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
 	printf("Auto-Complete Vocabulary (size: %zu):\n", r_btree_size(vocab->words_tree));
 	char** words = vocab_get_words(vocab);
+	if( ! words ) return;
 	for(char** w = words; w && *w; w++) {
 		printf("%*ld: %s\n", numdigits(r_btree_size(vocab->words_tree), 0), w - words + 1, *w);
 	}
