@@ -95,11 +95,11 @@ size_t vocab_size(vocabulary_t vocab) {
 /**
  * @brief Callback function for enumerating words.
  * @param data The data passed to the callback (the word).
- * @param user_data Context data passed to the callback.
+ * @param context Context data passed to the callback.
  */
-static void enum_words_callback(void* data, void* user_data) {
-	ASSERT(user_data);
-	char*** words_ptr = (char***)user_data;
+static void enum_words_callback(void* data, void* context) {
+	ASSERT(context);
+	char*** words_ptr = (char***)context;
 	ASSERT(*words_ptr);
 	**words_ptr = strdup((const char*)data); // duplicate the word
 	(*words_ptr)++;

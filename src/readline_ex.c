@@ -35,7 +35,7 @@ typedef struct _rlx_internal_t {
 	/** The callback function to handle input lines. */
 	rlx_callback_t callback;
 	/** User data to pass to the callback function and registered command handlers. */
-	void* userData;
+	void* context;
 	/** Options for configuring the readline_ex session. */
 	unsigned long options;
 	/** The file path for the history file. */
@@ -111,17 +111,17 @@ static void readline_callback_wrapper(char* line) {
 			char *start, *end;
 			if( strnetcontent(line, &start, &end) ) {
 				*end = '\0'; // null-terminate the line at the end of the net content
-				rlx->callback((rlx_t)rlx, start, end - start, rlx->userData);
+				rlx->callback((rlx_t)rlx, start, end - start, rlx->context);
 			} else {
 				// ignore empty lines (only whitespace)
 			}
 		} else {
-			rlx->callback((rlx_t)rlx, line, strlen(line), rlx->userData);
+			rlx->callback((rlx_t)rlx, line, strlen(line), rlx->context);
 		}
 		free(line); // free the line buffer after processing to avoid memory leaks
 	} else {
 		// EOF received (e.g., Ctrl+D). notify the callback with a NULL line
-		rlx->callback((rlx_t)rlx, 0, 0, rlx->userData);
+		rlx->callback((rlx_t)rlx, 0, 0, rlx->context);
 	}
 }
 
@@ -134,8 +134,8 @@ static int event_hook(void) {
  * @param h The readline_ex session handle.
  * @param callback The callback function to add.
  */
-static void autocomplete_commands_callback(rlx_t rlx, void* userData) {
-	(void)userData;
+static void autocomplete_commands_callback(rlx_t rlx, void* context) {
+	(void)context;
 	ASSERT(rlx);
 	ASSERT(rlx->completionVocabulary);
 	// add registered commands to the autocomplete vocabulary
@@ -152,7 +152,7 @@ static void autocomplete_commands_callback(rlx_t rlx, void* userData) {
 	@param maxHistoryEntries The maximum number of history entries to keep.
 	@param historyContext The context for the history file (optional).
 	@param options Options for configuring the readline_ex session.
-	@param userData User data to pass to the callback function and registered command handlers.
+	@param context User data to pass to the callback function and registered command handlers.
 	@return A handle to the readline_ex session, or NULL on failure.
 */
 rlx_t rlx_begin(
@@ -162,7 +162,7 @@ rlx_t rlx_begin(
 	size_t maxHistoryEntries,
 	const char* historyContext,
 	unsigned long options,
-	void* userData
+	void* context
 ) {
 	rlx_internal_t* rlx = &rlxStatic;
 
@@ -174,7 +174,7 @@ rlx_t rlx_begin(
 
 	rlx->isInitialized = true;
 	rlx->callback = callback;
-	rlx->userData = userData;
+	rlx->context = context;
 	rlx->options = options;
 	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
 	rlx->maxHistoryEntries = MAX(maxHistoryEntries, 10);
@@ -354,7 +354,7 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 	// // and then free the argv array after processing.
 	if( parse_command_line(line, &argc, &argv) > 0 ) {
 		if( (cmd = rlx_get_command(rlx, argv[0])) != 0 ) {
-			cmd->handler(rlx, cmd, argc, (const char**)argv, rlx->userData);
+			cmd->handler(rlx, cmd, argc, (const char**)argv, rlx->context);
 		}
 		free_command_args(argc, argv);
 	}
@@ -607,7 +607,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 			rlx_vocabulary_build_callback_t callback =
 				(rlx_vocabulary_build_callback_t)r_array_get(rlx->autocompleteCallbacks, i);
 			ASSERT(callback);
-			callback((rlx_t)rlx, rlx->userData);
+			callback((rlx_t)rlx, rlx->context);
 		}
 		completionList = (const char**)vocab_get_words(rlxStatic.completionVocabulary);
 		ASSERT(completionList);

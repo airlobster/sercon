@@ -83,8 +83,8 @@ typedef enum {
 	CGLOB_FILE_FIFO = 1UL << 5, /**< FIFO (named pipe) */
 	CGLOB_FILE_SOCKET = 1UL << 6, /**< Socket */
 } cglob_file_type_t;
-typedef void(*cglob_callback_t)(const char* path, void* userData);
-int cglob(const char* pattern, unsigned long options, cglob_callback_t callback, void* userData);
+typedef void(*cglob_callback_t)(const char* path, void* context);
+int cglob(const char* pattern, unsigned long options, cglob_callback_t callback, void* context);
 
 #ifdef __cplusplus
 } // extern "C"

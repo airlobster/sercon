@@ -112,10 +112,10 @@ void debug_msg(const char* file, int line, const char* fmt, ...) {
  * @param pattern The glob pattern.
  * @param options Options for the glob operation.
  * @param callback The callback function to be called for each matched path.
- * @param userData User-defined data to be passed to the callback function.
+ * @param context User-defined data to be passed to the callback function.
  * @return int The number of matched paths.
  */
-int cglob(const char* pattern, unsigned long options, cglob_callback_t callback, void* userData) {
+int cglob(const char* pattern, unsigned long options, cglob_callback_t callback, void* context) {
 	ASSERT(pattern);
 	ASSERT(callback);
 	int n = 0;
@@ -138,7 +138,7 @@ int cglob(const char* pattern, unsigned long options, cglob_callback_t callback,
 			pass |= (options & CGLOB_FILE_FIFO) && S_ISFIFO(st.st_mode);
 			pass |= (options & CGLOB_FILE_SOCKET) && S_ISSOCK(st.st_mode);
 			if( ! pass ) continue;
-			callback(glob_result.gl_pathv[i], userData);
+			callback(glob_result.gl_pathv[i], context);
 			++n;
 		}
 	} else if( ret != GLOB_NOMATCH ) {

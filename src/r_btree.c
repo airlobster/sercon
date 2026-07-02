@@ -67,14 +67,14 @@ static bool r_btree_add_node(r_btree_state_t* bt, r_btree_node_t** node, void* d
  * @param bt The binary tree state.
  * @param node The node to traverse.
  * @param traverse_func The function to call for each node's data.
- * @param user_data User data to pass to the traverse function.
+ * @param context User data to pass to the traverse function.
  */
-static void r_btree_traverse_node(r_btree_state_t* bt, r_btree_node_t* node, r_btree_traverse_func_t traverse_func, void* user_data) {
+static void r_btree_traverse_node(r_btree_state_t* bt, r_btree_node_t* node, r_btree_traverse_func_t traverse_func, void* context) {
 	ASSERT(bt);
 	if( ! node ) return;
-	r_btree_traverse_node(bt, node->left, traverse_func, user_data);
-	traverse_func(node->data, user_data);
-	r_btree_traverse_node(bt, node->right, traverse_func, user_data);
+	r_btree_traverse_node(bt, node->left, traverse_func, context);
+	traverse_func(node->data, context);
+	r_btree_traverse_node(bt, node->right, traverse_func, context);
 }
 
 /**
@@ -167,13 +167,13 @@ void r_btree_reset(r_btree_t tree) {
  * @brief Traverses the binary tree in-order, calling a user-provided function for each node's data.
  * @param tree The binary tree to traverse.
  * @param traverse_func The function to call for each node's data.
- * @param user_data User data to pass to the traverse function.
+ * @param context User data to pass to the traverse function.
  */
-void r_btree_traverse(r_btree_t tree, r_btree_traverse_func_t traverse_func, void* user_data) {
+void r_btree_traverse(r_btree_t tree, r_btree_traverse_func_t traverse_func, void* context) {
 	ASSERT(tree);
 	ASSERT(traverse_func);
 	r_btree_state_t* bt = (r_btree_state_t*)tree;
-	r_btree_traverse_node(bt, bt->root, traverse_func, user_data);
+	r_btree_traverse_node(bt, bt->root, traverse_func, context);
 }
 
 /**

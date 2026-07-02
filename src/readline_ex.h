@@ -49,7 +49,7 @@ typedef struct _rlx_registered_command_t {
 	/** A description of the command. */
 	const char* description;
 	/** The handler function that is called when the command is executed. */
-	void(*handler)(rlx_t h, const struct _rlx_registered_command_t* cmd, int argc, const char *argv[], void* userData);
+	void(*handler)(rlx_t h, const struct _rlx_registered_command_t* cmd, int argc, const char *argv[], void* context);
 } rlx_registered_command_t;
 
 /**
@@ -70,19 +70,19 @@ typedef enum {
  * @param h The readline_ex session handle.
  * @param line The input line.
  * @param length The length of the input line.
- * @param userData User data passed to the callback function.
+ * @param context User data passed to the callback function.
  */
-typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length, void* userData);
+typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length, void* context);
 
 /**
  * @brief Callback function type for building the autocomplete vocabulary.
  * @param rlx The readline_ex session handle.
- * @param userData User data passed to the callback function.
+ * @param context User data passed to the callback function.
  * @details Use this callback to add words to the auto-complete vocabulary using
  * the rlx_add_autocomplete_vocabulary_entry() function.
  * It is allowed to register multiple such callbacks.
  */
-typedef void (*rlx_vocabulary_build_callback_t)(rlx_t rlx, void* userData);
+typedef void (*rlx_vocabulary_build_callback_t)(rlx_t rlx, void* context);
 
 // RLX session management
 rlx_t rlx_begin(
@@ -92,7 +92,7 @@ rlx_t rlx_begin(
 	size_t maxHistoryEntries,
 	const char* historyContext,
 	unsigned long options,
-	void* userData
+	void* context
 );
 void rlx_end(rlx_t h);
 void rlx_pause(rlx_t h);

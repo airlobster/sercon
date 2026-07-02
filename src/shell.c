@@ -25,7 +25,7 @@ static void close_pipe(int pipefd[2]) {
  * @param input Optional input to pass to the command's stdin.
  * @param stdout_callback Callback function for handling stdout output.
  * @param stderr_callback Callback function for handling stderr output.
- * @param user_data User-defined data to pass to the callback functions.
+ * @param context User-defined data to pass to the callback functions.
  * @return int The exit status of the command, or -1 if sc_shell itself fails.
  */
 int sc_shell(
@@ -33,7 +33,7 @@ int sc_shell(
 		const char* input,
 		shell_output_callback_t stdout_callback,
 		shell_output_callback_t stderr_callback,
-		void* user_data
+		void* context
 	) {
 	int pStdin[2]={-1,-1}, pStdout[2]={-1,-1}, pStderr[2]={-1,-1};
 	char buffer[64];
@@ -108,7 +108,7 @@ int sc_shell(
 					buffer[bytesRead] = '\0';
 					lastChar = buffer[bytesRead - 1];
 					if( stdout_callback ) {
-						stdout_callback(buffer, bytesRead, user_data);
+						stdout_callback(buffer, bytesRead, context);
 					}
 				} else {
 					fds[0].fd = -1; // Mark this fd as closed
@@ -123,7 +123,7 @@ int sc_shell(
 					buffer[bytesRead] = '\0';
 					lastChar = buffer[bytesRead - 1];
 					if( stderr_callback ) {
-						stderr_callback(buffer, bytesRead, user_data);
+						stderr_callback(buffer, bytesRead, context);
 					}
 				} else {
 					fds[1].fd = -1; // Mark this fd as closed

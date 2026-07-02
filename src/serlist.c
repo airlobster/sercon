@@ -32,10 +32,10 @@ INITIALIZER(static void warn_about_overriding_env_patterns()) {
 /**
  * @brief Enumerates the available serial ports on the system.
  * @param callback The callback function to be called for each available serial port.
- * @param userData User-defined data to be passed to the callback function.
+ * @param context User-defined data to be passed to the callback function.
  * @return int The number of available serial ports.
  */
-int enumSerialPorts(void(*callback)(const char* port, void* userData), void* userData) {
+int enumSerialPorts(void(*callback)(const char* port, void* context), void* context) {
 	char* paths = 0;
 	char** path_list = 0;
 	int nPaths = 0, n = 0;
@@ -44,7 +44,7 @@ int enumSerialPorts(void(*callback)(const char* port, void* userData), void* use
 	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
 	parse_path_list(paths, &nPaths, &path_list);
 	for(int i=0; i < nPaths; ++i) {
-		n += cglob(path_list[i], CGLOB_FILE_CHAR_DEVICE, callback, userData);
+		n += cglob(path_list[i], CGLOB_FILE_CHAR_DEVICE, callback, context);
 		free(path_list[i]);
 	}
 	free(path_list);

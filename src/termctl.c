@@ -37,7 +37,7 @@ typedef struct _termctl_internal_t {
 	/**< Flag indicating if the cursor is at a new line */
 	bool atNewLine;
 	/**< User data pointer */
-	void* user_data;
+	void* context;
 } termctl_internal_t;
 
 /**
@@ -46,15 +46,15 @@ typedef struct _termctl_internal_t {
  * @param h The readline_ex handle.
  * @param line The input line.
  * @param length The length of the input line.
- * @param userData User data pointer.
+ * @param context User data pointer.
  * @details This function is called by readline_ex when user input is received.
  * It processes commands and invokes the user input callback if set.
  * The sole purpose of this function is to intercept STDIN EOF and notify the termctl instance,
  * otherwise we could have done without it.
  */
-static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void* userData) {
+static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void* context) {
 	(void)h;
-	termctl_internal_t* tc = (termctl_internal_t*)userData;
+	termctl_internal_t* tc = (termctl_internal_t*)context;
 	ASSERT(tc);
 	if( ! line ) {
 		tc->stdin_eof = 1; // tell poll we're done reading from stdin (EOF)
@@ -62,7 +62,7 @@ static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void*
 	} else if( ! rlx_process_command(tc->rlx, line) ) {
 		// command not handled by readline_ex, pass it to the user input callback if set
 		if( tc->user_input_callback ) {
-			tc->user_input_callback((termctl_t)tc, line, length, tc->user_data);
+			tc->user_input_callback((termctl_t)tc, line, length, tc->context);
 		}
 	}
 }
@@ -71,10 +71,10 @@ static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void*
  * @brief Create a new termctl instance.
  *
  * @param appname Name of the application.
- * @param userData User data pointer.
+ * @param context User data pointer.
  * @return termctl_t A new termctl instance, or NULL on failure.
  */
-termctl_t termctl_create(const char* appname, void* userData) {
+termctl_t termctl_create(const char* appname, void* context) {
 	termctl_internal_t* tc = (termctl_internal_t*)malloc(sizeof(termctl_internal_t));
 	if( ! tc ) {
 		DEBUG_MSG("Failed to allocate memory for termctl_internal_t");
@@ -90,7 +90,7 @@ termctl_t termctl_create(const char* appname, void* userData) {
 	tc->user_input_callback = NULL;
 	tc->prompt = NULL;
 	tc->atNewLine = true;
-	tc->user_data = userData;
+	tc->context = context;
 	tc->rlx = rlx_begin(appname, NULL, termctl_rlx_callback, 200, NULL,
 		RLX_OPT_PERSIST_HISTORY | RLX_OPT_AUTOCOMPLETE_CUSTOM, tc);
 
@@ -255,7 +255,7 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
 		free(tc->prompt);
 		tc->prompt = NULL;
 	}
-	char* newPrompt = tc->prompt_callback(tc, tc->user_data);
+	char* newPrompt = tc->prompt_callback(tc, tc->context);
 	if( newPrompt ) {
 		// create a safe version of the new prompt
 		char* pSafe = NULL;
@@ -316,7 +316,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 			for(size_t i=0; i < r_array_size(retrySet); i++) {
 				int fd = (int)(intptr_t)r_array_get(retrySet, i);
 				ASSERT(fd > 0);
-				int newFd = tc->reconnect_callback(tc, fd, tc->user_data);
+				int newFd = tc->reconnect_callback(tc, fd, tc->context);
 				if( newFd > 0 ) {
 					termctl_add_fd(tc, newFd);
 					// remove the fd from the retry set
@@ -357,7 +357,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 						// ignore carriage return, as we handle newlines with '\n'
 					} else {
 						if( tc->atNewLine && tc->newline_callback ) {
-							tc->newline_callback(tc, tc->user_data);
+							tc->newline_callback(tc, tc->context);
 						}
 						fputc(*p, stdout);
 						tc->atNewLine = false;

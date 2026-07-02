@@ -35,18 +35,18 @@ typedef struct _termctl_internal_t* termctl_t;
  * @brief Callback function type for updating the prompt.
  *
  * @param tc The termctl instance.
- * @param userData User data pointer.
+ * @param context User data pointer.
  * @return char* The new prompt string.
  */
-typedef char* (*termctl_prompt_callback_t)(termctl_t tc, void* userData);
+typedef char* (*termctl_prompt_callback_t)(termctl_t tc, void* context);
 
 /**
  * @brief Callback function type for handling newlines.
  *
  * @param tc The termctl instance.
- * @param userData User data pointer.
+ * @param context User data pointer.
  */
-typedef void (*termctl_newline_callback_t)(termctl_t tc, void* userData);
+typedef void (*termctl_newline_callback_t)(termctl_t tc, void* context);
 
 /**
  * @brief Callback function type for handling user input.
@@ -54,21 +54,21 @@ typedef void (*termctl_newline_callback_t)(termctl_t tc, void* userData);
  * @param tc The termctl instance.
  * @param line The input line.
  * @param length The length of the input line.
- * @param userData User data pointer.
+ * @param context User data pointer.
  */
-typedef void (*termctl_user_input_callback_t)(termctl_t tc, const char* line, size_t length, void* userData);
+typedef void (*termctl_user_input_callback_t)(termctl_t tc, const char* line, size_t length, void* context);
 
 /**
  * @brief Callback function type for handling reconnection attempts.
  *
  * @param tc The termctl instance.
  * @param fd The file descriptor to reconnect.
- * @param userData User data pointer.
+ * @param context User data pointer.
  * @return fd if successful, -1 if failed.
  */
-typedef int (*termctl_reconnect_callback_t)(termctl_t tc, int fd, void* userData);
+typedef int (*termctl_reconnect_callback_t)(termctl_t tc, int fd, void* context);
 
-termctl_t termctl_create(const char* appname, void* userData);
+termctl_t termctl_create(const char* appname, void* context);
 void termctl_destroy(termctl_t termctl);
 
 void termctl_set_prompt_callback(termctl_t termctl, termctl_prompt_callback_t callback);

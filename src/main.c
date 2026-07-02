@@ -28,8 +28,8 @@ settings_t settings = 0;
  * @brief Update the prompt for a termctl instance.
  * @param tc The internal termctl instance.
  */
-static void add_ports_to_vocabulary_callback(const char* portName, void* userData) {
-	termctl_t tc = (termctl_t)userData;
+static void add_ports_to_vocabulary_callback(const char* portName, void* context) {
+	termctl_t tc = (termctl_t)context;
 	ASSERT(tc);
 	rlx_add_autocomplete_vocabulary_entry(termctl_get_rlx(tc), portName);
 }
@@ -37,24 +37,24 @@ static void add_ports_to_vocabulary_callback(const char* portName, void* userDat
 /**
  * @brief Print a serial port name.
  * @param portName The name of the serial port.
- * @param userData User data pointer.
+ * @param context User data pointer.
  */
-static void enum_ports_print_callback(const char* portName, void* userData) {
-	(void)userData;
+static void enum_ports_print_callback(const char* portName, void* context) {
+	(void)context;
 	ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 }
 
-void shell_stdout_callback(const char* output, size_t length, void* user_data) {
-	(void)user_data;
+void shell_stdout_callback(const char* output, size_t length, void* context) {
+	(void)context;
 	(void)length;
-	ASSERT(user_data);
+	ASSERT(context);
 	a_normal("%s", output);
 }
 
-void shell_stderr_callback(const char* output, size_t length, void* user_data) {
-	(void)user_data;
+void shell_stderr_callback(const char* output, size_t length, void* context) {
+	(void)context;
 	(void)length;
-	ASSERT(user_data);
+	ASSERT(context);
 	a_error("%s", output);
 }
 
@@ -218,11 +218,11 @@ static void parse_cli_args(int argc, char *argv[])
  * @param cmd The registered command.
  * @param argc The argument count.
  * @param argv The argument vector.
- * @param userData User data pointer.
+ * @param context User data pointer.
  */
 static void registered_commands_callback(
-		rlx_t h, const rlx_registered_command_t* cmd, int argc, const char* argv[], void* userData) {
-	termctl_t tc = (termctl_t)userData;
+		rlx_t h, const rlx_registered_command_t* cmd, int argc, const char* argv[], void* context) {
+	termctl_t tc = (termctl_t)context;
 	ASSERT(h);
 	switch( cmd->id ) {
 		case 'h': {
@@ -373,11 +373,11 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
 /**
  * @brief Prompt callback function for a termctl instance.
  * @param tc The termctl instance.
- * @param userData User data pointer.
+ * @param context User data pointer.
  * @return char* The prompt string.
  * @details termctl will free the returned string after use, so it should be dynamically allocated.
  */
-static char* prompt_callback(termctl_t tc, void* userData) {
+static char* prompt_callback(termctl_t tc, void* context) {
 	ASSERT(tc);
 	if( ! isatty(fileno(stdin)) ) return 0; // no prompt if stdin is redirected!!
 	char *p = 0;
@@ -400,9 +400,9 @@ static char* prompt_callback(termctl_t tc, void* userData) {
  * @param tc The termctl instance.
  * @param line The input line.
  * @param length The length of the input line.
- * @param userData User data pointer.
+ * @param context User data pointer.
  */
-void user_input_callback(termctl_t tc, const char* line, size_t length, void* userData) {
+void user_input_callback(termctl_t tc, const char* line, size_t length, void* context) {
 	if( fdPort > 0 ) {
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
@@ -414,9 +414,9 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* us
 /**
  * @brief Newline callback function for a termctl instance.
  * @param tc The termctl instance.
- * @param userData User data pointer.
+ * @param context User data pointer.
  */
-void newline_callback(termctl_t tc, void* userData) {
+void newline_callback(termctl_t tc, void* context) {
 	(void)tc;
 	if( ! printTimestamps ) return;
 	cal_time_t t;
@@ -428,11 +428,11 @@ void newline_callback(termctl_t tc, void* userData) {
 /**
  * @brief Reconnect callback function for a termctl instance.
  * @param tc The termctl instance.
- * @param userData User data pointer.
+ * @param context User data pointer.
  * @return fd if successful, -1 if failed.
  */
-int reconnect_callback(termctl_t tc, int fd, void* userData) {
-	(void)userData;
+int reconnect_callback(termctl_t tc, int fd, void* context) {
+	(void)context;
 	(void)fd;
 	ASSERT(tc);
 	ASSERT(port);
@@ -476,8 +476,8 @@ static void apply_loaded_settings() {
 	}
 }
 
-static void autocomplete_callback(rlx_t rlx, void* userData) {
-	(void)userData;
+static void autocomplete_callback(rlx_t rlx, void* context) {
+	(void)context;
 	ASSERT(rlx);
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
 }

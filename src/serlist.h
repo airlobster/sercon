@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-int enumSerialPorts(void(*callback)(const char* port, void* userData), void* userData);
+int enumSerialPorts(void(*callback)(const char* port, void* context), void* context);
 
 #ifdef __cplusplus
 }
