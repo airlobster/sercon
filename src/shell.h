@@ -12,11 +12,24 @@ extern "C" {
 
 typedef void (*shell_output_callback_t)(const char* output, size_t length, void* context);
 
-int sc_shell(
+int sc_shell_v(
 	const char* argv[],
 	const char* input,
 	shell_output_callback_t stdout_callback,
 	shell_output_callback_t stderr_callback,
+	void* context
+);
+
+int sc_shell(
+	const char* command,
+	const char* input,
+	shell_output_callback_t stdout_callback,
+	shell_output_callback_t stderr_callback,
+	void* context
+);
+
+int enum_shell_commands(
+	void(*callback)(const char* command, void* context),
 	void* context
 );
 

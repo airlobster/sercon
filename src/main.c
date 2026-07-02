@@ -323,7 +323,7 @@ static void registered_commands_callback(
 				break;
 			}
 			ASSERT(argv[argc] == NULL); // ensure argv is null-terminated
-			int err = sc_shell(argv + 1, 0, shell_stdout_callback, shell_stderr_callback, tc);
+			int err = sc_shell_v(argv + 1, 0, shell_stdout_callback, shell_stderr_callback, tc);
 			if( err ) {
 				a_error("Shell command failed with exit code %d\n", err);
 			}
@@ -477,11 +477,19 @@ static void apply_loaded_settings() {
 	}
 }
 
+static void shell_commands_callback(const char* command, void* context) {
+	(void)context;
+	rlx_t rlx = (rlx_t)context;
+	rlx_add_autocomplete_vocabulary_entry(rlx, command);
+}
+
 static void autocomplete_callback(rlx_t rlx, void* context) {
 	(void)context;
 	ASSERT(rlx);
 	// add ports to the autocomplete vocabulary
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
+	// add registered commands to the autocomplete vocabulary
+	enum_shell_commands(shell_commands_callback, rlx);
 }
 
 int main(int argc, char* argv[]) {

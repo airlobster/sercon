@@ -4,7 +4,10 @@
 #include <sys/poll.h>
 #include <sys/errno.h>
 #include <string.h>
+#include <ctype.h>
 #include "utils.h"
+#include "command.h"
+#include "r_buffer.h"
 #include "shell.h"
 
 #define POLL_TIMEOUT (1000) // milliseconds
@@ -28,7 +31,7 @@ static void close_pipe(int pipefd[2]) {
  * @param context User-defined data to pass to the callback functions.
  * @return int The exit status of the command, or -1 if sc_shell itself fails.
  */
-int sc_shell(
+int sc_shell_v(
 		const char* argv[],
 		const char* input,
 		shell_output_callback_t stdout_callback,
@@ -74,81 +77,163 @@ int sc_shell(
 		perror("execvp failed");
 
 		exit(1);
-	} else {
-		// PARENT PROCESS
-		close(pStdin[0]); // Close read end of stdin pipe
-		close(pStdout[1]); // Close write end of stdout pipe
-		close(pStderr[1]); // Close write end of stderr pipe
+	}
 
-		// Write input to child's stdin if provided
-		if( input ) {
-			write(pStdin[1], input, strlen(input));
+	// PARENT PROCESS
+	close(pStdin[0]); // Close read end of stdin pipe
+	close(pStdout[1]); // Close write end of stdout pipe
+	close(pStderr[1]); // Close write end of stderr pipe
+
+	// Write input to child's stdin if provided
+	if( input ) {
+		write(pStdin[1], input, strlen(input));
+	}
+	close(pStdin[1]);
+
+	struct pollfd fds[] = {
+		{ .fd = pStdout[0], .events = POLL_MASK },
+		{ .fd = pStderr[0], .events = POLL_MASK }
+	};
+
+	int lastChar = 0;
+	int fdsLeft = array_size(fds);
+	while( fdsLeft ) {
+		ret = poll(fds, array_size(fds), POLL_TIMEOUT);
+
+		if( ret < 0 ) {
+			perror("poll failed");
+			break;
 		}
-		close(pStdin[1]);
 
-		struct pollfd fds[] = {
-			{ .fd = pStdout[0], .events = POLL_MASK },
-			{ .fd = pStderr[0], .events = POLL_MASK }
-		};
-
-		int lastChar = 0;
-		int fdsLeft = array_size(fds);
-		while( fdsLeft ) {
-			ret = poll(fds, array_size(fds), POLL_TIMEOUT);
-
-			if( ret < 0 ) {
-				perror("poll failed");
-				break;
-			}
-
-			// read child's STDOUT
-			if( fds[0].revents & POLL_MASK ) {
-				ssize_t bytesRead = read(pStdout[0], buffer, sizeof(buffer) - 1);
-				if( bytesRead > 0 ) {
-					buffer[bytesRead] = '\0';
-					lastChar = buffer[bytesRead - 1];
-					if( stdout_callback ) {
-						stdout_callback(buffer, bytesRead, context);
-					}
-				} else {
-					fds[0].fd = -1; // Mark this fd as closed
-					--fdsLeft;
+		// read child's STDOUT
+		if( fds[0].revents & POLL_MASK ) {
+			ssize_t bytesRead = read(pStdout[0], buffer, sizeof(buffer) - 1);
+			if( bytesRead > 0 ) {
+				buffer[bytesRead] = '\0';
+				lastChar = buffer[bytesRead - 1];
+				if( stdout_callback ) {
+					stdout_callback(buffer, bytesRead, context);
 				}
+			} else {
+				fds[0].fd = -1; // Mark this fd as closed
+				--fdsLeft;
 			}
+		}
 
-			// read child's STDERR
-			if( fds[1].revents & POLL_MASK ) {
-				ssize_t bytesRead = read(pStderr[0], buffer, sizeof(buffer) - 1);
-				if( bytesRead > 0 ) {
-					buffer[bytesRead] = '\0';
-					lastChar = buffer[bytesRead - 1];
-					if( stderr_callback ) {
-						stderr_callback(buffer, bytesRead, context);
-					}
-				} else {
-					fds[1].fd = -1; // Mark this fd as closed
-					--fdsLeft;
+		// read child's STDERR
+		if( fds[1].revents & POLL_MASK ) {
+			ssize_t bytesRead = read(pStderr[0], buffer, sizeof(buffer) - 1);
+			if( bytesRead > 0 ) {
+				buffer[bytesRead] = '\0';
+				lastChar = buffer[bytesRead - 1];
+				if( stderr_callback ) {
+					stderr_callback(buffer, bytesRead, context);
 				}
+			} else {
+				fds[1].fd = -1; // Mark this fd as closed
+				--fdsLeft;
 			}
-		} // end poll loop
-
-		if( lastChar != '\n' ) {
-			fputc('\n', stdout);
 		}
+	} // end poll loop
 
-		close(pStdout[0]);
-		close(pStderr[0]);
+	if( lastChar != '\n' ) {
+		fputc('\n', stdout);
+	}
 
-		int childExitStatus = 0;
-		if( waitpid(pid, &childExitStatus, 0) == -1 ) {
-			DEBUG_MSG("waitpid failed: %s", strerror(errno));
-		} else if( WIFEXITED(childExitStatus) ) {
-			childExitCode = WEXITSTATUS(childExitStatus);
-			DEBUG_MSG("Child exited with code %d", childExitCode);
-		} else if( WIFSIGNALED(childExitStatus) ) {
-			DEBUG_MSG("Child terminated by signal %d", WTERMSIG(childExitStatus));
-		}
+	close(pStdout[0]);
+	close(pStderr[0]);
+
+	int childExitStatus = 0;
+	if( waitpid(pid, &childExitStatus, 0) == -1 ) {
+		// DEBUG_MSG("waitpid failed: %s", strerror(errno));
+	} else if( WIFEXITED(childExitStatus) ) {
+		childExitCode = WEXITSTATUS(childExitStatus);
+		// DEBUG_MSG("Child exited with code %d", childExitCode);
+	} else if( WIFSIGNALED(childExitStatus) ) {
+		// DEBUG_MSG("Child terminated by signal %d", WTERMSIG(childExitStatus));
 	}
 
 	return childExitCode;
+}
+
+/**
+ * @brief Execute a shell command given as a single string.
+ * @param command The command string to execute.
+ * @param input Optional input to pass to the command's stdin.
+ * @param stdout_callback Callback function for handling stdout output.
+ * @param stderr_callback Callback function for handling stderr output.
+ * @param context User-defined data to pass to the callback functions.
+ * @return int The exit status of the command, or -1 if sc_shell itself fails.
+ */
+int sc_shell(
+	const char* command,
+	const char* input,
+	shell_output_callback_t stdout_callback,
+	shell_output_callback_t stderr_callback,
+	void* context
+) {
+	int argc = 0;
+	char** argv = 0;
+	ASSERT(command);
+	if( ! command ) return -1;
+	if( ! parse_command_line(command, &argc, &argv) ) {
+		DEBUG_MSG("Failed to parse command: %s", command);
+		free_command_args(argc, argv);
+		return -1;
+	}
+	int ret = sc_shell_v((const char**)argv, input, stdout_callback, stderr_callback, context);
+	free_command_args(argc, argv);
+	return ret;
+}
+
+
+typedef struct {
+	buffer_t token;
+	void(*callback)(const char* command, void* context);
+	void* context;
+} enum_shell_commands_state_t;
+
+/**
+ * @brief Callback function for processing the output of the shell command that enumerates available commands.
+ * @param output The output string from the shell command.
+ * @param length The length of the output string.
+ * @param context User-defined data pointer, expected to be of type enum_shell_commands_state_t*.
+ */
+static void enum_shell_commands_callback(const char* output, size_t length, void* context) {
+	enum_shell_commands_state_t* state = (enum_shell_commands_state_t*)context;
+	ASSERT(state && state->token);
+	for(const char *p = output; p < output + length; ++p) {
+		if( isspace(*p) ) {
+			// terminate the token and call the callback
+			if( r_buffer_size(state->token) > 0 ) {
+				if( state->callback ) {
+					state->callback(r_buffer_get_data(state->token), state->context);
+				}
+				r_buffer_clear(state->token);
+			}
+		} else {
+			r_buffer_append(state->token, p, 1);
+		}
+	}
+}
+
+/**
+ * @brief Enumerate available shell commands.
+ * @param callback Callback function to be called for each command.
+ * @param context User-defined data to pass to the callback function.
+ * @return int The exit status of the command, or -1 if sc_shell itself fails.
+ */
+int enum_shell_commands(void(*callback)(const char* command, void* context), void* context) {
+	enum_shell_commands_state_t state = {
+		.token=r_buffer_create(0),
+		.callback=callback,
+		.context=context
+	};
+	int ret = sc_shell("bash -c 'compgen -c'", NULL, enum_shell_commands_callback, NULL, &state);
+	// handle the last token if any
+	if( ret == 0 && callback && r_buffer_size(state.token) > 0 ) {
+		callback(r_buffer_get_data(state.token), context);
+	}
+	r_buffer_destroy(state.token);
+	return ret;
 }
