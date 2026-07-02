@@ -27,10 +27,10 @@ static void terminate_ansi() {
 		ansi_fprintf(stdout, ANSI_END_ALT_SCREEN);
 	}
 	if( isAnsiActive(stdout) ) {
-		ansi_fprintf(stdout, ANSI_RESET);
+		ansi_fprintf(stdout, "");
 	}
 	if( isAnsiActive(stderr) ) {
-		ansi_fprintf(stderr, ANSI_RESET);
+		ansi_fprintf(stderr, "");
 	}
 }
 

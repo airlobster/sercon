@@ -93,6 +93,16 @@ size_t vocab_size(vocabulary_t vocab) {
 }
 
 /**
+ * @brief Resets the vocabulary by clearing all words.
+ * @param vocab The vocabulary to reset.
+ */
+void vocab_reset(vocabulary_t vocab) {
+	ASSERT(vocab);
+	destroy_words_list(vocab);
+	r_btree_reset(vocab->words_tree);
+}
+
+/**
  * @brief Callback function for enumerating words.
  * @param data The data passed to the callback (the word).
  * @param context Context data passed to the callback.
@@ -145,9 +155,3 @@ void vocab_print(vocabulary_t vocab) {
 	}
 }
 #endif
-
-void vocab_reset(vocabulary_t vocab) {
-	ASSERT(vocab);
-	destroy_words_list(vocab);
-	r_btree_reset(vocab->words_tree);
-}

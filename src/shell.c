@@ -76,7 +76,7 @@ int sc_shell_v(
 		perror("execvp failed");
 
 		exit(1);
-	}
+	} // end child process
 
 	// PARENT PROCESS
 	close(pStdin[0]); // Close read end of stdin pipe

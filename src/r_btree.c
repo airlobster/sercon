@@ -3,16 +3,23 @@
 #include "utils.h"
 
 typedef struct _r_btree_node_t {
-		void* data;
-		struct _r_btree_node_t* left;
-		struct _r_btree_node_t* right;
+	/** The data stored in the node. */
+	void* data;
+	/** Pointer to the left child node. */
+	struct _r_btree_node_t* left;
+	/** Pointer to the right child node. */
+	struct _r_btree_node_t* right;
 } r_btree_node_t;
 
 typedef struct _r_btree_state_t {
-		r_btree_node_t* root;
-		r_btree_compare_func_t compare_func;
-		r_btree_free_func_t free_func;
-		size_t size;
+	/** The root node of the binary tree. */
+	r_btree_node_t* root;
+	/** The function to compare two nodes. */
+	r_btree_compare_func_t compare_func;
+	/** The function to free a node's data. */
+	r_btree_free_func_t free_func;
+	/** The number of nodes in the binary tree. */
+	size_t size;
 } r_btree_state_t;
 
 /**
