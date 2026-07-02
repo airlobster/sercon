@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "serlist.h"
 #include "command.h"
+#include "cglob.h"
 
 #define ENV_NAME "PORTS_SEARCH_PATH"
 
