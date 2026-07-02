@@ -488,7 +488,7 @@ static void autocomplete_callback(rlx_t rlx, void* context) {
 	ASSERT(rlx);
 	// add ports to the autocomplete vocabulary
 	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
-	// if the user is typing a shell command, add shell commands to the vocabulary
+	// if the user is currently typing a shell command, add shell commands to the vocabulary
 	const char* curr_line = rlx_get_current_line(rlx);
 	if( curr_line && strncmp(curr_line, "shell ", 6) == 0 ) {
 		enum_shell_commands(shell_commands_callback, rlx);
