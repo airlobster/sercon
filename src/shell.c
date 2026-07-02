@@ -173,8 +173,8 @@ int sc_shell(
 ) {
 	int argc = 0;
 	char** argv = 0;
-	ASSERT(command);
-	if( ! command ) return -1;
+	ASSERT(command && *command);
+	if( ! command || ! *command ) return -1;
 	if( ! parse_command_line(command, &argc, &argv) ) {
 		DEBUG_MSG("Failed to parse command: %s", command);
 		free_command_args(argc, argv);
