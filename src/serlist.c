@@ -45,7 +45,12 @@ int enumSerialPorts(void(*callback)(const char* port, void* context), void* cont
 	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
 	parse_path_list(paths, &nPaths, &path_list);
 	for(int i=0; i < nPaths; ++i) {
-		n += cglob(path_list[i], CGLOB_FILE_CHAR_DEVICE, callback, context);
+		cglob_iterator_t g = globIterator(path_list[i], CGLOB_FILE_CHAR_DEVICE);
+		for(const char* path = nextGlob(g); path; path = nextGlob(g)) {
+			callback(path, context);
+			++n;
+		}
+		freeGlobIterator(g);
 		free(path_list[i]);
 	}
 	free(path_list);

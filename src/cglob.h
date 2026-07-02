@@ -15,9 +15,11 @@ typedef enum {
 	CGLOB_FILE_SOCKET = 1UL << 6, /**< Socket */
 } cglob_file_type_t;
 
-typedef void(*cglob_callback_t)(const char* path, void* context);
+typedef void* cglob_iterator_t;
 
-int cglob(const char* pattern, unsigned long options, cglob_callback_t callback, void* context);
+cglob_iterator_t globIterator(const char* pattern, unsigned long options);
+const char* nextGlob(cglob_iterator_t iterator);
+void freeGlobIterator(cglob_iterator_t iterator);
 
 #ifdef __cplusplus
 }
