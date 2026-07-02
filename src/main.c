@@ -516,7 +516,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	// set callbacks for termctl
+	// set callbacks for termctl and its underlying rlx instance
 	termctl_set_prompt_callback(termctl, prompt_callback);
 	termctl_set_user_input_callback(termctl, user_input_callback);
 	termctl_set_newline_callback(termctl, newline_callback);
