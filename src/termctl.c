@@ -92,7 +92,7 @@ termctl_t termctl_create(const char* appname, void* userData) {
 	tc->atNewLine = true;
 	tc->user_data = userData;
 	tc->rlx = rlx_begin(appname, NULL, termctl_rlx_callback, 200, NULL,
-		RLX_OPT_PERSIST_HISTORY| RLX_OPT_AUTOCOMPLETE_COMMANDS, tc);
+		RLX_OPT_PERSIST_HISTORY | RLX_OPT_AUTOCOMPLETE_CUSTOM, tc);
 
 	if( ! tc->rlx ) {
 		DEBUG_MSG("Failed to initialize readline_ex");

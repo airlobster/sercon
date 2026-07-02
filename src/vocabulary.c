@@ -33,47 +33,13 @@ typedef struct _vocabulary_internal_t {
 static int init_schema(vocabulary_internal_t* vocab) {
 	static const char sql[] =
 		"CREATE TABLE IF NOT EXISTS words ("
-		"word TEXT PRIMARY KEY NOT NULL,"
-		"timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+		"word TEXT PRIMARY KEY NOT NULL"
 		");";
 	int rc = sqlite3_exec(vocab->db, sql, 0, 0, 0);
 	if( rc != SQLITE_OK ) {
 		DB_ERROR(vocab);
 	}
 	return rc;
-}
-
-/**
- * @brief Removes the oldest words from the vocabulary if it exceeds the maximum capacity.
- * @param vocab The vocabulary to remove words from.
- * @return int SQLITE_OK on success, or an SQLite error code on failure.
- */
-static int remove_oldest_words(vocabulary_internal_t* vocab) {
-	static const char sql[] =
-		"DELETE FROM words WHERE word NOT IN "
-		"(SELECT word FROM words ORDER BY timestamp DESC LIMIT ?);"
-		;
-	ASSERT(vocab);
-	ASSERT(vocab->db);
-	if( ! vocab->max_capacity || vocab->size <= vocab->max_capacity ) {
-		return SQLITE_OK;
-	}
-	sqlite3_stmt *stmt;
-	int rc = sqlite3_prepare_v2(vocab->db, sql, -1, &stmt, 0);
-	if( rc != SQLITE_OK ) {
-		DB_ERROR(vocab);
-		return rc;
-	}
-	sqlite3_bind_int(stmt, 1, (int)(vocab->max_capacity));
-	rc = sqlite3_step(stmt);
-	if( rc != SQLITE_DONE ) {
-		DB_ERROR(vocab);
-		sqlite3_finalize(stmt);
-		return rc;
-	}
-	sqlite3_finalize(stmt);
-	vocab->size = vocab->max_capacity;
-	return SQLITE_OK;
 }
 
 /**
@@ -158,7 +124,7 @@ void vocab_destroy(vocabulary_t vocab) {
 bool vocab_add_word(vocabulary_t vocab, const char* word) {
 	static const char sql[] =
 		"INSERT INTO words (word) VALUES (?) "
-		"ON CONFLICT(word) DO UPDATE SET timestamp = CURRENT_TIMESTAMP;"
+		// "ON CONFLICT(word) DO UPDATE SET timestamp = CURRENT_TIMESTAMP;"
 		;
 	ASSERT(vocab);
 	ASSERT(word && *word);
@@ -171,7 +137,7 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
 	if( rc == SQLITE_DONE ) {
 		vocab->dirty = true;
 		vocab->size++;
-		return remove_oldest_words(vocab) == SQLITE_OK;
+		return true;
 	} else if( rc != SQLITE_CONSTRAINT ) {
 		DB_ERROR(vocab);
 	}

@@ -476,6 +476,12 @@ static void apply_loaded_settings() {
 	}
 }
 
+static void autocomplete_callback(rlx_t rlx, void* userData) {
+	(void)userData;
+	ASSERT(rlx);
+	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
+}
+
 int main(int argc, char* argv[]) {
 	const char* appname = basename(argv[0]);
 
@@ -502,9 +508,9 @@ int main(int argc, char* argv[]) {
 	termctl_set_user_input_callback(termctl, user_input_callback);
 	termctl_set_newline_callback(termctl, newline_callback);
 	termctl_set_reconnect_callback(termctl, reconnect_callback);
+	rlx_add_autocomplete_callback(termctl_get_rlx(termctl), autocomplete_callback);
 
 	setupTerminalRegisteredCommands(termctl);
-	enumSerialPorts(add_ports_to_vocabulary_callback, termctl);
 
 	// if port was specified in the command-line, attempt to connect to it
 	// before entering the event loop

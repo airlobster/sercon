@@ -13,6 +13,8 @@
 #include "utils.h"
 #include "ansi.h"
 #include "r_buffer.h"
+#include "r_array.h"
+#include "vocabulary.h"
 
 /**
  * @brief Node for a linked list of registered commands.
@@ -44,10 +46,10 @@ typedef struct _rlx_internal_t {
 	char* savedLineBuffer;
 	/** The linked list of registered commands. */
 	rlx_command_node_t* commands;
+	/** Array of autocomplete callbacks. */
+	r_array_t autocompleteCallbacks;
 	/** The vocabulary for autocompletion. */
 	vocabulary_t completionVocabulary;
-	/** Flag indicating whether the readline_ex session owns the completion vocabulary. */
-	bool ownsCompletionVocabulary;
 	/** Flag indicating whether the readline_ex session is paused. */
 	bool isPaused;
 } rlx_internal_t;
@@ -59,7 +61,6 @@ static char** rlx_custom_completion(const char* text, int start, int end);
 static char* rlx_custom_completion_generator(const char* text, int state);
 static void rlx_add_history_entry(rlx_t h, const char* line);
 static void rlx_commit_history(rlx_t h);
-static void rlx_load_history_into_autocomplete(rlx_t h);
 
 /**
 	@brief Create the file path for the history file.
@@ -129,6 +130,21 @@ static int event_hook(void) {
 }
 
 /**
+ * @brief Add an autocomplete callback to the readline_ex session.
+ * @param h The readline_ex session handle.
+ * @param callback The callback function to add.
+ */
+static void autocomplete_commands_callback(rlx_t rlx, void* userData) {
+	(void)userData;
+	ASSERT(rlx);
+	ASSERT(rlx->completionVocabulary);
+	// add registered commands to the autocomplete vocabulary
+	for(const rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
+		vocab_add_word(rlx->completionVocabulary, cmd->cmd.command);
+	}
+}
+
+/**
 	@brief Begin a readline_ex session.
 	@param appname The name of the application.
 	@param prompt The prompt string to display.
@@ -164,8 +180,8 @@ rlx_t rlx_begin(
 	rlx->maxHistoryEntries = MAX(maxHistoryEntries, 10);
 	rlx->savedLineBuffer = 0;
 	rlx->commands = 0;
-	rlx->completionVocabulary = vocab_create(0, 0);
-	rlx->ownsCompletionVocabulary = true;
+	rlx->autocompleteCallbacks = 0;
+	rlx->completionVocabulary = 0;
 	rlx->isPaused = false;
 
 	history_max_entries = rlx->maxHistoryEntries;
@@ -173,30 +189,25 @@ rlx_t rlx_begin(
 	// if the option to persist history is enabled, we will load the history from the file on startup
 	if( rlx->options & RLX_OPT_PERSIST_HISTORY ) {
 		read_history(rlx->historyFilePath);
-		if( rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY ) {
-			// if the option to autocomplete from history is enabled,
-			// we will load the history entries into the autocomplete vocabulary
-			rlx_load_history_into_autocomplete(rlx);
-		}
 	}
 
 	rl_callback_handler_install(prompt, readline_callback_wrapper);
 
-	// setup auto-complete
-	// (RLX_OPT_AUTOCOMPLETE_COMMANDS and RLX_OPT_AUTOCOMPLETE_HISTORY takes priority
-	// over RLX_OPT_AUTOCOMPLETE_FILES)
-	if( rlx->options & RLX_OPT_AUTOCOMPLETE_MASK ) {
-		// some kind of auto-completion was requested,
-		// so we set up the completion function and word break characters accordingly.
-		if( rlx->options & (RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_HISTORY) ) {
-			rl_attempted_completion_function = rlx_custom_completion;
-		} else if( rlx->options & RLX_OPT_AUTOCOMPLETE_FILES ) {
-			rl_attempted_completion_function = 0; // use default readline filename completion
-		}
+	if( rlx->options & RLX_OPT_AUTOCOMPLETE_CUSTOM ) {
+		rlx->autocompleteCallbacks = r_array_create(0, 0);
+		rlx->completionVocabulary = vocab_create(0, 0);
+		rl_attempted_completion_function = rlx_custom_completion;
+		rl_bind_key('\t', rl_complete);
+		rl_completer_word_break_characters = " \t\n\"'`@$><=;|&{(";
+		rlx_add_autocomplete_callback((rlx_t)rlx, autocomplete_commands_callback);
+	} else if( rlx->options & RLX_OPT_AUTOCOMPLETE_FILES ) {
+		// if the option to use the default GNU readline file autocompletion is enabled,
+		// we will set up the completion function and word break characters accordingly.
+		rl_attempted_completion_function = 0; // use default readline filename completion
 		rl_bind_key('\t', rl_complete);
 		rl_completer_word_break_characters = " \t\n\"'`@$><=;|&{(";
 	} else {
-		// auto-complete is disabled
+		// no auto-complete
 		rl_bind_key('\t', rl_insert);
 	}
 
@@ -237,10 +248,13 @@ void rlx_end(rlx_t rlx) {
 	}
 
 	// free auto-complete vocabulary
-	if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary ) {
+	if( rlx->completionVocabulary ) {
 		vocab_destroy(rlx->completionVocabulary);
 		rlx->completionVocabulary = 0;
 	}
+
+	// destroy the array of autocomplete callbacks
+	r_array_destroy(rlx->autocompleteCallbacks);
 
 	// reset the readline context to its initial state
 #ifdef NDEBUG
@@ -283,9 +297,9 @@ void rlx_register_commands(rlx_t rlx, const rlx_registered_command_t* commands) 
 		cmd->cmd = *rc;
 		cmd->next = rlx->commands;
 		rlx->commands = cmd;
-		if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary && (rlx->options & RLX_OPT_AUTOCOMPLETE_COMMANDS) ) {
-			vocab_add_word(rlx->completionVocabulary, rc->command);
-		}
+		// if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary && (rlx->options & RLX_OPT_AUTOCOMPLETE_COMMANDS) ) {
+		// 	vocab_add_word(rlx->completionVocabulary, rc->command);
+		// }
 	}
 }
 
@@ -361,10 +375,6 @@ static void rlx_add_history_entry(rlx_t rlx, const char* line) {
 	ASSERT(rlx);
 	if( ! line || ! *line ) return;
 	add_history(line);
-	// add the new history entry to the autocomplete vocabulary if we own it and the option is enabled
-	if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary && (rlx->options & RLX_OPT_AUTOCOMPLETE_HISTORY) ) {
-		vocab_add_word(rlx->completionVocabulary, line);
-	}
 }
 
 /**
@@ -544,6 +554,25 @@ void rlx_print_registered_commands(rlx_t rlx) {
 }
 
 /**
+ * @brief Add an autocomplete callback.
+ * @param h The readline_ex session handle.
+ * @param callback The callback function to add.
+ * @return true if the callback was added successfully, false otherwise.
+ */
+bool rlx_add_autocomplete_callback(rlx_t h, rlx_vocabulary_build_callback_t callback) {
+	ASSERT(h);
+	ASSERT(callback);
+	ASSERT(h->completionVocabulary);
+	ASSERT(h->autocompleteCallbacks);
+	if( ! h->completionVocabulary || ! h->autocompleteCallbacks ) {
+		DEBUG_MSG("Cannot add autocomplete callback: RLX_OPT_AUTOCOMPLETE_CUSTOM was not set.");
+		return false;
+	}
+	r_array_add(h->autocompleteCallbacks, callback);
+	return true;
+}
+
+/**
 	@brief Custom completion function for readline_ex.
 	@param text The text to complete.
 	@param start The start position of the text.
@@ -567,10 +596,19 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 	static const char** completionList = 0;
 	static size_t vocabIndex = 0;
 	static size_t textLen = 0;
+	rlx_internal_t* rlx = &rlxStatic;
+	ASSERT(rlx->isInitialized);
+	ASSERT( rlx->completionVocabulary);
 
+	// first call for a given completion, we need to build the list of possible completions
 	if( state == 0 ) {
-		ASSERT(rlxStatic.completionVocabulary);
-		// first call, build the completion words list
+		// invoke auto-complete chain of callbacks to build the vocabulary
+		for(size_t i=0; i < r_array_size(rlx->autocompleteCallbacks); i++) {
+			rlx_vocabulary_build_callback_t callback =
+				(rlx_vocabulary_build_callback_t)r_array_get(rlx->autocompleteCallbacks, i);
+			ASSERT(callback);
+			callback((rlx_t)rlx, rlx->userData);
+		}
 		completionList = (const char**)vocab_get_words(rlxStatic.completionVocabulary);
 		ASSERT(completionList);
 		vocabIndex = 0;
@@ -589,22 +627,6 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 }
 
 /**
-	@brief Set a custom autocomplete vocabulary for the readline_ex session.
-	@param rlx The readline_ex session handle.
-	@param vocab The custom autocomplete vocabulary, or NULL to use the default vocabulary.
-*/
-void rlx_set_autocomplete_vocabulary(rlx_t rlx, vocabulary_t vocab) {
-	ASSERT(rlx);
-	if( rlx->ownsCompletionVocabulary ) {
-		// dispose of the old vocabulary if we own it before replacing it with the new one
-		vocab_destroy(rlx->completionVocabulary);
-		rlx->completionVocabulary = 0;
-	}
-	rlx->completionVocabulary = vocab;
-	rlx->ownsCompletionVocabulary = vocab == 0;
-}
-
-/**
  * @brief Add a new entry to the autocomplete vocabulary.
  * @param rlx The readline_ex session handle.
  * @param entry The entry to add to the autocomplete vocabulary.
@@ -612,29 +634,18 @@ void rlx_set_autocomplete_vocabulary(rlx_t rlx, vocabulary_t vocab) {
  */
 bool rlx_add_autocomplete_vocabulary_entry(rlx_t rlx, const char* entry) {
 	ASSERT(rlx);
+	ASSERT(rlx->isInitialized);
+	ASSERT( rlx->completionVocabulary);
 	ASSERT(entry && *entry);
 	if( ! entry || ! *entry ) return false;
 
 	// if we don't own the vocabulary, we cannot modify it
-	if( ! rlx->ownsCompletionVocabulary || ! rlx->completionVocabulary ) return false;
+	if( ! rlx->completionVocabulary ) {
+		DEBUG_MSG("Cannot add autocomplete vocabulary entry: RLX_OPT_AUTOCOMPLETE_CUSTOM was not set.");
+		return false;
+	}
 
 	return vocab_add_word(rlx->completionVocabulary, entry);
-}
-
-/**
- * @brief Load the readline history into the autocomplete vocabulary.
- * @param rlx The readline_ex session handle.
- */
-static void rlx_load_history_into_autocomplete(rlx_t rlx) {
-	ASSERT(rlx);
-	ASSERT(rlx->completionVocabulary && rlx->ownsCompletionVocabulary);
-	using_history();
-	int n = rlx_get_history_length(rlx);
-	for(int j = 0; j < n; j++) {
-		HIST_ENTRY* entry = history_get(history_base + j);
-		if( ! entry || ! entry->line || ! *entry->line ) continue;
-		vocab_add_word(rlx->completionVocabulary, entry->line);
-	}
 }
 
 #ifdef _DEBUG_

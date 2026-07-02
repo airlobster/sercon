@@ -26,7 +26,6 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "vocabulary.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,13 +57,12 @@ typedef struct _rlx_registered_command_t {
  * @details These options can be combined using bitwise OR to enable multiple features.
  */
 typedef enum {
-	RLX_OPT_AUTOCOMPLETE_HISTORY = 1UL << 0, // include history entries in the autocomplete vocabulary
-	RLX_OPT_AUTOCOMPLETE_COMMANDS = 1UL << 1, // include registered commands in the autocomplete vocabulary
-	RLX_OPT_AUTOCOMPLETE_FILES = 1UL << 2, // default GNU readline file autocompletion (ignoring any custom vocabulary)
-	RLX_OPT_AUTOCOMPLETE_MASK = RLX_OPT_AUTOCOMPLETE_HISTORY | RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_FILES,
-	RLX_OPT_PERSIST_HISTORY = 1UL << 3, // save history to file and load it on startup
-	RLX_OPT_HISTORY_ALLOW_DUPLICATES = 1UL << 4, // allow duplicate entries in history
-	RLX_OPT_NO_TRIM_LINE = 1UL << 5, // do not trim leading and trailing whitespace from input lines before processing
+	RLX_OPT_AUTOCOMPLETE_CUSTOM = 1UL << 0, // use a custom autocomplete vocabulary instead of the default
+	RLX_OPT_AUTOCOMPLETE_FILES = 1UL << 1, // enable filename autocompletion
+	RLX_OPT_AUTOCOMPLETE_MASK = RLX_OPT_AUTOCOMPLETE_CUSTOM | RLX_OPT_AUTOCOMPLETE_FILES, // mask for autocomplete options
+	RLX_OPT_PERSIST_HISTORY = 1UL << 2, // save history to file and load it on startup
+	RLX_OPT_HISTORY_ALLOW_DUPLICATES = 1UL << 3, // allow duplicate entries in history
+	RLX_OPT_NO_TRIM_LINE = 1UL << 4, // do not trim leading and trailing whitespace from input lines before processing
 } rlx_options_t;
 
 /**
@@ -75,6 +73,16 @@ typedef enum {
  * @param userData User data passed to the callback function.
  */
 typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length, void* userData);
+
+/**
+ * @brief Callback function type for building the autocomplete vocabulary.
+ * @param rlx The readline_ex session handle.
+ * @param userData User data passed to the callback function.
+ * @details Use this callback to add words to the auto-complete vocabulary using
+ * the rlx_add_autocomplete_vocabulary_entry() function.
+ * It is allowed to register multiple such callbacks.
+ */
+typedef void (*rlx_vocabulary_build_callback_t)(rlx_t rlx, void* userData);
 
 // RLX session management
 rlx_t rlx_begin(
@@ -114,7 +122,7 @@ void rlx_reset_history(rlx_t h);
 void rlx_print_history(rlx_t h);
 
 // vocabulary management
-void rlx_set_autocomplete_vocabulary(rlx_t h, vocabulary_t vocab);
+bool rlx_add_autocomplete_callback(rlx_t h, rlx_vocabulary_build_callback_t callback);
 bool rlx_add_autocomplete_vocabulary_entry(rlx_t h, const char* entry);
 #ifdef _DEBUG_
 void rlx_print_autocomplete_vocabulary(rlx_t h);
