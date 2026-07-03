@@ -128,8 +128,8 @@ void vocab_print(vocabulary_t vocab) {
 		return;
 	}
 	printf("Auto-Complete Vocabulary (size: %zu):\n", n);
-	for(int i = 0; i < n; i++) {
-		printf("%*d: %s\n", numdigits(n, 0), i + 1, (const char*)r_array_get(a, i));
+	for(size_t i = 0; i < n; i++) {
+		printf("%*zu: %s\n", numdigits(n, 0), i + 1, (const char*)r_array_get(a, i));
 	}
 	r_array_destroy(a);
 }
