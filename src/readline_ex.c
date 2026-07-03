@@ -211,10 +211,6 @@ rlx_t rlx_begin(
 		rl_bind_key('\t', rl_insert);
 	}
 
-	if( rlx->completionVocabulary ) {
-		rlx_rebuild_completion_vocabulary(rlx);
-	}
-
 	using_history();
 
 	rl_event_hook = event_hook;

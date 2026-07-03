@@ -9,6 +9,8 @@
 #include "termctl.h"
 #include "r_array.h"
 
+#define PULL_TIMEOUT_MS (500)
+
 /**
  * @brief Internal structure for termctl.
  * @details This structure holds the state and configuration for the terminal control.
@@ -83,7 +85,7 @@ termctl_t termctl_create(const char* appname, void* context) {
 
 	tc->fds = NULL;
 	tc->nfds = 0;
-	tc->poll_timeout_ms = 500; // default timeout
+	tc->poll_timeout_ms = PULL_TIMEOUT_MS; // default timeout
 	tc->stdin_eof = 0;
 	tc->prompt_callback = NULL;
 	tc->newline_callback = NULL;
