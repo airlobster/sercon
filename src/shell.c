@@ -95,7 +95,9 @@ int sc_shell_v(
 	};
 
 	int lastChar = 0;
+	shell_output_callback_t lastFdCallback = NULL; // callback of the last active device
 	int fdsLeft = array_size(fds);
+
 	while( fdsLeft ) {
 		ret = poll(fds, array_size(fds), POLL_TIMEOUT);
 
@@ -109,10 +111,11 @@ int sc_shell_v(
 			ssize_t bytesRead = read(pStdout[0], buffer, sizeof(buffer) - 1);
 			if( bytesRead > 0 ) {
 				buffer[bytesRead] = '\0';
-				lastChar = buffer[bytesRead - 1];
 				if( stdout_callback ) {
 					stdout_callback(buffer, bytesRead, context);
 				}
+				lastChar = buffer[bytesRead - 1];
+				lastFdCallback = stdout_callback;
 			} else {
 				fds[0].fd = -1; // Mark this fd as closed
 				--fdsLeft;
@@ -124,10 +127,11 @@ int sc_shell_v(
 			ssize_t bytesRead = read(pStderr[0], buffer, sizeof(buffer) - 1);
 			if( bytesRead > 0 ) {
 				buffer[bytesRead] = '\0';
-				lastChar = buffer[bytesRead - 1];
 				if( stderr_callback ) {
 					stderr_callback(buffer, bytesRead, context);
 				}
+				lastChar = buffer[bytesRead - 1];
+				lastFdCallback = stderr_callback;
 			} else {
 				fds[1].fd = -1; // Mark this fd as closed
 				--fdsLeft;
@@ -135,8 +139,9 @@ int sc_shell_v(
 		}
 	} // end poll loop
 
-	if( lastChar != '\n' && stdout_callback ) {
-		stdout_callback("\n", 1, context);
+	// send a final linefeed to the last callback if the last character read was not a newline
+	if( lastChar != '\n' && lastFdCallback ) {
+		lastFdCallback("\n", 1, context);
 	}
 
 	close(pStdout[0]);
