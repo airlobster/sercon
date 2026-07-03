@@ -11,7 +11,7 @@ typedef struct _r_buffer_t* buffer_t;
 
 buffer_t r_buffer_create(size_t max_size);
 void r_buffer_destroy(buffer_t buffer);
-void r_buffer_append(buffer_t buffer, const char* data, size_t length);
+size_t r_buffer_append(buffer_t buffer, const char* data, size_t length);
 const char* r_buffer_get_data(buffer_t buffer);
 char* r_buffer_detach_data(buffer_t buffer);
 void r_buffer_clear(buffer_t buffer);

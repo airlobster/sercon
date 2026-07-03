@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 #ifdef _DEBUG_
-#define DEBUG_MSG(fmt, ...) debug_msg(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
-void debug_msg(const char* file, int line, const char* fmt, ...);
+#define DEBUG_MSG(fmt, ...) debug_msg(__FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+void debug_msg(const char* file, int line, const char* func, const char* fmt, ...);
 #define ASSERT(cond) if (!(cond)) { DEBUG_MSG("Assertion failed: '%s'", #cond); exit(-1); }
 #else
 #define DEBUG_MSG(fmt, ...) ((void)0)

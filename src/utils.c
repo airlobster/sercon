@@ -83,25 +83,20 @@ int strnetcontent(char* s, char** start, char** end) {
 }
 
 #ifdef _DEBUG_
-void debug_msg(const char* file, int line, const char* fmt, ...) {
+void debug_msg(const char* file, int line, const char* func, const char* fmt, ...) {
 	va_list args;
-	char *msg = 0;
-
-	fprintf(stderr, "[%s:%d] ", file, line);
+	char *msg = NULL;
 
 	va_start(args, fmt);
 	vasprintf(&msg, fmt, args);
 	va_end(args);
 
-	// trim leading and trailing whitespaces
-	char *start, *end;
-	strnetcontent(msg, &start, &end);
-	*end = '\0'; // null-terminate at the last non-whitespace character
-
-	fprintf(stderr, "%s\n", start);
+	fprintf(stderr, "[%s@%s:%d] %s\n", func, file, line, msg ? msg : "");
 	fflush(stderr);
 
-	free(msg);
+	if( msg ) {
+		free(msg);
+	}
 }
 #endif
 

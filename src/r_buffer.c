@@ -31,26 +31,27 @@ void r_buffer_destroy(buffer_t buffer) {
 	free(b);
 }
 
-void r_buffer_append(buffer_t buffer, const char* data, size_t length) {
+size_t r_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	r_buffer_t* b = (r_buffer_t*)buffer;
 	ASSERT(b);
 	if( b->max_size && b->length + length >= b->max_size ) {
 		DEBUG_MSG("Buffer overflow: cannot append data to buffer");
-		return;
+		return 0;
 	}
 	if( b->length + length >= b->capacity ) {
 		size_t newCapacity = MAX(b->capacity * 2, b->length + length);
-		char* newData = (char*)realloc(b->data, newCapacity + 1);
+		char* newData = (char*)realloc(b->data, (newCapacity + 1) * sizeof(char)); // +1 for null terminator
 		if( ! newData ) {
 			DEBUG_MSG("Failed to allocate memory for r_buffer");
-			return;
+			return 0;
 		}
 		b->data = newData;
 		b->capacity = newCapacity;
 	}
-	strncpy(b->data + b->length, data, length);
+	memcpy(b->data + b->length, data, length);
 	b->length += length;
 	b->data[b->length] = '\0'; // null-terminate the buffer
+	return length;
 }
 
 const char* r_buffer_get_data(buffer_t buffer) {
