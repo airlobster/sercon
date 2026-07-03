@@ -123,15 +123,13 @@ void vocab_print(vocabulary_t vocab) {
 	if( ! a ) return;
 	size_t n = r_array_size(a);
 	if( ! n ) {
-		printf("Vocabulary not set yet\n");
+		DEBUG_MSG("Vocabulary is empty\n");
 		r_array_destroy(a);
 		return;
 	}
 	printf("Auto-Complete Vocabulary (size: %zu):\n", n);
-	fflush(stdout);
-	const char* const* words = (const char* const*)r_array_elements(a);
-	for(const char* const* w = words; *w; w++) {
-		printf("%*zu: %s\n", numdigits(n, 0), w - words + 1, *w);
+	for(int i = 0; i < n; i++) {
+		printf("%*d: %s\n", numdigits(n, 0), i + 1, (const char*)r_array_get(a, i));
 	}
 	r_array_destroy(a);
 }
