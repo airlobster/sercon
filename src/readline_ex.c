@@ -602,8 +602,10 @@ static char** rlx_custom_completion(const char* text, int start, int end) {
  */
 void rlx_rebuild_completion_vocabulary(rlx_t rlx) {
 	ASSERT(rlx);
-	ASSERT(rlx->completionVocabulary);
-	ASSERT(rlx->autocompleteCallbacks);
+	if( ! rlx->completionVocabulary || ! rlx->autocompleteCallbacks ) {
+		DEBUG_MSG("Cannot rebuild autocomplete vocabulary: RLX_OPT_AUTOCOMPLETE_CUSTOM was not set.");
+		return;
+	}
 	vocab_reset(rlx->completionVocabulary);
 	// invoke auto-complete chain of callbacks to build the vocabulary
 	for(size_t i=0; i < r_array_size(rlx->autocompleteCallbacks); i++) {
