@@ -8,16 +8,22 @@
 #include "utils.h"
 
 typedef struct {
-	const char* pattern;
+	const char** patterns;
 	unsigned long options;
 } cglob_options_t;
 
 typedef struct {
 	cglob_options_t* options;
 	glob_t glob_result;
-	size_t i;
+	const char** current_pattern;
+	size_t iResult;
 } cglob_state_t;
 
+/**
+ * @brief Frees the resources associated with the glob iterator state.
+ * 
+ * @param state Pointer to the iterator state to be freed.
+ */
 static void cglob_free(void* state) {
 	if( ! state ) return;
 	globfree(&((cglob_state_t*)state)->glob_result);
@@ -25,6 +31,14 @@ static void cglob_free(void* state) {
 	free(state);
 }
 
+/**
+ * @brief Get the next matching file from the glob iterator.
+ * 
+ * @param state Pointer to the iterator state.
+ * @param done Pointer to an integer that will be set to 1 when iteration is complete.
+ * @param context Pointer to the iterator context (cglob_options_t).
+ * @return void* Pointer to the next matching file path, or NULL if iteration is complete.
+ */
 static void* cglob_next(void** state, int* done, void* context) {
 	if( ! state || ! done ) return NULL;
 
@@ -33,36 +47,48 @@ static void* cglob_next(void** state, int* done, void* context) {
 	// first time - initialize state
 	if( ! *state ) {
 		ctx = malloc(sizeof(cglob_state_t));
-		ctx->i = 0;
+		ctx->current_pattern = ((cglob_options_t*)context)->patterns;
+		ctx->iResult = 0;
 		ctx->options = (cglob_options_t*)context;
-		int ret = glob(ctx->options->pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &ctx->glob_result);
+		*state = ctx;
+	}
+
+	// for each pattern...
+	while( *ctx->current_pattern ) {
+		// perform globbing for the current pattern
+		if( ctx->current_pattern != ctx->options->patterns ) {
+			// free previous glob results before starting a new glob operation
+			globfree(&ctx->glob_result);
+		}
+		int ret = glob(*ctx->current_pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &ctx->glob_result);
 		if( ret != 0 && ret != GLOB_NOMATCH ) {
-			DEBUG_MSG("Error occurred while globbing pattern: %s", ctx->options->pattern);
+			DEBUG_MSG("Error occurred while globbing pattern: %s", *ctx->current_pattern);
 			*done = 1;
 			cglob_free(ctx);
 			return NULL;
 		}
-		*state = ctx;
-	}
-
-	while( ctx->i < ctx->glob_result.gl_pathc ) {
-		const char* path = ctx->glob_result.gl_pathv[ctx->i++];
-		struct stat st;
-		if( stat(path, &st) != 0 ) {
-			DEBUG_MSG("Failed to stat file: %s (%s)", path, strerror(errno));
-			continue;
+		// iterate through the results of the globbing operation
+		while( ctx->iResult < ctx->glob_result.gl_pathc ) {
+			const char* path = ctx->glob_result.gl_pathv[ctx->iResult++];
+			struct stat st;
+			if( stat(path, &st) != 0 ) {
+				DEBUG_MSG("Failed to stat file: %s (%s)", path, strerror(errno));
+				continue;
+			}
+			bool pass = false;
+			pass |= (ctx->options->options & CGLOB_FILE_REGULAR) && S_ISREG(st.st_mode);
+			pass |= (ctx->options->options & CGLOB_FILE_DIRECTORY) && S_ISDIR(st.st_mode);
+			pass |= (ctx->options->options & CGLOB_FILE_SYMLINK) && S_ISLNK(st.st_mode);
+			pass |= (ctx->options->options & CGLOB_FILE_CHAR_DEVICE) && S_ISCHR(st.st_mode);
+			pass |= (ctx->options->options & CGLOB_FILE_BLOCK_DEVICE) && S_ISBLK(st.st_mode);
+			pass |= (ctx->options->options & CGLOB_FILE_FIFO) && S_ISFIFO(st.st_mode);
+			pass |= (ctx->options->options & CGLOB_FILE_SOCKET) && S_ISSOCK(st.st_mode);
+			if( pass ) {
+				return (void*)path;
+			}
 		}
-		bool pass = false;
-		pass |= (ctx->options->options & CGLOB_FILE_REGULAR) && S_ISREG(st.st_mode);
-		pass |= (ctx->options->options & CGLOB_FILE_DIRECTORY) && S_ISDIR(st.st_mode);
-		pass |= (ctx->options->options & CGLOB_FILE_SYMLINK) && S_ISLNK(st.st_mode);
-		pass |= (ctx->options->options & CGLOB_FILE_CHAR_DEVICE) && S_ISCHR(st.st_mode);
-		pass |= (ctx->options->options & CGLOB_FILE_BLOCK_DEVICE) && S_ISBLK(st.st_mode);
-		pass |= (ctx->options->options & CGLOB_FILE_FIFO) && S_ISFIFO(st.st_mode);
-		pass |= (ctx->options->options & CGLOB_FILE_SOCKET) && S_ISSOCK(st.st_mode);
-		if( pass ) {
-			return (void*)path;
-		}
+		ctx->current_pattern++;
+		ctx->iResult = 0;
 	}
 
 	*done = 1;
@@ -70,13 +96,20 @@ static void* cglob_next(void** state, int* done, void* context) {
 	return NULL;
 }
 
-iterator_t cglob_iterator(const char* pattern, unsigned long options) {
+/**
+ * @brief Creates a glob iterator for the specified patterns and options.
+ * 
+ * @param patterns Array of patterns to match.
+ * @param options Options for filtering the matched files.
+ * @return iterator_t The initialized iterator.
+ */
+iterator_t cglob_iterator(const char* patterns[], unsigned long options) {
 	cglob_options_t* opt = malloc(sizeof(cglob_options_t));
 	if( ! opt ) {
 		DEBUG_MSG("Failed to allocate memory for cglob_options_t");
 		return NULL;
 	}
-	opt->pattern = pattern;
+	opt->patterns = patterns;
 	opt->options = options;
 	return iterator_init(cglob_next, cglob_free, opt);
 }
