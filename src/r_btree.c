@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "r_btree.h"
 #include "utils.h"
+#include "r_stack.h"
 
 typedef struct _r_btree_node_t {
 	/** The data stored in the node. */
@@ -67,22 +68,6 @@ static bool r_btree_add_node(r_btree_state_t* bt, r_btree_node_t** node, void* d
 		return r_btree_add_node(bt, &(*node)->right, data);
 	}
 	return false;
-}
-
-/**
- * @brief Recursively traverses a binary tree node and its children in-order.
- * @param bt The binary tree state.
- * @param node The node to traverse.
- * @param traverse_func The function to call for each node's data.
- * @param context User data to pass to the traverse function.
- */
-static void r_btree_traverse_node(r_btree_state_t* bt, r_btree_node_t* node, r_btree_traverse_func_t traverse_func, void* context) {
-	ASSERT(bt);
-	ASSERT(traverse_func);
-	if( ! node ) return;
-	r_btree_traverse_node(bt, node->left, traverse_func, context);
-	traverse_func(node->data, context);
-	r_btree_traverse_node(bt, node->right, traverse_func, context);
 }
 
 /**
@@ -174,19 +159,6 @@ void r_btree_reset(r_btree_t tree) {
 }
 
 /**
- * @brief Traverses the binary tree in-order, calling a user-provided function for each node's data.
- * @param tree The binary tree to traverse.
- * @param traverse_func The function to call for each node's data.
- * @param context User data to pass to the traverse function.
- */
-void r_btree_traverse(r_btree_t tree, r_btree_traverse_func_t traverse_func, void* context) {
-	ASSERT(tree);
-	ASSERT(traverse_func);
-	r_btree_state_t* bt = (r_btree_state_t*)tree;
-	r_btree_traverse_node(bt, bt->root, traverse_func, context);
-}
-
-/**
  * @brief Finds a node in the binary tree.
  * @param tree The binary tree.
  * @param data The data to find.
@@ -199,14 +171,27 @@ bool r_btree_exists(r_btree_t tree, const void* data) {
 	return node != NULL;
 }
 
-static void* r_btree_next(void** state, int* done, void* context) {
-	typedef struct {
-		r_btree_state_t* btree;
-		r_btree_node_t* stack[256];
-		r_btree_node_t* current;
-		int top;
-	} iterator_state_t;
 
+/**
+ * @brief internal b-tree iterator state structure
+ */
+typedef struct {
+	/**< The binary tree being iterated over */
+	r_btree_state_t* btree;
+	/**< The stack used for in-order traversal */
+	r_stack_t stack;
+	/**< The current node in the traversal */
+	r_btree_node_t* current;
+} iterator_state_t;
+
+/**
+ * @brief Iterator function for in-order traversal of the binary tree.
+ * @param state Pointer to the iterator state.
+ * @param done Pointer to an integer indicating if the iteration is complete.
+ * @param context User data passed to the iterator.
+ * @return The next data element in the binary tree, or NULL if iteration is complete.
+ */
+static void* r_btree_next(void** state, int* done, void* context) {
 	iterator_state_t* ctx = (iterator_state_t*)(*state);
 
 	// first time initialization
@@ -219,19 +204,25 @@ static void* r_btree_next(void** state, int* done, void* context) {
 		}
 		ctx->btree = (r_btree_state_t*)context;
 		ctx->current = ctx->btree->root;
-		ctx->top = 0;
+		ctx->stack = r_stack_create(0, NULL);
+		if( ! ctx->stack ) {
+			DEBUG_MSG("Failed to create stack for iterator");
+			free(ctx);
+			*done = 1;
+			return NULL;
+		}
 
 		*state = ctx;
 	}
 
-	while( ctx->current || ctx->top > 0 ) {
+	while( ctx->current || ! r_stack_is_empty(ctx->stack) ) {
 		if( ctx->current ) {
-			ASSERT(ctx->top < (int)array_size(ctx->stack)); // prevent stack overflow
-			ctx->stack[ctx->top++] = ctx->current;
+			r_stack_push(ctx->stack, ctx->current);
 			ctx->current = ctx->current->left;
 		} else {
-			ASSERT(ctx->top > 0); // prevent stack underflow
-			ctx->current = ctx->stack[--ctx->top];
+			bool success;
+			ctx->current = r_stack_pop(ctx->stack, &success);
+			ASSERT(success);
 			void* data = ctx->current->data;
 			ctx->current = ctx->current->right;
 			return data;
@@ -242,8 +233,27 @@ static void* r_btree_next(void** state, int* done, void* context) {
 	return NULL;
 }
 
+/**
+ * @brief Frees the resources associated with the binary tree iterator.
+ * @param state Pointer to the iterator state.
+ */
+static void r_btree_iterator_free(void* state) {
+	iterator_state_t* ctx = (iterator_state_t*)state;
+	if( ctx ) {
+		if( ctx->stack ) {
+			r_stack_destroy(ctx->stack);
+		}
+		free(ctx);
+	}
+}
+
+/**
+ * @brief Initializes an iterator for in-order traversal of the binary tree.
+ * @param tree The binary tree to iterate over.
+ * @return An iterator for the binary tree.
+ */
 iterator_t r_btree_iterator(r_btree_t tree) {
 	ASSERT(tree);
 	r_btree_state_t* bt = (r_btree_state_t*)tree;
-	return iterator_init(r_btree_next, free, bt);
+	return iterator_init(r_btree_next, r_btree_iterator_free, bt);
 }

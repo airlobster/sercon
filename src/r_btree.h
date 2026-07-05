@@ -36,7 +36,6 @@ bool r_btree_add(r_btree_t tree, void* data);
 bool r_btree_exists(r_btree_t tree, const void* data);
 size_t r_btree_size(r_btree_t tree);
 void r_btree_reset(r_btree_t tree);
-void r_btree_traverse(r_btree_t tree, r_btree_traverse_func_t traverse_func, void* context);
 
 iterator_t r_btree_iterator(r_btree_t tree);
 
