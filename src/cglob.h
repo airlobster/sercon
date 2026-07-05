@@ -12,6 +12,8 @@
  * @note This library is designed to be used in both C and C++ projects.
  */
 
+#include "iterator.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,11 +28,7 @@ typedef enum {
 	CGLOB_FILE_SOCKET = 1UL << 6, /**< Socket */
 } cglob_file_type_t;
 
-typedef void* cglob_iterator_t;
-
-cglob_iterator_t globIterator(const char* pattern, unsigned long options);
-const char* nextGlob(cglob_iterator_t iterator);
-void freeGlobIterator(cglob_iterator_t iterator);
+iterator_t cglob_iterator(const char* pattern, unsigned long options);
 
 #ifdef __cplusplus
 }

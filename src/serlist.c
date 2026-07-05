@@ -40,6 +40,7 @@ r_array_t enumSerialPorts() {
 	r_array_t ports = r_array_create(0, free);
 	if( ! ports ) return NULL;
 	char* paths = 0;
+	// build paths from default and environment variable
 	const char* envPats = getenv(ENV_NAME);
 	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
 	r_array_t path_array = parse_path_list(paths);
@@ -48,13 +49,15 @@ r_array_t enumSerialPorts() {
 		r_array_destroy(ports);
 		return NULL;
 	}
+	// for each path pattern, use cglob_iterator to find matching files and add them to the ports array
 	for(size_t i=0; i < r_array_size(path_array); ++i) {
-		cglob_iterator_t g = globIterator(r_array_get(path_array, i), CGLOB_FILE_CHAR_DEVICE);
-		for(const char* path = nextGlob(g); path; path = nextGlob(g)) {
+		iterator_t g = cglob_iterator(r_array_get(path_array, i), CGLOB_FILE_CHAR_DEVICE);
+		for(iterator_result_t res = iterator_next(&g); g && !res.done; res = iterator_next(&g)) {
+			const char* path = (const char*)res.value;
 			r_array_add(ports, strdup(path));
 		}
-		freeGlobIterator(g);
 	}
+	// cleanup
 	r_array_destroy(path_array);
 	free(paths);
 	return ports;
