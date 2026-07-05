@@ -6,7 +6,6 @@
 #include <ctype.h>
 #include "utils.h"
 #include "command.h"
-#include "r_buffer.h"
 #include "shell.h"
 
 #define POLL_TIMEOUT (1000) // milliseconds
