@@ -50,6 +50,10 @@ iterator_t iterator_init(iterator_next_func_t next, iterator_state_dtor_t dtor, 
 void iterator_free(iterator_t* g);
 iterator_result_t iterator_next(iterator_t* g);
 
+
+#define FOREACH_ITERATOR(it, result) \
+	for(iterator_result_t result = iterator_next(&it); ! result.done; result = iterator_next(&it))
+
 #ifdef __cplusplus
 }
 #endif

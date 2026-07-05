@@ -44,7 +44,8 @@ void shell_stderr_callback(const char* output, size_t length, void* context) {
 static void print_ports_list() {
 	ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
 	iterator_t i = enumSerialPorts();
-	for(iterator_result_t res = iterator_next(&i); i && !res.done; res = iterator_next(&i)) {
+	if( ! i ) return;
+	FOREACH_ITERATOR(i, res) {
 		const char* portName = (const char*)res.value;
 		ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 	}
@@ -431,7 +432,7 @@ static void autocomplete_callback(rlx_t rlx, void* context) {
 	ASSERT(rlx);
 	iterator_t i = enumSerialPorts();
 	if( ! i ) return;
-	for(iterator_result_t res = iterator_next(&i); i && !res.done; res = iterator_next(&i)) {
+	FOREACH_ITERATOR(i, res) {
 		const char* portName = (const char*)res.value;
 		rlx_add_autocomplete_vocabulary_entry(rlx, portName);
 	}
