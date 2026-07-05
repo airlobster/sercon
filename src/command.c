@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -6,6 +7,7 @@
 #include "r_array.h"
 #include "utils.h"
 #include "r_buffer.h"
+#include "r_stack.h"
 
 /**
  * @brief Parses a command line into an argument vector, similar to how a shell would parse command line input.
@@ -18,8 +20,8 @@
  *	(no support for environment variables expansion, command substitution, or other shell features)
  */
 int parse_command_line(const char* line, int* argc, char*** argv) {
-#define PUSH(s) state[statePos++]=(s)
-#define POP() --statePos
+#define PUSH(s) r_stack_push(stateStack, (void*)(intptr_t)(s))
+#define POP() (parse_state_t)(intptr_t)r_stack_pop(stateStack, 0)
 #define UNGET() --p
 	typedef enum {
 		PS_START,
@@ -32,8 +34,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	} parse_state_t;
 
 	r_array_t atokens = r_array_create(0, free);
-	parse_state_t state[32] = {0}; // state stack
-	int statePos = 0; // current position in the state stack
+	r_stack_t stateStack = r_stack_create(0, NULL);
 	char quote = 0; // current quote character when in PS_QUOTED state
 	buffer_t token = r_buffer_create(0); // buffer for the current token
 	unsigned int integerValue = 0; // used for parsing octal and hex escape sequences
@@ -51,8 +52,8 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 
 	for(const char* p = line; *p ; p++) {
 		// state stack overflow check
-		ASSERT(statePos > 0 && statePos < (int)(sizeof(state)/sizeof(state[0])));
-		switch( state[statePos - 1] ) {
+		ASSERT(r_stack_size(stateStack) > 0);
+		switch( (parse_state_t)(intptr_t)r_stack_peek(stateStack, 0) ) {
 			case PS_START: {
 				if( isspace(*p) ) break;
 				// push token-completion state
@@ -181,6 +182,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 
 	r_array_destroy(atokens);
 	r_buffer_destroy(token);
+	r_stack_destroy(stateStack);
 
 	return *argc;
 #undef PUSH
