@@ -4,18 +4,19 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "r_array.h"
 #include "cglob.h"
 #include "utils.h"
 
 typedef struct {
-	const char** patterns;
+	r_array_t patterns;  // Array of patterns to match
 	unsigned long options;
 } cglob_options_t;
 
 typedef struct {
 	cglob_options_t* options;
 	glob_t glob_result;
-	const char** current_pattern;
+	size_t current_pattern;
 	size_t iResult;
 } cglob_state_t;
 
@@ -27,6 +28,7 @@ typedef struct {
 static void cglob_free(void* state) {
 	if( ! state ) return;
 	globfree(&((cglob_state_t*)state)->glob_result);
+	r_array_destroy(((cglob_state_t*)state)->options->patterns);
 	free(((cglob_state_t*)state)->options);
 	free(state);
 }
@@ -47,22 +49,23 @@ static void* cglob_next(void** state, int* done, void* context) {
 	// first time - initialize state
 	if( ! *state ) {
 		ctx = malloc(sizeof(cglob_state_t));
-		ctx->current_pattern = ((cglob_options_t*)context)->patterns;
+		ctx->current_pattern = 0;
 		ctx->iResult = 0;
 		ctx->options = (cglob_options_t*)context;
 		*state = ctx;
 	}
 
 	// for each pattern...
-	while( *ctx->current_pattern ) {
-		// perform globbing for the current pattern
-		if( ctx->current_pattern != ctx->options->patterns ) {
+	while( ctx->current_pattern < r_array_size(ctx->options->patterns) ) {
+		const char* pattern = r_array_get(ctx->options->patterns, ctx->current_pattern);
+		if( ctx->current_pattern ) {
 			// free previous glob results before starting a new glob operation
 			globfree(&ctx->glob_result);
 		}
-		int ret = glob(*ctx->current_pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &ctx->glob_result);
+		// perform globbing for the current pattern
+		int ret = glob(pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &ctx->glob_result);
 		if( ret != 0 && ret != GLOB_NOMATCH ) {
-			DEBUG_MSG("Error occurred while globbing pattern: %s", *ctx->current_pattern);
+			DEBUG_MSG("Error occurred while globbing pattern: %s", pattern);
 			*done = 1;
 			cglob_free(ctx);
 			return NULL;
@@ -104,12 +107,13 @@ static void* cglob_next(void** state, int* done, void* context) {
  * @return iterator_t The initialized iterator.
  */
 iterator_t cglob_iterator(const char* patterns[], unsigned long options) {
-	cglob_options_t* opt = malloc(sizeof(cglob_options_t));
-	if( ! opt ) {
-		DEBUG_MSG("Failed to allocate memory for cglob_options_t");
-		return NULL;
+	// make a copy of the patterns array to ensure it remains valid for the lifetime of the iterator
+	r_array_t patterns_array = r_array_create(0, free);
+	for(const char** p = patterns; *p; ++p) {
+		r_array_add(patterns_array, strdup(*p));
 	}
-	opt->patterns = patterns;
+	cglob_options_t* opt = malloc(sizeof(cglob_options_t));
+	opt->patterns = patterns_array;
 	opt->options = options;
 	return iterator_init(cglob_next, cglob_free, opt);
 }

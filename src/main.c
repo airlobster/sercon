@@ -43,12 +43,11 @@ void shell_stderr_callback(const char* output, size_t length, void* context) {
  */
 static void print_ports_list() {
 	ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
-	r_array_t ports = enumSerialPorts();
-	for(size_t i=0; i < r_array_size(ports); ++i) {
-		const char* portName = r_array_get(ports, i);
+	iterator_t i = enumSerialPorts();
+	for(iterator_result_t res = iterator_next(&i); i && !res.done; res = iterator_next(&i)) {
+		const char* portName = (const char*)res.value;
 		ansi_fprintf(stdout, ANSI_ITALIC "  %s\n", portName);
 	}
-	r_array_destroy(ports);
 }
 
 /**
@@ -430,13 +429,12 @@ int reconnect_callback(termctl_t tc, int fd, void* context) {
 static void autocomplete_callback(rlx_t rlx, void* context) {
 	(void)context;
 	ASSERT(rlx);
-	r_array_t ports = enumSerialPorts();
-	if( ! ports ) return;
-	for(size_t i=0; i < r_array_size(ports); ++i) {
-		const char* portName = r_array_get(ports, i);
+	iterator_t i = enumSerialPorts();
+	if( ! i ) return;
+	for(iterator_result_t res = iterator_next(&i); i && !res.done; res = iterator_next(&i)) {
+		const char* portName = (const char*)res.value;
 		rlx_add_autocomplete_vocabulary_entry(rlx, portName);
 	}
-	r_array_destroy(ports);
 }
 
 /**

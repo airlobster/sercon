@@ -32,34 +32,27 @@ INITIALIZER(static void warn_about_overriding_env_patterns()) {
 
 /**
  * @brief Enumerates the available serial ports on the system.
- * @param callback The callback function to be called for each available serial port.
- * @param context User-defined data to be passed to the callback function.
- * @return r_array_t An array of available serial ports.
+ * @return iterator_t An iterator over the available serial ports.
  */
-r_array_t enumSerialPorts() {
+iterator_t enumSerialPorts() {
 	char* paths = 0;
-
-	r_array_t ports = r_array_create(0, free);
-	if( ! ports ) return NULL;
 
 	// build paths from default and environment variable
 	const char* envPats = getenv(ENV_NAME);
 	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
+
+	// convert to a dynamic array of strings
 	r_array_t path_array = parse_path_list(paths);
 	if( ! path_array ) {
 		free(paths);
-		r_array_destroy(ports);
 		return NULL;
 	}
 
 	iterator_t g = cglob_iterator((const char**)r_array_elements(path_array), CGLOB_FILE_CHAR_DEVICE);
-	for(iterator_result_t res = iterator_next(&g); g && !res.done; res = iterator_next(&g)) {
-		const char* path = (const char*)res.value;
-		r_array_add(ports, strdup(path));
-	}
 
 	// cleanup
 	r_array_destroy(path_array);
 	free(paths);
-	return ports;
+
+	return g;
 }
