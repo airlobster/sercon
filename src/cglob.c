@@ -102,7 +102,7 @@ static void* cglob_next(void** state, int* done, void* context) {
 /**
  * @brief Creates a glob iterator for the specified patterns and options.
  * 
- * @param patterns Array of patterns to match.
+ * @param patterns Array of patterns to match (NULL-terminated).
  * @param options Options for filtering the matched files.
  * @return iterator_t The initialized iterator.
  */
