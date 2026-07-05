@@ -202,7 +202,7 @@ bool r_btree_exists(r_btree_t tree, const void* data) {
 static void* r_btree_next(void** state, int* done, void* context) {
 	typedef struct {
 		r_btree_state_t* btree;
-		r_btree_node_t* stack[128];
+		r_btree_node_t* stack[256];
 		r_btree_node_t* current;
 		int top;
 	} iterator_state_t;
@@ -226,9 +226,11 @@ static void* r_btree_next(void** state, int* done, void* context) {
 
 	while( ctx->current || ctx->top > 0 ) {
 		if( ctx->current ) {
+			ASSERT(ctx->top < (int)array_size(ctx->stack)); // prevent stack overflow
 			ctx->stack[ctx->top++] = ctx->current;
 			ctx->current = ctx->current->left;
 		} else {
+			ASSERT(ctx->top > 0); // prevent stack underflow
 			ctx->current = ctx->stack[--ctx->top];
 			void* data = ctx->current->data;
 			ctx->current = ctx->current->right;
