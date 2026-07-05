@@ -113,6 +113,11 @@ iterator_t cglob_iterator(const char* patterns[], unsigned long options) {
 		r_array_add(patterns_array, strdup(*p));
 	}
 	cglob_options_t* opt = malloc(sizeof(cglob_options_t));
+	if( ! opt ) {
+		DEBUG_MSG("Failed to allocate memory for cglob_options_t");
+		r_array_destroy(patterns_array);
+		return NULL;
+	}
 	opt->patterns = patterns_array;
 	opt->options = options;
 	return iterator_init(cglob_next, cglob_free, opt);
