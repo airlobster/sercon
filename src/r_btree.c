@@ -199,25 +199,49 @@ bool r_btree_exists(r_btree_t tree, const void* data) {
 	return node != NULL;
 }
 
-static void to_array_callback(void* data, void* context) {
-		r_array_t array = (r_array_t)context;
-		ASSERT(array);
-		r_array_add(array, data);
+static void* r_btree_next(void** state, int* done, void* context) {
+	typedef struct {
+		r_btree_state_t* btree;
+		r_btree_node_t* stack[128];
+		r_btree_node_t* current;
+		int top;
+	} iterator_state_t;
+
+	iterator_state_t* ctx = (iterator_state_t*)(*state);
+
+	// first time initialization
+	if( ! ctx ) {
+		ctx = (iterator_state_t*)malloc(sizeof(iterator_state_t));
+		if( ! ctx ) {
+			DEBUG_MSG("Failed to allocate memory for iterator_state_t");
+			*done = 1;
+			return NULL;
+		}
+		ctx->btree = (r_btree_state_t*)context;
+		ctx->current = ctx->btree->root;
+		ctx->top = 0;
+
+		*state = ctx;
+	}
+
+	while( ctx->current || ctx->top > 0 ) {
+		if( ctx->current ) {
+			ctx->stack[ctx->top++] = ctx->current;
+			ctx->current = ctx->current->left;
+		} else {
+			ctx->current = ctx->stack[--ctx->top];
+			void* data = ctx->current->data;
+			ctx->current = ctx->current->right;
+			return data;
+		}
+	}
+
+	*done = 1;
+	return NULL;
 }
 
-/**
- * @brief Converts the binary tree to an array.
- * @param tree The binary tree to convert.
- * @return An array containing the data from the binary tree in sorted order.
- * @details The words in the returned array are owned by the vocabulary and should not be freed.
- * That's why we don't set a dtor function for the returned array.
- */
-r_array_t r_btree_to_array(r_btree_t tree) {
-	r_array_t array = r_array_create(0, 0);
-	if( ! array ) {
-		DEBUG_MSG("Failed to create array for r_btree_to_array");
-		return NULL;
-	}
-	r_btree_traverse(tree, to_array_callback, array);
-	return array;
+iterator_t r_btree_iterator(r_btree_t tree) {
+	ASSERT(tree);
+	r_btree_state_t* bt = (r_btree_state_t*)tree;
+	return iterator_init(r_btree_next, free, bt);
 }

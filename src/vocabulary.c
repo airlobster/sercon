@@ -109,7 +109,12 @@ void vocab_reset(vocabulary_t vocab) {
  */
 r_array_t vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
-	return r_btree_to_array(vocab->words_tree);
+	r_array_t a = r_array_create(0, free);
+	iterator_t it = r_btree_iterator(vocab->words_tree);
+	_foreach(it, result) {
+		r_array_add(a, strdup((const char*)result.value));
+	}
+	return a;
 }
 
 #ifdef _DEBUG_
@@ -119,18 +124,10 @@ r_array_t vocab_get_words(vocabulary_t vocab) {
  */
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
-	r_array_t a = r_btree_to_array(vocab->words_tree);
-	if( ! a ) return;
-	size_t n = r_array_size(a);
-	if( ! n ) {
-		DEBUG_MSG("Vocabulary is empty\n");
-		r_array_destroy(a);
-		return;
+	printf("Auto-Complete Vocabulary:\n");
+	iterator_t it = r_btree_iterator(vocab->words_tree);
+	_foreach(it, result) {
+		printf("%s\n", (const char*)result.value);
 	}
-	printf("Auto-Complete Vocabulary (size: %zu):\n", n);
-	for(size_t i = 0; i < n; i++) {
-		printf("%*zu: %s\n", numdigits(n, 0), i + 1, (const char*)r_array_get(a, i));
-	}
-	r_array_destroy(a);
 }
 #endif
