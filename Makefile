@@ -178,7 +178,7 @@ cleanall:
 	rm -rf $(BUILD_ROOT) $(DIST_DIR) $(DOXYGEN_ARTIFACTS_DIR) Doxyfile*
 
 test:
-	@./tests/test_linuxes
+	@./tests/test_linuxes ./tests/scenarios/*
 
 help:
 	@printf "$(COLOR_BOLD)Usage:$(COLOR_RESET)\n"
