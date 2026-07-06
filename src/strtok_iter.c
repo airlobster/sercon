@@ -4,17 +4,36 @@
 #include "strtok_iter.h"
 #include "utils.h"
 
+/**
+ * @brief Options for the strtok iterator.
+ *
+ * This struct holds the options for the strtok iterator, including the string to tokenize
+ * and the delimiters to use for tokenization.
+ */
 typedef struct {
-	char* str;
-	char* delim;
+	char* str; /**< The string to be tokenized. */
+	char* delim; /**< The delimiters to use for tokenization. */
 } strtok_iter_options_t;
 
+/**
+ * @brief State for the strtok iterator.
+ *
+ * This struct holds the state of the strtok iterator, including the current position
+ * in the string, the end of the string, and a lookup table for delimiters.
+ */
 typedef struct {
-	strtok_iter_options_t* options;
-	const char *start, *end;
-	bool ascii[127];
+	strtok_iter_options_t* options; /**< The options for the strtok iterator. */
+	const char *start, *end; /**< Pointers to the start and end of the current token. */
+	bool ascii[127]; /**< Lookup table for delimiters. */
 } strtok_iter_state_t;
 
+/**
+ * @brief Destructor for the strtok iterator state.
+ *
+ * This function frees the resources associated with the strtok iterator state.
+ *
+ * @param state The state to be destroyed.
+ */
 static void strtok_iter_state_dtor(void* state) {
 	if( ! state ) return;
 
@@ -27,6 +46,17 @@ static void strtok_iter_state_dtor(void* state) {
 	free(s);
 }
 
+/**
+ * @brief Generate the next token from the strtok iterator.
+ *
+ * This function generates the next token from the string based on the specified delimiters.
+ * It updates the state of the iterator and returns the next token.
+ *
+ * @param state The current state of the iterator.
+ * @param done A pointer to an integer that indicates whether the iteration is done.
+ * @param context The context for the iterator, which includes the options for tokenization.
+ * @return void* The next token, or NULL if there are no more tokens.
+ */
 static void *strtok_iter_next(void** state, int* done, void* context) {
 	ASSERT(state != NULL);
 	ASSERT(done != NULL);
@@ -80,6 +110,15 @@ static void *strtok_iter_next(void** state, int* done, void* context) {
 	return NULL;
 }
 
+/**
+ * @brief Create a strtok iterator.
+ *
+ * This function creates an iterator that tokenizes a string based on the specified delimiters.
+ *
+ * @param str The string to be tokenized.
+ * @param delim The delimiters to use for tokenization.
+ * @return iterator_t The created iterator.
+ */
 iterator_t strtok_iter(const char *str, const char *delim) {
 	ASSERT(str != NULL);
 	ASSERT(delim != NULL);
