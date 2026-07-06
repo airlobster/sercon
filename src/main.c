@@ -1,12 +1,9 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <sys/param.h>
-#include <sys/errno.h>
 #include <termios.h>
-#include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
 #include "utils.h"
 #include "getopt_ex.h"
 #include "serlist.h"
@@ -14,7 +11,6 @@
 #include "termctl.h"
 #include "settings.h"
 #include "shell.h"
-#include "cglob.h"
 
 #ifndef VERSION
 #define VERSION "0.0.0.0"
