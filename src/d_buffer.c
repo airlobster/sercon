@@ -1,19 +1,19 @@
 #include <sys/param.h>
 #include <string.h>
-#include "r_buffer.h"
+#include "d_buffer.h"
 #include "utils.h"
 
 #define DEFAULT_MAX_SIZE (512)
 
-typedef struct _r_buffer_t {
+typedef struct _d_buffer_t {
 	char* data;
 	size_t length;
 	size_t capacity;
 	size_t max_size;
-} r_buffer_t;
+} d_buffer_t;
 
-buffer_t r_buffer_create(size_t max_size) {
-	r_buffer_t* b = (r_buffer_t*)malloc(sizeof(struct _r_buffer_t));
+buffer_t d_buffer_create(size_t max_size) {
+	d_buffer_t* b = (d_buffer_t*)malloc(sizeof(struct _d_buffer_t));
 	b->data = NULL;
 	b->length = 0;
 	b->capacity = 0;
@@ -21,8 +21,8 @@ buffer_t r_buffer_create(size_t max_size) {
 	return b;
 }
 
-void r_buffer_destroy(buffer_t buffer) {
-	r_buffer_t* b = (r_buffer_t*)buffer;
+void d_buffer_destroy(buffer_t buffer) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	if( b->data ) {
 		free(b->data);
@@ -31,8 +31,8 @@ void r_buffer_destroy(buffer_t buffer) {
 	free(b);
 }
 
-size_t r_buffer_append(buffer_t buffer, const char* data, size_t length) {
-	r_buffer_t* b = (r_buffer_t*)buffer;
+size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	if( b->max_size && b->length + length >= b->max_size ) {
 		DEBUG_MSG("Buffer overflow: cannot append data to buffer");
@@ -42,7 +42,7 @@ size_t r_buffer_append(buffer_t buffer, const char* data, size_t length) {
 		size_t newCapacity = MAX(b->capacity * 2, b->length + length);
 		char* newData = (char*)realloc(b->data, (newCapacity + 1) * sizeof(char)); // +1 for null terminator
 		if( ! newData ) {
-			DEBUG_MSG("Failed to allocate memory for r_buffer");
+			DEBUG_MSG("Failed to allocate memory for d_buffer");
 			return 0;
 		}
 		b->data = newData;
@@ -54,14 +54,14 @@ size_t r_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	return length;
 }
 
-const char* r_buffer_get_data(buffer_t buffer) {
-	r_buffer_t* b = (r_buffer_t*)buffer;
+const char* d_buffer_get_data(buffer_t buffer) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	return b->data;
 }
 
-char* r_buffer_detach_data(buffer_t buffer) {
-	r_buffer_t* b = (r_buffer_t*)buffer;
+char* d_buffer_detach_data(buffer_t buffer) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	char* data = b->data;
 	b->data = NULL;
@@ -70,8 +70,8 @@ char* r_buffer_detach_data(buffer_t buffer) {
 	return data;
 }
 
-void r_buffer_clear(buffer_t buffer) {
-	r_buffer_t* b = (r_buffer_t*)buffer;
+void d_buffer_clear(buffer_t buffer) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	// reuse current allocated memory if possible
 	if( b->data ) {
@@ -80,8 +80,8 @@ void r_buffer_clear(buffer_t buffer) {
 	b->length = 0;
 }
 
-size_t r_buffer_size(buffer_t buffer) {
-	r_buffer_t* b = (r_buffer_t*)buffer;
+size_t d_buffer_size(buffer_t buffer) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	return b->length;
 }

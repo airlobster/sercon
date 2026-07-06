@@ -4,10 +4,10 @@
 #include <string.h>
 #include <ctype.h>
 #include "command.h"
-#include "r_array.h"
+#include "d_array.h"
 #include "utils.h"
-#include "r_buffer.h"
-#include "r_stack.h"
+#include "d_buffer.h"
+#include "d_stack.h"
 
 /**
  * @brief Parses a command line into an argument vector, similar to how a shell would parse command line input.
@@ -20,8 +20,8 @@
  *	(no support for environment variables expansion, command substitution, or other shell features)
  */
 int parse_command_line(const char* line, int* argc, char*** argv) {
-#define PUSH(s) r_stack_push(stateStack, (void*)(intptr_t)(s))
-#define POP() (parse_state_t)(intptr_t)r_stack_pop(stateStack, 0)
+#define PUSH(s) d_stack_push(stateStack, (void*)(intptr_t)(s))
+#define POP() (parse_state_t)(intptr_t)d_stack_pop(stateStack, 0)
 #define UNGET() --p
 	typedef enum {
 		PS_START,
@@ -33,10 +33,10 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 		PS_END,
 	} parse_state_t;
 
-	r_array_t atokens = r_array_create(0, free);
-	r_stack_t stateStack = r_stack_create(0, NULL);
+	d_array_t atokens = d_array_create(0, free);
+	d_stack_t stateStack = d_stack_create(0, NULL);
 	char quote = 0; // current quote character when in PS_QUOTED state
-	buffer_t token = r_buffer_create(0); // buffer for the current token
+	buffer_t token = d_buffer_create(0); // buffer for the current token
 	unsigned int integerValue = 0; // used for parsing octal and hex escape sequences
 	int nExpectedDigits = 0; // number of expected digits for octal or hex escape sequences
 
@@ -52,8 +52,8 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 
 	for(const char* p = line; *p ; p++) {
 		// state stack overflow check
-		ASSERT(r_stack_size(stateStack) > 0);
-		switch( (parse_state_t)(intptr_t)r_stack_peek(stateStack, 0) ) {
+		ASSERT(d_stack_size(stateStack) > 0);
+		switch( (parse_state_t)(intptr_t)d_stack_peek(stateStack, 0) ) {
 			case PS_START: {
 				if( isspace(*p) ) break;
 				// push token-completion state
@@ -77,7 +77,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 					UNGET(); // reprocess this character in the following state
 					break;
 				}
-				r_buffer_append(token, p, 1);
+				d_buffer_append(token, p, 1);
 				break;
 			}
 			case PS_QUOTED: {
@@ -89,19 +89,19 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 					POP();
 					quote = 0;
 				} else {
-					r_buffer_append(token, p, 1);
+					d_buffer_append(token, p, 1);
 				}
 				break;
 			}
 			case PS_ESCAPE: {
 				POP();
 				switch( *p ) {
-					case 'n': r_buffer_append(token, "\n", 1); break;
-					case 'r': r_buffer_append(token, "\r", 1); break;
-					case 't': r_buffer_append(token, "\t", 1); break;
-					case 'b': r_buffer_append(token, "\b", 1); break;
-					case 'a': r_buffer_append(token, "\a", 1); break;
-					case 'f': r_buffer_append(token, "\f", 1); break;
+					case 'n': d_buffer_append(token, "\n", 1); break;
+					case 'r': d_buffer_append(token, "\r", 1); break;
+					case 't': d_buffer_append(token, "\t", 1); break;
+					case 'b': d_buffer_append(token, "\b", 1); break;
+					case 'a': d_buffer_append(token, "\a", 1); break;
+					case 'f': d_buffer_append(token, "\f", 1); break;
 					case '0':
 					case '1':
 					case '2':
@@ -126,7 +126,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 						UNGET(); // reprocess this character in the following state
 						break;
 					}
-					default: r_buffer_append(token, p, 1); break;
+					default: d_buffer_append(token, p, 1); break;
 				}
 				break;
 			}
@@ -140,7 +140,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				}
 				if( --nExpectedDigits == 0 || done ) {
 					ASSERT(integerValue <= 255);
-					r_buffer_append(token, (char[]){(char)(integerValue & 0xFF)}, 1);
+					d_buffer_append(token, (char[]){(char)(integerValue & 0xFF)}, 1);
 					POP(); // exit PS_ESCAPE_OCTAL state
 				}
 				break;
@@ -158,13 +158,13 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 				}
 				if( --nExpectedDigits == 0 || stop ) {
 					ASSERT(integerValue <= 255);
-					r_buffer_append(token, (char[]){(char)(integerValue & 0xFF)}, 1);
+					d_buffer_append(token, (char[]){(char)(integerValue & 0xFF)}, 1);
 					POP(); // exit PS_ESCAPE_HEX state
 				}
 				break;
 			}
 			case PS_END: {
-				r_array_add(atokens, r_buffer_detach_data(token));
+				d_array_add(atokens, d_buffer_detach_data(token));
 				POP();
 				UNGET(); // reprocess this character in the following state
 				break;
@@ -173,16 +173,16 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 	} // end for
 
 	// if there's still a pending token, commit it
-	if( r_buffer_size(token) > 0 ) {
-		r_array_add(atokens, r_buffer_detach_data(token));
+	if( d_buffer_size(token) > 0 ) {
+		d_array_add(atokens, d_buffer_detach_data(token));
 	}
 
-	*argc = r_array_size(atokens); // exclude the null terminator
-	*argv = (char**)r_array_detach_elements(atokens);
+	*argc = d_array_size(atokens); // exclude the null terminator
+	*argv = (char**)d_array_detach_elements(atokens);
 
-	r_array_destroy(atokens);
-	r_buffer_destroy(token);
-	r_stack_destroy(stateStack);
+	d_array_destroy(atokens);
+	d_buffer_destroy(token);
+	d_stack_destroy(stateStack);
 
 	return *argc;
 #undef PUSH

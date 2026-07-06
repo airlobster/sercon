@@ -101,14 +101,14 @@ void debug_msg(const char* file, int line, const char* func, const char* fmt, ..
 #endif
 
 /**
- * @brief Parse a colon-separated list of paths and return them as an r_array_t.
+ * @brief Parse a colon-separated list of paths and return them as an d_array_t.
  *
  * @param pathlist The colon-separated list of paths.
- * @return r_array_t An array of paths.
+ * @return d_array_t An array of paths.
  */
-r_array_t parse_path_list(const char* pathlist) {
+d_array_t parse_path_list(const char* pathlist) {
 	ASSERT(pathlist);
-	r_array_t paths_array = r_array_create(0, free);
+	d_array_t paths_array = d_array_create(0, free);
 	const char* start = pathlist, *end = pathlist;
 	while( *start ) {
 		while( isspace(*start) ) {
@@ -119,7 +119,7 @@ r_array_t parse_path_list(const char* pathlist) {
 			++end;
 		}
 		if( end > start ) {
-			r_array_add(paths_array, strndup(start, end - start));
+			d_array_add(paths_array, strndup(start, end - start));
 		}
 		start = (*end) ? end + 1 : end;
 	}

@@ -4,14 +4,14 @@
 #include <string.h>
 #include "vocabulary.h"
 #include "utils.h"
-#include "r_btree.h"
+#include "d_btree.h"
 
 /**
  * @brief The internal structure of a vocabulary.
  */
 typedef struct _vocabulary_internal_t {
 	unsigned long options; /**< Options for the vocabulary. */
-	r_btree_t words_tree; /**< The binary tree for fast word lookup. */
+	d_btree_t words_tree; /**< The binary tree for fast word lookup. */
 	char** words_list; /**< The list of words in the vocabulary. */
 } vocabulary_internal_t;
 
@@ -44,7 +44,7 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 
 	vocab->options = options;
 	vocab->words_list = NULL;
-	vocab->words_tree = r_btree_create((r_btree_compare_func_t)strcmp, free);
+	vocab->words_tree = d_btree_create((d_btree_compare_func_t)strcmp, free);
 
 	return vocab;
 }
@@ -56,7 +56,7 @@ vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 void vocab_destroy(vocabulary_t vocab) {
 	ASSERT(vocab);
 	destroy_words_list(vocab);
-	r_btree_destroy(vocab->words_tree);
+	d_btree_destroy(vocab->words_tree);
 	free(vocab);
 }
 
@@ -75,7 +75,7 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
 		DEBUG_MSG("Failed to allocate memory for word copy");
 		return false; // allocation failed
 	}
-	if( ! r_btree_add(vocab->words_tree, word_copy) ) {
+	if( ! d_btree_add(vocab->words_tree, word_copy) ) {
 		free(word_copy);
 		return false;
 	}
@@ -89,7 +89,7 @@ bool vocab_add_word(vocabulary_t vocab, const char* word) {
  */
 size_t vocab_size(vocabulary_t vocab) {
 	ASSERT(vocab);
-	return r_btree_size(vocab->words_tree);
+	return d_btree_size(vocab->words_tree);
 }
 
 /**
@@ -99,20 +99,20 @@ size_t vocab_size(vocabulary_t vocab) {
 void vocab_reset(vocabulary_t vocab) {
 	ASSERT(vocab);
 	destroy_words_list(vocab);
-	r_btree_reset(vocab->words_tree);
+	d_btree_reset(vocab->words_tree);
 }
 
 /**
  * @brief Gets all the words in the vocabulary.
  * @param vocab The vocabulary to get the words from.
- * @return r_array_t An array of words.
+ * @return d_array_t An array of words.
  */
-r_array_t vocab_get_words(vocabulary_t vocab) {
+d_array_t vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
-	r_array_t a = r_array_create(0, free);
-	iterator_t it = r_btree_iterator(vocab->words_tree);
+	d_array_t a = d_array_create(0, free);
+	iterator_t it = d_btree_iterator(vocab->words_tree);
 	_foreach(it, result) {
-		r_array_add(a, strdup((const char*)result.value));
+		d_array_add(a, strdup((const char*)result.value));
 	}
 	return a;
 }
@@ -125,7 +125,7 @@ r_array_t vocab_get_words(vocabulary_t vocab) {
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
 	printf("Auto-Complete Vocabulary:\n");
-	iterator_t it = r_btree_iterator(vocab->words_tree);
+	iterator_t it = d_btree_iterator(vocab->words_tree);
 	_foreach(it, result) {
 		printf("%s\n", (const char*)result.value);
 	}

@@ -7,7 +7,7 @@
 #include <termios.h>
 #include "utils.h"
 #include "termctl.h"
-#include "r_array.h"
+#include "d_array.h"
 
 #define PULL_TIMEOUT_MS (500)
 
@@ -290,7 +290,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 	termctl_internal_t* tc = (termctl_internal_t*)termctl;
 	char buffer[128];
 	termctl_result_t rc = TERMCTL_R_OK;
-	r_array_t retrySet = r_array_create(0, NULL);
+	d_array_t retrySet = d_array_create(0, NULL);
 
 	rlx_rebuild_completion_vocabulary(termctl_get_rlx(termctl));
 
@@ -317,14 +317,14 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 				break;
 			}
 			// attempt to reconnect any disconnected fds
-			for(size_t i=0; i < r_array_size(retrySet); i++) {
-				int fd = (int)(intptr_t)r_array_get(retrySet, i);
+			for(size_t i=0; i < d_array_size(retrySet); i++) {
+				int fd = (int)(intptr_t)d_array_get(retrySet, i);
 				ASSERT(fd > 0);
 				int newFd = tc->reconnect_callback(tc, fd, tc->context);
 				if( newFd > 0 ) {
 					termctl_add_fd(tc, newFd);
 					// remove the fd from the retry set
-					r_array_remove(retrySet, i);
+					d_array_remove(retrySet, i);
 					--i; // adjust index since we removed an element
 				}
 			}
@@ -346,7 +346,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 				// remove it from the poll list and add it to the retry-set
 				// (if a reconnect callback is set)
 				if( tc->reconnect_callback ) {
-					r_array_add(retrySet, (void*)(intptr_t)tc->fds[i].fd);
+					d_array_add(retrySet, (void*)(intptr_t)tc->fds[i].fd);
 				}
 				close(tc->fds[i].fd);
 				termctl_remove_fd(tc, tc->fds[i].fd);
@@ -373,7 +373,7 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 		} // end other fds handling
 	} // end while
 
-	r_array_destroy(retrySet);
+	d_array_destroy(retrySet);
 
 	return rc;
 }

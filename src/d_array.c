@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "utils.h"
-#include "r_array.h"
+#include "d_array.h"
 
 #define PAGE_SIZE (16)
 #define DEFAULT_MAX_ENTRIES (1024*2)
@@ -13,8 +13,8 @@ typedef struct {
 	size_t size; /**< Number of elements in the array */
 	size_t capacity; /**< Capacity of the array */
 	size_t maxEntries; /**< Maximum number of entries allowed in the array */
-	r_array_dtor_t dtor; /**< Destructor function for array elements */
-} r_array_internal_t;
+	d_array_dtor_t dtor; /**< Destructor function for array elements */
+} d_array_internal_t;
 
 /**
  * @brief Default destructor function that does nothing.
@@ -28,12 +28,12 @@ static void null_dtor(void* element) {
  * @brief Create a new dynamic array.
  * @param maxEntries The initial maximum number of entries.
  * @param dtor Destructor function for array elements (optional).
- * @return r_array_t The created dynamic array.
+ * @return d_array_t The created dynamic array.
  */
-r_array_t r_array_create(size_t maxEntries, r_array_dtor_t dtor) {
-	r_array_internal_t* a = (r_array_internal_t*)malloc(sizeof(r_array_internal_t));
+d_array_t d_array_create(size_t maxEntries, d_array_dtor_t dtor) {
+	d_array_internal_t* a = (d_array_internal_t*)malloc(sizeof(d_array_internal_t));
 	if( ! a ) {
-		DEBUG_MSG("ERROR: Failed to allocate memory for r_array_internal_t");
+		DEBUG_MSG("ERROR: Failed to allocate memory for d_array_internal_t");
 		return 0;
 	}
 	a->elements = 0;
@@ -42,15 +42,15 @@ r_array_t r_array_create(size_t maxEntries, r_array_dtor_t dtor) {
 	a->maxEntries = maxEntries ? maxEntries : DEFAULT_MAX_ENTRIES;
 	a->dtor = dtor ? dtor : null_dtor;
 
-	return (r_array_t)a;
+	return (d_array_t)a;
 }
 
 /**
  * @brief Destroy a dynamic array.
  * @param array The dynamic array to destroy.
  */
-void r_array_destroy(r_array_t array) {
-	r_array_internal_t* a = (r_array_internal_t*)array;
+void d_array_destroy(d_array_t array) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
 	ASSERT(a);
 	if( a->elements ) {
 		for( size_t i = 0; i < a->size; ++i ) {
@@ -68,14 +68,14 @@ void r_array_destroy(r_array_t array) {
  * @param element The element to add.
  * @return bool True if the element was added successfully, false otherwise.
  */
-bool r_array_add(r_array_t array, void* element) {
-	r_array_internal_t* a = (r_array_internal_t*)array;
+bool d_array_add(d_array_t array, void* element) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
 	ASSERT(a);
 	ASSERT(element);
 	if( ! element ) return false;
 	// limit reached?
 	if( a->maxEntries && a->size >= a->maxEntries ) {
-		DEBUG_MSG("ERROR: Maximum number of entries reached in r_array_add");
+		DEBUG_MSG("ERROR: Maximum number of entries reached in d_array_add");
 		return false;
 	}
 	// need to grow the array?
@@ -83,7 +83,7 @@ bool r_array_add(r_array_t array, void* element) {
 		size_t new_capacity = a->capacity ? a->capacity * 2 : PAGE_SIZE;
 		void** new_elements = realloc(a->elements, (new_capacity + 1) * sizeof(void*));
 		if( ! new_elements ) {
-			DEBUG_MSG("ERROR: Failed to allocate memory for r_array elements");
+			DEBUG_MSG("ERROR: Failed to allocate memory for d_array elements");
 			return false;
 		};
 		a->elements = new_elements;
@@ -100,12 +100,12 @@ bool r_array_add(r_array_t array, void* element) {
  * @param index The index of the element to retrieve.
  * @return void* The element at the specified index.
  */
-void* r_array_get(r_array_t array, size_t index) {
-	r_array_internal_t* a = (r_array_internal_t*)array;
+void* d_array_get(d_array_t array, size_t index) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
 	ASSERT(a);
 	ASSERT(index < a->size);
 	if( index >= a->size ) {
-		DEBUG_MSG("ERROR: Index out of bounds in r_array_get");
+		DEBUG_MSG("ERROR: Index out of bounds in d_array_get");
 		return 0;
 	}
 	return a->elements[index];
@@ -117,12 +117,12 @@ void* r_array_get(r_array_t array, size_t index) {
  * @param index The index of the element to remove.
  * @return bool True if the element was removed successfully, false otherwise.
  */
-bool r_array_remove(r_array_t array, size_t index) {
-	r_array_internal_t* a = (r_array_internal_t*)array;
+bool d_array_remove(d_array_t array, size_t index) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
 	ASSERT(a);
 	ASSERT(index < a->size);
 	if( index >= a->size ) {
-		DEBUG_MSG("ERROR: Index out of bounds in r_array_remove");
+		DEBUG_MSG("ERROR: Index out of bounds in d_array_remove");
 		return false;
 	}
 	if( a->dtor ) {
@@ -140,8 +140,8 @@ bool r_array_remove(r_array_t array, size_t index) {
  * @param array The dynamic array.
  * @return size_t The number of elements in the array.
  */
-size_t r_array_size(r_array_t array) {
-	r_array_internal_t* a = (r_array_internal_t*)array;
+size_t d_array_size(d_array_t array) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
 	ASSERT(a);
 	return a->size;
 }
@@ -151,8 +151,8 @@ size_t r_array_size(r_array_t array) {
  * @param array The dynamic array.
  * @return const void* const* The elements of the array.
  */
-const void* const*  r_array_elements(r_array_t array) {
-	r_array_internal_t* a = (r_array_internal_t*)array;
+const void* const*  d_array_elements(d_array_t array) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
 	ASSERT(a);
 	return (const void* const*)a->elements;
 }
@@ -161,10 +161,10 @@ const void* const*  r_array_elements(r_array_t array) {
  * @brief Detach the elements from the dynamic array, leaving it empty.
  * @param array The dynamic array.
  * @return void** The detached elements of the array.
- * @note r_array will no longer manage the memory of the detached elements;
+ * @note d_array will no longer manage the memory of the detached elements;
  */
-void** r_array_detach_elements(r_array_t array) {
-	r_array_internal_t* a = (r_array_internal_t*)array;
+void** d_array_detach_elements(d_array_t array) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
 	ASSERT(a);
 	void** elements = a->elements;
 	a->elements = 0;

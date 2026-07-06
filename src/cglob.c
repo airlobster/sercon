@@ -4,12 +4,12 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "r_array.h"
+#include "d_array.h"
 #include "cglob.h"
 #include "utils.h"
 
 typedef struct {
-	r_array_t patterns;  // Array of patterns to match
+	d_array_t patterns;  // Array of patterns to match
 	unsigned long options;
 } cglob_options_t;
 
@@ -28,7 +28,7 @@ typedef struct {
 static void cglob_free(void* state) {
 	if( ! state ) return;
 	globfree(&((cglob_state_t*)state)->glob_result);
-	r_array_destroy(((cglob_state_t*)state)->options->patterns);
+	d_array_destroy(((cglob_state_t*)state)->options->patterns);
 	free(((cglob_state_t*)state)->options);
 	free(state);
 }
@@ -56,8 +56,8 @@ static void* cglob_next(void** state, int* done, void* context) {
 	}
 
 	// for each pattern...
-	while( ctx->current_pattern < r_array_size(ctx->options->patterns) ) {
-		const char* pattern = r_array_get(ctx->options->patterns, ctx->current_pattern);
+	while( ctx->current_pattern < d_array_size(ctx->options->patterns) ) {
+		const char* pattern = d_array_get(ctx->options->patterns, ctx->current_pattern);
 		if( ctx->current_pattern ) {
 			// free previous glob results before starting a new glob operation
 			globfree(&ctx->glob_result);
@@ -107,14 +107,14 @@ static void* cglob_next(void** state, int* done, void* context) {
  */
 iterator_t cglob_iterator(const char* patterns[], unsigned long options) {
 	// make a copy of the patterns array to ensure it remains valid for the lifetime of the iterator
-	r_array_t patterns_array = r_array_create(0, free);
+	d_array_t patterns_array = d_array_create(0, free);
 	for(const char** p = patterns; *p; ++p) {
-		r_array_add(patterns_array, strdup(*p));
+		d_array_add(patterns_array, strdup(*p));
 	}
 	cglob_options_t* opt = malloc(sizeof(cglob_options_t));
 	if( ! opt ) {
 		DEBUG_MSG("Failed to allocate memory for cglob_options_t");
-		r_array_destroy(patterns_array);
+		d_array_destroy(patterns_array);
 		return NULL;
 	}
 	opt->patterns = patterns_array;

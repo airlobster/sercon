@@ -12,8 +12,8 @@
 #include "command.h"
 #include "utils.h"
 #include "ansi.h"
-#include "r_buffer.h"
-#include "r_array.h"
+#include "d_buffer.h"
+#include "d_array.h"
 #include "vocabulary.h"
 
 /**
@@ -47,7 +47,7 @@ typedef struct _rlx_internal_t {
 	/** The linked list of registered commands. */
 	rlx_command_node_t* commands;
 	/** Array of autocomplete callbacks. */
-	r_array_t autocompleteCallbacks;
+	d_array_t autocompleteCallbacks;
 	/** The vocabulary for autocompletion. */
 	vocabulary_t completionVocabulary;
 	/** Flag indicating whether the readline_ex session is paused. */
@@ -194,7 +194,7 @@ rlx_t rlx_begin(
 	rl_callback_handler_install(prompt, readline_callback_wrapper);
 
 	if( rlx->options & RLX_OPT_AUTOCOMPLETE_CUSTOM ) {
-		rlx->autocompleteCallbacks = r_array_create(0, 0);
+		rlx->autocompleteCallbacks = d_array_create(0, 0);
 		rlx->completionVocabulary = vocab_create(0, 0);
 		rl_attempted_completion_function = rlx_custom_completion;
 		rl_bind_key('\t', rl_complete);
@@ -254,7 +254,7 @@ void rlx_end(rlx_t rlx) {
 	}
 
 	// destroy the array of autocomplete callbacks
-	r_array_destroy(rlx->autocompleteCallbacks);
+	d_array_destroy(rlx->autocompleteCallbacks);
 
 	// reset the readline context to its initial state
 #ifdef NDEBUG
@@ -578,7 +578,7 @@ bool rlx_add_autocomplete_callback(rlx_t h, rlx_vocabulary_build_callback_t call
 		DEBUG_MSG("Cannot add autocomplete callback: RLX_OPT_AUTOCOMPLETE_CUSTOM was not set.");
 		return false;
 	}
-	r_array_add(h->autocompleteCallbacks, callback);
+	d_array_add(h->autocompleteCallbacks, callback);
 	return true;
 }
 
@@ -608,9 +608,9 @@ void rlx_rebuild_completion_vocabulary(rlx_t rlx) {
 	}
 	vocab_reset(rlx->completionVocabulary);
 	// invoke auto-complete chain of callbacks to build the vocabulary
-	for(size_t i=0; i < r_array_size(rlx->autocompleteCallbacks); i++) {
+	for(size_t i=0; i < d_array_size(rlx->autocompleteCallbacks); i++) {
 		rlx_vocabulary_build_callback_t callback =
-			(rlx_vocabulary_build_callback_t)r_array_get(rlx->autocompleteCallbacks, i);
+			(rlx_vocabulary_build_callback_t)d_array_get(rlx->autocompleteCallbacks, i);
 		ASSERT(callback);
 		callback((rlx_t)rlx, rlx->context);
 	}
@@ -628,7 +628,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 	ASSERT(rlx->completionVocabulary);
 	ASSERT(rlx->autocompleteCallbacks);
 
-	static r_array_t completionList = 0;
+	static d_array_t completionList = 0;
 	static size_t vocabIndex = 0;
 	static size_t textLen = 0;
 
@@ -639,7 +639,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 		if( completionList ) {
 			// since this array has no dtor function set, only the array itself will be freed,
 			// while leaving the elements (strings) intact, which is what we want since they are owned by the vocabulary.
-			r_array_destroy(completionList);
+			d_array_destroy(completionList);
 			completionList = 0;
 		}
 		completionList = vocab_get_words(rlx->completionVocabulary);
@@ -649,8 +649,8 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 	}
 
 	// search through the vocabulary for the next matching the input text
-	while( vocabIndex < r_array_size(completionList) ) {
-		const char* candidate = (const char*)r_array_get(completionList, vocabIndex++);
+	while( vocabIndex < d_array_size(completionList) ) {
+		const char* candidate = (const char*)d_array_get(completionList, vocabIndex++);
 		if( strncmp(candidate, text, textLen) == 0 ) {
 			return strdup(candidate);
 		}
@@ -718,7 +718,7 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	} state_t;
 	state_t state[16] = {0};
 	size_t statePos = 0;
-	buffer_t buf = r_buffer_create(0);
+	buffer_t buf = d_buffer_create(0);
 
 	ASSERT(outSafePrompt);
 
@@ -734,16 +734,16 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 		switch(PEEK()) {
 			case STATE_NORMAL: {
 				if( *c == '\033' ) {
-					r_buffer_append(buf, "\001", 1);
+					d_buffer_append(buf, "\001", 1);
 					PUSH(STATE_ANSI);
 					UNGET(); // reprocess this character in the STATE_ANSI state
 					break;
 				}
-				r_buffer_append(buf, c, 1);
+				d_buffer_append(buf, c, 1);
 				break;
 			}
 			case STATE_ANSI: {
-				r_buffer_append(buf, c, 1);
+				d_buffer_append(buf, c, 1);
 				if( IS_ANSI_END_CHAR(*c) ) {
 					POP();
 					PUSH(STATE_ANSI_END);
@@ -752,7 +752,7 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 			}
 			case STATE_ANSI_END: {
 				POP();
-				r_buffer_append(buf, "\002", 1);
+				d_buffer_append(buf, "\002", 1);
 				UNGET(); // reprocess this character in the STATE_NORMAL state
 				break;
 			}
@@ -762,11 +762,11 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 	// if we ended in the STATE_ANSI_END state, we need to close the ANSI sequence with \002
 	ASSERT(statePos > 0);
 	if( PEEK() == STATE_ANSI_END ) {
-		r_buffer_append(buf, "\002", 1);
+		d_buffer_append(buf, "\002", 1);
 	}
 
-	*outSafePrompt = r_buffer_detach_data(buf);
-	r_buffer_destroy(buf);
+	*outSafePrompt = d_buffer_detach_data(buf);
+	d_buffer_destroy(buf);
 
 #undef PUSH
 #undef POP
