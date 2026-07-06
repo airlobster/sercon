@@ -67,7 +67,6 @@ static void* cglob_next(void** state, int* done, void* context) {
 		if( ret != 0 && ret != GLOB_NOMATCH ) {
 			DEBUG_MSG("Error occurred while globbing pattern: %s", pattern);
 			*done = 1;
-			cglob_free(ctx);
 			return NULL;
 		}
 		// iterate through the results of the globbing operation
