@@ -142,8 +142,20 @@ static void autocomplete_commands_callback(rlx_t rlx, const char* text, void* co
 	ASSERT(rlx->completionVocabulary);
 	// add registered commands to the autocomplete vocabulary
 	for(const rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
-		vocab_add_word(rlx->completionVocabulary, cmd->cmd.command);
+		rlx_add_autocomplete_vocabulary_entry(rlx, cmd->cmd.command);
 	}
+}
+
+/**
+ * @brief Autocomplete callback for file names.
+ * @param h The readline_ex session handle.
+ * @param text The text to complete.
+ * @param context User data passed to the callback function.
+ */
+static void autocomplete_files_callback(rlx_t rlx, const char* text, void* context) {
+	(void)rlx;
+	(void)text;
+	(void)context;
 }
 
 /**
@@ -195,17 +207,20 @@ rlx_t rlx_begin(
 
 	rl_callback_handler_install(prompt, readline_callback_wrapper);
 
-	if( rlx->options & RLX_OPT_AUTOCOMPLETE_CUSTOM ) {
-		rlx->autocompleteCallbacks = d_array_create(0, 0);
-		rlx->completionVocabulary = vocab_create(0, 0);
-		rl_attempted_completion_function = rlx_custom_completion;
-		rl_bind_key('\t', rl_complete);
-		rl_completer_word_break_characters = " \t\n\"'`@$><=;|&{(";
-		rlx_add_autocomplete_callback((rlx_t)rlx, autocomplete_commands_callback);
-	} else if( rlx->options & RLX_OPT_AUTOCOMPLETE_FILES ) {
-		// if the option to use the default GNU readline file autocompletion is enabled,
-		// we will set up the completion function and word break characters accordingly.
-		rl_attempted_completion_function = 0; // use default readline filename completion
+	if( rlx->options & RLX_OPT_AUTOCOMPLETE_MASK ) {
+		if( rlx->options & RLX_OPT_AUTOCOMPLETE_DEFAULT ) {
+			rl_attempted_completion_function = 0; // use default readline filename completion
+		} else {
+			rlx->autocompleteCallbacks = d_array_create(0, 0);
+			rlx->completionVocabulary = vocab_create(0, 0);
+			rl_attempted_completion_function = rlx_custom_completion;
+			if( rlx->options & RLX_OPT_AUTOCOMPLETE_COMMANDS ) {
+				rlx_add_autocomplete_callback((rlx_t)rlx, autocomplete_commands_callback);
+			}
+			if( rlx->options & RLX_OPT_AUTOCOMPLETE_FILES ) {
+				rlx_add_autocomplete_callback((rlx_t)rlx, autocomplete_files_callback);
+			}
+		}
 		rl_bind_key('\t', rl_complete);
 		rl_completer_word_break_characters = " \t\n\"'`@$><=;|&{(";
 	} else {
@@ -299,9 +314,6 @@ void rlx_register_commands(rlx_t rlx, const rlx_registered_command_t* commands) 
 		cmd->cmd = *rc;
 		cmd->next = rlx->commands;
 		rlx->commands = cmd;
-		// if( rlx->ownsCompletionVocabulary && rlx->completionVocabulary && (rlx->options & RLX_OPT_AUTOCOMPLETE_COMMANDS) ) {
-		// 	vocab_add_word(rlx->completionVocabulary, rc->command);
-		// }
 	}
 }
 
@@ -614,7 +626,7 @@ void rlx_rebuild_completion_vocabulary(rlx_t rlx, const char* text) {
 	for(size_t i=0; i < d_array_size(rlx->autocompleteCallbacks); i++) {
 		rlx_vocabulary_build_callback_t callback =
 			(rlx_vocabulary_build_callback_t)d_array_get(rlx->autocompleteCallbacks, i);
-		ASSERT(callback);
+		ASSERT(callback != NULL);
 		callback((rlx_t)rlx, text, rlx->context);
 	}
 }

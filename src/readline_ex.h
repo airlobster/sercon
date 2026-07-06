@@ -57,12 +57,13 @@ typedef struct _rlx_registered_command_t {
  * @details These options can be combined using bitwise OR to enable multiple features.
  */
 typedef enum {
-	RLX_OPT_AUTOCOMPLETE_CUSTOM = 1UL << 0, // use a custom autocomplete vocabulary instead of the default
-	RLX_OPT_AUTOCOMPLETE_FILES = 1UL << 1, // enable filename autocompletion
-	RLX_OPT_AUTOCOMPLETE_MASK = RLX_OPT_AUTOCOMPLETE_CUSTOM | RLX_OPT_AUTOCOMPLETE_FILES, // mask for autocomplete options
-	RLX_OPT_PERSIST_HISTORY = 1UL << 2, // save history to file and load it on startup
-	RLX_OPT_HISTORY_ALLOW_DUPLICATES = 1UL << 3, // allow duplicate entries in history
-	RLX_OPT_NO_TRIM_LINE = 1UL << 4, // do not trim leading and trailing whitespace from input lines before processing
+	RLX_OPT_AUTOCOMPLETE_DEFAULT = 1UL << 0, // readline's default autocompletion behavior (files only)
+	RLX_OPT_AUTOCOMPLETE_COMMANDS = 1UL << 1, // use a custom autocomplete vocabulary instead of the default
+	RLX_OPT_AUTOCOMPLETE_FILES = 1UL << 2, // enable filename autocompletion
+	RLX_OPT_AUTOCOMPLETE_MASK = RLX_OPT_AUTOCOMPLETE_DEFAULT | RLX_OPT_AUTOCOMPLETE_COMMANDS | RLX_OPT_AUTOCOMPLETE_FILES,
+	RLX_OPT_PERSIST_HISTORY = 1UL << 5, // save history to file and load it on startup
+	RLX_OPT_HISTORY_ALLOW_DUPLICATES = 1UL << 6, // allow duplicate entries in history
+	RLX_OPT_NO_TRIM_LINE = 1UL << 7, // do not trim leading and trailing whitespace from input lines before processing
 } rlx_options_t;
 
 /**
