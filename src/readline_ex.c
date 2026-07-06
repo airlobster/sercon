@@ -306,6 +306,7 @@ void rlx_end(rlx_t rlx) {
  * by the application itself.
  */
 void rlx_change_prompt(rlx_t rlx, const char* newPrompt) {
+	(void)rlx;
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
 	if( rl_prompt && newPrompt && strcmp(rl_prompt, newPrompt) == 0 ) {
@@ -402,6 +403,7 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 	@param line The line to add to the history.
 */
 static void rlx_add_history_entry(rlx_t rlx, const char* line) {
+	(void)rlx;
 	ASSERT(rlx);
 	if( ! line || ! *line ) return;
 	add_history(line);
@@ -446,6 +448,7 @@ void rlx_resume(rlx_t rlx, bool redisplayPrompt) {
 	@details Send a copy of the input string to the readline_ex session as if it was typed by the user.
 */
 void rlx_inject_input(rlx_t h, const char* input) {
+	(void)h;
 	ASSERT(h);
 	if( ! input ) return;
 	readline_callback_wrapper(strdup(input));
@@ -485,6 +488,7 @@ void rlx_process_input(rlx_t rlx) {
 	@return The current input line, or NULL if there is no input line.
 */
 const char* rlx_get_current_line(rlx_t h) {
+	(void)h;
 	ASSERT(h);
 	return rl_line_buffer;
 }

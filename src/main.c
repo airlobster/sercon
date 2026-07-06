@@ -329,6 +329,7 @@ static void registered_commands_callback(
  * @details termctl will free the returned string after use, so it should be dynamically allocated.
  */
 static char* prompt_callback(termctl_t tc, void* context) {
+	(void)tc;
 	(void)context;
 	ASSERT(tc);
 	if( ! isatty(fileno(stdin)) ) return 0; // no prompt if stdin is redirected!!
