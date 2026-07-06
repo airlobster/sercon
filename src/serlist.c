@@ -45,10 +45,7 @@ iterator_t enumSerialPorts() {
 
 	// convert to a dynamic array of strings
 	d_array_t paths_array = d_array_create(0, free);
-	iterator_t path_iter = strtok_iter(paths, ":");
-	_foreach(path_iter, r) {
-		d_array_add(paths_array, (char*)r.value);
-	}
+	d_array_from_iterator(paths_array, strtok_iter(paths, ":"));
 
 	iterator_t g = cglob_iter((const char**)d_array_elements(paths_array), CGLOB_FILE_CHAR_DEVICE);
 

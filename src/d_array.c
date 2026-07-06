@@ -172,3 +172,33 @@ void** d_array_detach_elements(d_array_t array) {
 	a->capacity = 0;
 	return elements;
 }
+
+/**
+ * @brief Clear the dynamic array, destroying all elements.
+ * @param array The dynamic array.
+ */
+void d_array_clear(d_array_t array) {
+	d_array_internal_t* a = (d_array_internal_t*)array;
+	ASSERT(a);
+	for( size_t i = 0; i < a->size; ++i ) {
+		ASSERT(a->dtor);
+		a->dtor(a->elements[i]);
+	}
+	a->size = 0;
+}
+
+/**
+ * @brief Populate the dynamic array from an iterator.
+ * @param array The dynamic array.
+ * @param iter The iterator to populate from.
+ * @return size_t The number of elements added to the array.
+ */
+size_t d_array_from_iterator(d_array_t array, iterator_t iter) {
+	ASSERT(array);
+	ASSERT(iter);
+	d_array_clear(array);
+	_foreach(iter, r) {
+		d_array_add(array, r.value);
+	}
+	return d_array_size(array);
+}
