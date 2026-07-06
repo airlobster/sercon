@@ -26,15 +26,15 @@ settings_t settings = 0;
 void shell_stdout_callback(const char* output, size_t length, void* context) {
 	(void)context;
 	(void)length;
-	ASSERT(context);
-	a_normal("%s", output);
+	(void)context;
+	ansi_fprintf(stdout, ANSI_ITALIC ANSI_WHITE "%s", output);
 }
 
 void shell_stderr_callback(const char* output, size_t length, void* context) {
 	(void)context;
 	(void)length;
-	ASSERT(context);
-	a_error("%s", output);
+	(void)context;
+	ansi_fprintf(stderr, ANSI_ITALIC ANSI_RED "%s", output);
 }
 
 /**
