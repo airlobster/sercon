@@ -7,6 +7,8 @@
 #include "serlist.h"
 #include "command.h"
 #include "cglob.h"
+#include "d_array.h"
+#include "strtok_iter.h"
 
 #define ENV_NAME "PORTS_SEARCH_PATH"
 
@@ -42,16 +44,16 @@ iterator_t enumSerialPorts() {
 	asprintf(&paths, "%s:%s", def_paths, envPats ? envPats : "");
 
 	// convert to a dynamic array of strings
-	d_array_t path_array = parse_path_list(paths);
-	if( ! path_array ) {
-		free(paths);
-		return NULL;
+	d_array_t paths_array = d_array_create(0, free);
+	iterator_t path_iter = strtok_iter(paths, ":");
+	_foreach(path_iter, r) {
+		d_array_add(paths_array, (char*)r.value);
 	}
 
-	iterator_t g = cglob_iter((const char**)d_array_elements(path_array), CGLOB_FILE_CHAR_DEVICE);
+	iterator_t g = cglob_iter((const char**)d_array_elements(paths_array), CGLOB_FILE_CHAR_DEVICE);
 
 	// cleanup
-	d_array_destroy(path_array);
+	d_array_destroy(paths_array);
 	free(paths);
 
 	return g;

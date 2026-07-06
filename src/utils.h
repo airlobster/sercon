@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdio.h>
-#include "d_array.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,7 +63,6 @@ int now(cal_time_t* t);
 int numdigits(long long v, unsigned short base);
 
 int strnetcontent(char* s, char** start, char** end);
-d_array_t parse_path_list(const char* pathlist);
 
 #ifdef __cplusplus
 } // extern "C"

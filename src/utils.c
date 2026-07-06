@@ -100,33 +100,6 @@ void debug_msg(const char* file, int line, const char* func, const char* fmt, ..
 }
 #endif
 
-/**
- * @brief Parse a colon-separated list of paths and return them as an d_array_t.
- *
- * @param pathlist The colon-separated list of paths.
- * @return d_array_t An array of paths.
- */
-d_array_t parse_path_list(const char* pathlist) {
-	ASSERT(pathlist);
-	d_array_t paths_array = d_array_create(0, free);
-	const char* start = pathlist, *end = pathlist;
-	while( *start ) {
-		while( isspace(*start) ) {
-			++start;
-		}
-		end = start;
-		while( *end && *end != ':' ) {
-			++end;
-		}
-		if( end > start ) {
-			d_array_add(paths_array, strndup(start, end - start));
-		}
-		start = (*end) ? end + 1 : end;
-	}
-	return paths_array;
-}
-
-
 static struct termios originalTermios;
 static void reset_termios(void) {
 	DEBUG_MSG("Resetting termios changes");
