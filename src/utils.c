@@ -43,6 +43,20 @@ const char* getHomeDir() {
 }
 
 /**
+ * @brief Check if a given path is a directory.
+ * @param path The path to check.
+ * @return true if the path is a directory, false otherwise.
+ */
+bool isDirectory(const char* path) {
+	ASSERT(path && *path);
+	struct stat s;
+	if( stat(path, &s) == 0 ) {
+		return S_ISDIR(s.st_mode);
+	}
+	return false;
+}
+
+/**
  * @brief Get the number of digits in an integer.
  * @param v The integer.
  * @param base The numerical base. (e.g., 10 for decimal, 16 for hexadecimal. If 0, defaults to 10).

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +45,7 @@ void debug_msg(const char* file, int line, const char* func, const char* fmt, ..
 #define INITIALIZER(decl) decl __attribute__((constructor)); decl
 
 const char* getHomeDir();
+bool isDirectory(const char* path);
 
 /**
  * @brief Structure representing a calendar time.
