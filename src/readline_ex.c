@@ -671,7 +671,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 bool rlx_add_autocomplete_vocabulary_entry(rlx_t rlx, const char* entry) {
 	ASSERT(rlx);
 	ASSERT(rlx->isInitialized);
-	ASSERT( rlx->completionVocabulary);
+	ASSERT(rlx->completionVocabulary);
 	ASSERT(entry && *entry);
 	if( ! entry || ! *entry ) return false;
 
@@ -691,6 +691,7 @@ bool rlx_add_autocomplete_vocabulary_entry(rlx_t rlx, const char* entry) {
  */
 void rlx_print_autocomplete_vocabulary(rlx_t rlx) {
 	ASSERT(rlx);
+	rlx_rebuild_completion_vocabulary(rlx, 0);
 	if( rlx->completionVocabulary ) {
 		vocab_print(rlx->completionVocabulary);
 	} else {
