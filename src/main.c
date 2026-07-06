@@ -322,36 +322,6 @@ static void registered_commands_callback(
 }
 
 /**
- * @brief Setup the registered commands for the terminal.
- * @param termctl The termctl instance.
- */
-static void setupTerminalRegisteredCommands(termctl_t termctl) {
-	static const rlx_registered_command_t commands[] = {
-		{'i', "history", "Show command history", registered_commands_callback},
-		{'c', "clear", "Clear history", registered_commands_callback},
-		{'h', "help", "Show this help message", registered_commands_callback},
-		{'q', "exit", "Exit the program", registered_commands_callback},
-		{'q', "quit", "Exit the program", registered_commands_callback},
-		{'v', "version", "Show version information", registered_commands_callback},
-		{'p', "ports", "List available serial ports", registered_commands_callback},
-		{'C', "connect", "Connect to a serial port (usage: connect PORT{:BAUD})", registered_commands_callback},
-		{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
-		{'t', "timestamps", "Set/show timestamps state (on|off)", registered_commands_callback},
-		{'R', "colors", "Set/show ANSI color mode (auto|always|never)", registered_commands_callback},
-		{'s', "script", "Run a script file (usage: script PATH)", registered_commands_callback},
-		{'B', "shell", "Run a shell command (usage: shell COMMAND)", registered_commands_callback},
-#ifdef _DEBUG_
-		{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
-		{'S', "settings", "Show current settings (debugging only)", registered_commands_callback},
-#endif
-		{0, 0, 0, 0} // end marker
-	};
-	ASSERT(termctl);
-	ASSERT(commands[array_size(commands)-1].command == 0); // ensure the last command is the end marker
-	rlx_register_commands(termctl_get_rlx(termctl), commands);
-}
-
-/**
  * @brief Prompt callback function for a termctl instance.
  * @param tc The termctl instance.
  * @param context User data pointer.
@@ -478,6 +448,28 @@ static void apply_loaded_settings() {
 	}
 }
 
+// registered commnands
+static const rlx_registered_command_t commands[] = {
+	{'i', "history", "Show command history", registered_commands_callback},
+	{'c', "clear", "Clear history", registered_commands_callback},
+	{'h', "help", "Show this help message", registered_commands_callback},
+	{'q', "exit", "Exit the program", registered_commands_callback},
+	{'q', "quit", "Exit the program", registered_commands_callback},
+	{'v', "version", "Show version information", registered_commands_callback},
+	{'p', "ports", "List available serial ports", registered_commands_callback},
+	{'C', "connect", "Connect to a serial port (usage: connect PORT{:BAUD})", registered_commands_callback},
+	{'D', "disconnect", "Disconnect from the current serial port", registered_commands_callback},
+	{'t', "timestamps", "Set/show timestamps state (on|off)", registered_commands_callback},
+	{'R', "colors", "Set/show ANSI color mode (auto|always|never)", registered_commands_callback},
+	{'s', "script", "Run a script file (usage: script PATH)", registered_commands_callback},
+	{'B', "shell", "Run a shell command (usage: shell COMMAND)", registered_commands_callback},
+#ifdef _DEBUG_
+	{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
+	{'S', "settings", "Show current settings (debugging only)", registered_commands_callback},
+#endif
+	RLX_REGISTERED_COMMAND_END
+};
+
 int main(int argc, char* argv[]) {
 	const char* appname = basename(argv[0]);
 
@@ -507,7 +499,7 @@ int main(int argc, char* argv[]) {
 	termctl_set_reconnect_callback(termctl, reconnect_callback);
 	rlx_add_autocomplete_callback(termctl_get_rlx(termctl), autocomplete_ports_callback);
 
-	setupTerminalRegisteredCommands(termctl);
+	rlx_register_commands(termctl_get_rlx(termctl), commands);
 
 	// if port was specified in the command-line, attempt to connect to it
 	// before entering the event loop
