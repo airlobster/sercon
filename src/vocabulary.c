@@ -36,6 +36,7 @@ static void destroy_words_list(vocabulary_internal_t* vocab) {
  * @return vocabulary_t The newly created vocabulary.
  */
 vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
+	(void)max_capacity;
 	vocabulary_internal_t* vocab = (vocabulary_internal_t*)malloc(sizeof(vocabulary_internal_t));
 	if( ! vocab ) {
 		DEBUG_MSG("Failed to allocate memory for vocabulary");

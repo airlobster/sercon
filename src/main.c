@@ -360,6 +360,7 @@ static void setupTerminalRegisteredCommands(termctl_t termctl) {
  * @details termctl will free the returned string after use, so it should be dynamically allocated.
  */
 static char* prompt_callback(termctl_t tc, void* context) {
+	(void)context;
 	ASSERT(tc);
 	if( ! isatty(fileno(stdin)) ) return 0; // no prompt if stdin is redirected!!
 	char *p = 0;
@@ -385,6 +386,8 @@ static char* prompt_callback(termctl_t tc, void* context) {
  * @param context User data pointer.
  */
 void user_input_callback(termctl_t tc, const char* line, size_t length, void* context) {
+	(void)tc;
+	(void)context;
 	if( fdPort > 0 ) {
 		write(fdPort, line, length);
 		write(fdPort, "\n", 1);
@@ -400,6 +403,7 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* co
  */
 void newline_callback(termctl_t tc, void* context) {
 	(void)tc;
+	(void)context;
 	if( ! printTimestamps ) return;
 	cal_time_t t;
 	now(&t);

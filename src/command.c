@@ -21,7 +21,7 @@
  */
 int parse_command_line(const char* line, int* argc, char*** argv) {
 #define PUSH(s) d_stack_push(stateStack, (void*)(intptr_t)(s))
-#define POP() (parse_state_t)(intptr_t)d_stack_pop(stateStack, 0)
+#define POP() (void)d_stack_pop(stateStack, 0)
 #define UNGET() --p
 	typedef enum {
 		PS_START,
