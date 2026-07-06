@@ -15,6 +15,7 @@
 #include "d_buffer.h"
 #include "d_array.h"
 #include "vocabulary.h"
+#include "cglob.h"
 
 /**
  * @brief Node for a linked list of registered commands.
@@ -154,8 +155,23 @@ static void autocomplete_commands_callback(rlx_t rlx, const char* text, void* co
  */
 static void autocomplete_files_callback(rlx_t rlx, const char* text, void* context) {
 	(void)rlx;
-	(void)text;
 	(void)context;
+	char* wildcard = NULL;
+	// the caller has to use '/' to trigger file completion (./ or /path/to/file),
+	// otherwise we will not add any file names to the vocabulary
+	if( text && ! strchr(text, '/') ) return;
+	// create the glob wildcard pattern for matching files and directories
+	asprintf(&wildcard, "%s*", text ? text : "");
+	if( ! wildcard ) {
+		DEBUG_MSG("Failed to allocate memory for wildcard string.");
+		return;
+	}
+	iterator_t g = cglob_iter((const char*[]){wildcard, NULL},
+										CGLOB_FILE_REGULAR | CGLOB_FILE_DIRECTORY | CGLOB_FILE_SYMLINK);
+	_foreach(g, r) {
+		rlx_add_autocomplete_vocabulary_entry(rlx, (const char*)r.value);
+	}
+	free(wildcard);
 }
 
 /**
