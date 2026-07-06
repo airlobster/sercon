@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "iterator.h"
 #include "utils.h"
+#include "mem.h"
 
 typedef struct _iter_context_t {
 	/**< The state of the iterator. (created and managed by the next() function) */
@@ -28,9 +29,8 @@ typedef struct _iter_context_t {
  */
 iterator_t iterator_init(iterator_next_func_t next, iterator_state_dtor_t dtor, void* context) {
 	ASSERT(next != NULL);
-	iterator_t g = (iterator_t)malloc(sizeof(iterator_context_t));
+	iterator_t g = (iterator_t)MALLOC(sizeof(iterator_context_t));
 	if( !g ) {
-		DEBUG_MSG("Failed to allocate memory for iterator\n");
 		return NULL;
 	}
 	g->done = 0;
@@ -55,7 +55,7 @@ void iterator_free(iterator_t* g) {
 		if( (*g)->state && (*g)->dtor ) {
 			(*g)->dtor((*g)->state);
 		}
-		free(*g);
+		FREE(*g);
 		*g = NULL;
 	}
 }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "strtok_iter.h"
 #include "utils.h"
+#include "mem.h"
 
 /**
  * @brief Options for the strtok iterator.
@@ -39,11 +40,11 @@ static void strtok_iter_state_dtor(void* state) {
 
 	strtok_iter_state_t* s = (strtok_iter_state_t*)state;
 	if( s->options ) {
-		free(s->options->delim);
-		free(s->options->str);
-		free(s->options);
+		FREE(s->options->delim);
+		FREE(s->options->str);
+		FREE(s->options);
 	}
-	free(s);
+	FREE(s);
 }
 
 /**
@@ -66,7 +67,7 @@ static void *strtok_iter_next(void** state, int* done, void* context) {
 
 	// first call, initialize the state
 	if( ! ctx ) {
-		ctx = malloc(sizeof(strtok_iter_state_t));
+		ctx = MALLOC(sizeof(strtok_iter_state_t));
 		if( ! ctx ) {
 			*done = 1;
 			return NULL;
@@ -98,7 +99,7 @@ static void *strtok_iter_next(void** state, int* done, void* context) {
 			++ctx->end;
 		}
 		if( ctx->end > ctx->start ) {
-			token = strndup(ctx->start, ctx->end - ctx->start);
+			token = STRNDUP(ctx->start, ctx->end - ctx->start);
 		}
 		ctx->start = ctx->end; // move start to end for next token
 		if( token ) {
@@ -124,12 +125,11 @@ iterator_t strtok_iter(const char *str, const char *delim) {
 	ASSERT(delim != NULL);
 	// allocate options struct and copy arguments into it, so that the iterator
 	// can be used after the original strings go out of scope
-	strtok_iter_options_t *options = malloc(sizeof(strtok_iter_options_t));
+	strtok_iter_options_t *options = MALLOC(sizeof(strtok_iter_options_t));
 	if( ! options ) {
-		DEBUG_MSG("Failed to allocate memory for strtok_iter_options_t");
 		return NULL;
 	}
-	options->delim = strdup(delim);
-	options->str = strdup(str);
+	options->delim = STRDUP(delim);
+	options->str = STRDUP(str);
 	return iterator_init(strtok_iter_next, strtok_iter_state_dtor, options);
 }

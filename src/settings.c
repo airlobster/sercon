@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "settings.h"
 #include "utils.h"
+#include "mem.h"
 
 typedef struct _settings_node_t {
 	char* key; /**< The key of the setting. */
@@ -42,12 +43,12 @@ static settings_node_t* find_node(settings_impl_t* s, const char* key) {
  * @return The home directory path as a string.
  */
 settings_t settings_init(const char* appname) {
-	settings_impl_t* s = (settings_impl_t*)malloc(sizeof(settings_impl_t));
+	settings_impl_t* s = (settings_impl_t*)MALLOC(sizeof(settings_impl_t));
 	if( ! s ) {
 		return NULL;
 	}
 
-	s->appname = strdup(appname);
+	s->appname = STRDUP(appname);
 	s->filename = NULL;
 	s->head = NULL;
 	s->tail = NULL;
@@ -68,10 +69,10 @@ void settings_free(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
 	settings_save(settings);
-	free(s->filename);
-	free(s->appname);
+	FREE(s->filename);
+	FREE(s->appname);
 	settings_clear(settings);
-	free(s);
+	FREE(s);
 }
 
 /**
@@ -102,12 +103,11 @@ bool settings_set(settings_t settings, const char* key, const char* value) {
 	settings_impl_t* s = (settings_impl_t*)settings;
 	settings_node_t* node = find_node(s, key);
 	if( ! node ) {
-		node = (settings_node_t*)malloc(sizeof(settings_node_t));
+		node = (settings_node_t*)MALLOC(sizeof(settings_node_t));
 		if( ! node ) {
-			DEBUG_MSG("Failed to allocate memory for settings node");
 			return false;
 		}
-		node->key = strdup(key);
+		node->key = STRDUP(key);
 		node->next = NULL;
 		node->prev = s->tail;
 		if( s->tail ) {
@@ -118,7 +118,7 @@ bool settings_set(settings_t settings, const char* key, const char* value) {
 		s->tail = node;
 		s->size++;
 	}
-	node->value = strdup(value ? value : "");
+	node->value = STRDUP(value ? value : "");
 	return true;
 }
 
@@ -142,7 +142,7 @@ bool settings_save(settings_t settings) {
 	FILE* file = fopen(tempname, "w");
 	if( ! file ) {
 		DEBUG_MSG("Failed to create settings temporary file: %s", tempname);
-		free(tempname);
+		FREE(tempname);
 		return false;
 	}
 	fprintf(file, "# Settings file for %s\n\n", s->appname);
@@ -153,11 +153,11 @@ bool settings_save(settings_t settings) {
 
 	if( rename(tempname, s->filename) != 0 ) {
 		DEBUG_MSG("Failed to rename temporary settings file: %s", tempname);
-		free(tempname);
+		FREE(tempname);
 		return false;
 	}
 
-	free(tempname);
+	FREE(tempname);
 	return true;
 }
 
@@ -182,22 +182,22 @@ bool settings_load(settings_t settings) {
 		for(start = line; isspace(*start); start++) {}
 		for(end = start; *end && ! isspace(*end) && *end != '=' && *end != '#'; end++) {}
 		if( start == end ) continue;
-		key = strndup(start, end - start);
+		key = STRNDUP(start, end - start);
 		if( ! key ) {
 			DEBUG_MSG("Failed to allocate memory for key");
 			continue;
 		}
 		for(start = end; isspace(*start) || *start == '=' || *start == '#'; start++) {}
 		for(end = start; *end && *end != '\n' && *end != '#'; end++) {}
-		value = strndup(start, end - start);
+		value = STRNDUP(start, end - start);
 		if( ! value ) {
 			DEBUG_MSG("Failed to allocate memory for value");
-			free(key);
+			FREE(key);
 			continue;
 		}
 		settings_set(settings, key, value);
-		free(key);
-		free(value);
+		FREE(key);
+		FREE(value);
 	}
 	fclose(file);
 	return true;
@@ -224,9 +224,9 @@ bool settings_delete(settings_t settings, const char* key) {
 		} else {
 			s->tail = node->prev;
 		}
-		free(node->key);
-		free(node->value);
-		free(node);
+		FREE(node->key);
+		FREE(node->value);
+		FREE(node);
 		s->size--;
 		return true;
 	}
@@ -242,9 +242,9 @@ void settings_clear(settings_t settings) {
 	settings_impl_t* s = (settings_impl_t*)settings;
 	for(settings_node_t* node = s->head; node; ) {
 		settings_node_t* next = node->next;
-		free(node->key);
-		free(node->value);
-		free(node);
+		FREE(node->key);
+		FREE(node->value);
+		FREE(node);
 		node = next;
 	}
 	s->head = NULL;

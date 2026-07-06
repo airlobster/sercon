@@ -7,6 +7,7 @@
 #include "getopt_ex.h"
 #include "utils.h"
 #include "ansi.h"
+#include "mem.h"
 
 static int processing = 0;
 
@@ -16,7 +17,7 @@ static int processing = 0;
  * @note This function is intended to be used with the 'autoptr' macro defined in utils.h
  */
 static void free_(void* ptr) {
-	if( ptr ) free(*(void**)ptr);
+	if( ptr ) FREE(*(void**)ptr);
 }
 
 /**

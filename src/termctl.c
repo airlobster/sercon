@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "termctl.h"
 #include "d_array.h"
+#include "mem.h"
 
 #define PULL_TIMEOUT_MS (500)
 
@@ -77,9 +78,8 @@ static void termctl_rlx_callback(rlx_t h, const char* line, size_t length, void*
  * @return termctl_t A new termctl instance, or NULL on failure.
  */
 termctl_t termctl_create(const char* appname, void* context) {
-	termctl_internal_t* tc = (termctl_internal_t*)malloc(sizeof(termctl_internal_t));
+	termctl_internal_t* tc = (termctl_internal_t*)MALLOC(sizeof(termctl_internal_t));
 	if( ! tc ) {
-		DEBUG_MSG("Failed to allocate memory for termctl_internal_t");
 		return NULL;
 	}
 
@@ -98,7 +98,7 @@ termctl_t termctl_create(const char* appname, void* context) {
 
 	if( ! tc->rlx ) {
 		DEBUG_MSG("Failed to initialize readline_ex");
-		free(tc);
+		FREE(tc);
 		return NULL;
 	}
 
@@ -120,12 +120,12 @@ void termctl_destroy(termctl_t termctl) {
 		rlx_end(tc->rlx);
 	}
 	if( tc->fds ) {
-		free(tc->fds);
+		FREE(tc->fds);
 	}
 	if( tc->prompt ) {
-		free(tc->prompt);
+		FREE(tc->prompt);
 	}
-	free(tc);
+	FREE(tc);
 }
 
 /**
@@ -207,9 +207,8 @@ int termctl_add_fd(termctl_t termctl, int fd) {
 			return 0;
 		}
 	}
-	tc->fds = (struct pollfd*)realloc(tc->fds, sizeof(struct pollfd) * (tc->nfds + 1));
+	tc->fds = (struct pollfd*)REALLOC(tc->fds, sizeof(struct pollfd) * (tc->nfds + 1));
 	if( ! tc->fds ) {
-		DEBUG_MSG("Failed to allocate memory for pollfd array");
 		return 0;
 	}
 	tc->fds[tc->nfds].fd = fd;
@@ -237,7 +236,7 @@ int termctl_remove_fd(termctl_t termctl, int fd) {
 			tc->fds[j] = tc->fds[j + 1];
 		}
 		tc->nfds--;
-		tc->fds = (struct pollfd*)realloc(tc->fds, sizeof(struct pollfd) * tc->nfds);
+		tc->fds = (struct pollfd*)REALLOC(tc->fds, sizeof(struct pollfd) * tc->nfds);
 		return 1;
 	}
 	return 0; // fd not found
@@ -254,7 +253,7 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
 		return;
 	}
 	if( tc->prompt ) {
-		free(tc->prompt);
+		FREE(tc->prompt);
 		tc->prompt = NULL;
 	}
 	char* newPrompt = tc->prompt_callback(tc, tc->context);
@@ -262,7 +261,7 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
 		// create a safe version of the new prompt
 		char* pSafe = NULL;
 		rlx_make_safe_prompt(newPrompt, &pSafe);
-		free(newPrompt);
+		FREE(newPrompt);
 		tc->prompt = pSafe;
 	}
 	rlx_change_prompt(tc->rlx, tc->prompt);

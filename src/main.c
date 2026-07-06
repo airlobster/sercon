@@ -12,6 +12,7 @@
 #include "termctl.h"
 #include "settings.h"
 #include "shell.h"
+#include "mem.h"
 
 #ifndef VERSION
 #define VERSION "0.0.0.0"
@@ -80,7 +81,7 @@ static int connect(termctl_t tc, const char* portName, int baudRate) {
 static bool disconnect(termctl_t tc) {
 	(void)tc;
 	if( port ) {
-		free(port);
+		FREE(port);
 		port = 0;
 	}
 	if( fdPort > 0 ) {
@@ -150,7 +151,7 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 		}
 		case 'p': {
 			ASSERT(! port);
-			port = strdup(optarg);
+			port = STRDUP(optarg);
 			break;
 		}
 		case 'T': {
@@ -259,7 +260,7 @@ static void registered_commands_callback(
 			}
 			fdPort = applyConnectionString(tc, argv[1]);
 			if( fdPort > 0 ) {
-				port = strdup(argv[1]);
+				port = STRDUP(argv[1]);
 				termctl_add_fd(tc, fdPort);
 			}
 			break;
@@ -432,7 +433,7 @@ static void on_exit_handler(void) {
 		fdPort = -1;
 	}
 	if( port ) {
-		free(port);
+		FREE(port);
 		port = 0;
 	}
 	if( settings ) {

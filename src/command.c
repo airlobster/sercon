@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "d_buffer.h"
 #include "d_stack.h"
+#include "mem.h"
 
 /**
  * @brief Parses a command line into an argument vector, similar to how a shell would parse command line input.
@@ -198,7 +199,7 @@ int parse_command_line(const char* line, int* argc, char*** argv) {
 void free_command_args(int argc, char** argv) {
 	ASSERT(argv);
 	for(int i = 0; i < argc; i++) {
-		free(argv[i]);
+		FREE(argv[i]);
 	}
-	free(argv);
+	FREE(argv);
 }

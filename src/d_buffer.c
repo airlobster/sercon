@@ -2,6 +2,7 @@
 #include <string.h>
 #include "d_buffer.h"
 #include "utils.h"
+#include "mem.h"
 
 #define DEFAULT_MAX_SIZE (512)
 
@@ -13,7 +14,7 @@ typedef struct _d_buffer_t {
 } d_buffer_t;
 
 buffer_t d_buffer_create(size_t max_size) {
-	d_buffer_t* b = (d_buffer_t*)malloc(sizeof(struct _d_buffer_t));
+	d_buffer_t* b = (d_buffer_t*)MALLOC(sizeof(struct _d_buffer_t));
 	b->data = NULL;
 	b->length = 0;
 	b->capacity = 0;
@@ -25,10 +26,10 @@ void d_buffer_destroy(buffer_t buffer) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	if( b->data ) {
-		free(b->data);
+		FREE(b->data);
 		b->data = NULL;
 	}
-	free(b);
+	FREE(b);
 }
 
 size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
@@ -40,9 +41,8 @@ size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	}
 	if( b->length + length >= b->capacity ) {
 		size_t newCapacity = MAX(b->capacity * 2, b->length + length);
-		char* newData = (char*)realloc(b->data, (newCapacity + 1) * sizeof(char)); // +1 for null terminator
+		char* newData = (char*)REALLOC(b->data, (newCapacity + 1) * sizeof(char)); // +1 for null terminator
 		if( ! newData ) {
-			DEBUG_MSG("Failed to allocate memory for d_buffer");
 			return 0;
 		}
 		b->data = newData;

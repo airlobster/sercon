@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "d_stack.h"
 #include "utils.h"
+#include "mem.h"
 
 /**
  * @brief Internal structure representing a node in the stack.
@@ -33,9 +34,8 @@ typedef struct _d_stack_internal_t {
  * @return A pointer to the newly created stack, or NULL on failure.
  */
 d_stack_t d_stack_create(size_t max_capacity, d_stack_dtor_t dtor) {
-	d_stack_internal_t* stack = (d_stack_internal_t*)malloc(sizeof(d_stack_internal_t));
+	d_stack_internal_t* stack = (d_stack_internal_t*)MALLOC(sizeof(d_stack_internal_t));
 	if( ! stack ) {
-		DEBUG_MSG("Failed to allocate memory for stack");
 		return NULL;
 	}
 	stack->top = NULL;
@@ -58,10 +58,10 @@ void d_stack_destroy(d_stack_t stack) {
 		if( s->dtor ) {
 			s->dtor(current->data);
 		}
-		free(current);
+		FREE(current);
 		current = next;
 	}
-	free(s);
+	FREE(s);
 }
 
 /**
@@ -77,9 +77,8 @@ bool d_stack_push(d_stack_t stack, void* data) {
 		DEBUG_MSG("Stack is full, cannot push element");
 		return false;
 	}
-	d_stack_node_t* new_node = (d_stack_node_t*)malloc(sizeof(d_stack_node_t));
+	d_stack_node_t* new_node = (d_stack_node_t*)MALLOC(sizeof(d_stack_node_t));
 	if( ! new_node ) {
-		DEBUG_MSG("Failed to allocate memory for new stack node");
 		return false;
 	}
 	new_node->data = data;
@@ -108,7 +107,7 @@ void* d_stack_pop(d_stack_t stack, bool* success) {
 	s->top = top_node->next;
 	s->size--;
 	if( success ) *success = true;
-	free(top_node);
+	FREE(top_node);
 	return data;
 }
 

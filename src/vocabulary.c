@@ -5,6 +5,7 @@
 #include "vocabulary.h"
 #include "utils.h"
 #include "d_btree.h"
+#include "mem.h"
 
 /**
  * @brief The internal structure of a vocabulary.
@@ -23,9 +24,9 @@ static void destroy_words_list(vocabulary_internal_t* vocab) {
 	ASSERT(vocab);
 	if( ! vocab->words_list ) return;
 	for(char** w = vocab->words_list; *w; w++) {
-		free(*w);
+		FREE(*w);
 	}
-	free(vocab->words_list);
+	FREE(vocab->words_list);
 	vocab->words_list = NULL;
 }
 
@@ -37,9 +38,8 @@ static void destroy_words_list(vocabulary_internal_t* vocab) {
  */
 vocabulary_t vocab_create(unsigned long options, size_t max_capacity) {
 	(void)max_capacity;
-	vocabulary_internal_t* vocab = (vocabulary_internal_t*)malloc(sizeof(vocabulary_internal_t));
+	vocabulary_internal_t* vocab = (vocabulary_internal_t*)MALLOC(sizeof(vocabulary_internal_t));
 	if( ! vocab ) {
-		DEBUG_MSG("Failed to allocate memory for vocabulary");
 		return NULL; // allocation failed
 	}
 
@@ -58,7 +58,7 @@ void vocab_destroy(vocabulary_t vocab) {
 	ASSERT(vocab);
 	destroy_words_list(vocab);
 	d_btree_destroy(vocab->words_tree);
-	free(vocab);
+	FREE(vocab);
 }
 
 /**
@@ -71,13 +71,12 @@ void vocab_destroy(vocabulary_t vocab) {
 bool vocab_add_word(vocabulary_t vocab, const char* word) {
 	ASSERT(vocab);
 	ASSERT(word && *word);
-	char* word_copy = strdup(word);
+	char* word_copy = STRDUP(word);
 	if( ! word_copy ) {
-		DEBUG_MSG("Failed to allocate memory for word copy");
 		return false; // allocation failed
 	}
 	if( ! d_btree_add(vocab->words_tree, word_copy) ) {
-		free(word_copy);
+		FREE(word_copy);
 		return false;
 	}
 	return true;
@@ -113,7 +112,7 @@ d_array_t vocab_get_words(vocabulary_t vocab) {
 	d_array_t a = d_array_create(0, free);
 	iterator_t it = d_btree_iter(vocab->words_tree);
 	_foreach(it, result) {
-		d_array_add(a, strdup((const char*)result.value));
+		d_array_add(a, STRDUP((const char*)result.value));
 	}
 	return a;
 }

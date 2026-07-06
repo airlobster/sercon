@@ -2,6 +2,7 @@
 #include "d_btree.h"
 #include "utils.h"
 #include "d_stack.h"
+#include "mem.h"
 
 typedef struct _d_btree_node_t {
 	/** The data stored in the node. */
@@ -36,7 +37,7 @@ static void d_btree_destroy_node(d_btree_state_t* bt, d_btree_node_t* node) {
 	if( bt->free_func && node->data ) {
 		bt->free_func(node->data);
 	}
-	free(node);
+	FREE(node);
 }
 
 /**
@@ -50,9 +51,8 @@ static bool d_btree_add_node(d_btree_state_t* bt, d_btree_node_t** node, void* d
 	ASSERT(bt);
 	ASSERT(bt->compare_func);
 	if( ! *node ) {
-		*node = (d_btree_node_t*)malloc(sizeof(d_btree_node_t));
+		*node = (d_btree_node_t*)MALLOC(sizeof(d_btree_node_t));
 		if( ! *node ) {
-			DEBUG_MSG("Failed to allocate memory for d_btree_node_t");
 			return false;
 		}
 		(*node)->data = data;
@@ -99,9 +99,8 @@ static d_btree_node_t* d_btree_find_node(d_btree_state_t* bt, d_btree_node_t* no
  */
 d_btree_t d_btree_create(d_btree_compare_func_t compare_func, d_btree_free_func_t free_func) {
 	ASSERT(compare_func);
-	d_btree_state_t* bt = (d_btree_state_t*)malloc(sizeof(d_btree_state_t));
+	d_btree_state_t* bt = (d_btree_state_t*)MALLOC(sizeof(d_btree_state_t));
 	if( ! bt ) {
-		DEBUG_MSG("Failed to allocate memory for d_btree_state_t");
 		return NULL;
 	}
 	bt->root = NULL;
@@ -119,7 +118,7 @@ void d_btree_destroy(d_btree_t tree) {
 	ASSERT(tree);
 	d_btree_state_t* bt = (d_btree_state_t*)tree;
 	d_btree_destroy_node(bt, bt->root);
-	free(bt);
+	FREE(bt);
 }
 
 /**
@@ -196,9 +195,8 @@ static void* d_btree_next(void** state, int* done, void* context) {
 
 	// first time initialization
 	if( ! ctx ) {
-		ctx = (iterator_state_t*)malloc(sizeof(iterator_state_t));
+		ctx = (iterator_state_t*)MALLOC(sizeof(iterator_state_t));
 		if( ! ctx ) {
-			DEBUG_MSG("Failed to allocate memory for iterator_state_t");
 			*done = 1;
 			return NULL;
 		}
@@ -206,8 +204,7 @@ static void* d_btree_next(void** state, int* done, void* context) {
 		ctx->current = ctx->btree->root;
 		ctx->stack = d_stack_create(0, NULL);
 		if( ! ctx->stack ) {
-			DEBUG_MSG("Failed to create stack for iterator");
-			free(ctx);
+			FREE(ctx);
 			*done = 1;
 			return NULL;
 		}
@@ -243,7 +240,7 @@ static void d_btree_iter_free(void* state) {
 		if( ctx->stack ) {
 			d_stack_destroy(ctx->stack);
 		}
-		free(ctx);
+		FREE(ctx);
 	}
 }
 

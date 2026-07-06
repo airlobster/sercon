@@ -7,6 +7,7 @@
 #include "d_array.h"
 #include "cglob.h"
 #include "utils.h"
+#include "mem.h"
 
 typedef struct {
 	d_array_t patterns;  // Array of patterns to match
@@ -33,8 +34,8 @@ static void cglob_free(void* state) {
 	// DEBUG_MSG("Freeing cglob_state_t with %s", d_array_get(((cglob_state_t*)state)->options->patterns, 0));
 	globfree(&((cglob_state_t*)state)->glob_result);
 	d_array_destroy(((cglob_state_t*)state)->options->patterns);
-	free(((cglob_state_t*)state)->options);
-	free(state);
+	FREE(((cglob_state_t*)state)->options);
+	FREE(state);
 }
 
 /**
@@ -52,7 +53,7 @@ static void* cglob_next(void** state, int* done, void* context) {
 
 	// first time - initialize state
 	if( ! *state ) {
-		ctx = malloc(sizeof(cglob_state_t));
+		ctx = MALLOC(sizeof(cglob_state_t));
 		ctx->current_pattern = 0;
 		ctx->iResult = 0;
 		ctx->options = (cglob_options_t*)context;
@@ -113,11 +114,10 @@ iterator_t cglob_iter(const char* patterns[], unsigned long options) {
 	// make a copy of the patterns array to ensure it remains valid for the lifetime of the iterator
 	d_array_t patterns_array = d_array_create(0, free);
 	for(const char** p = patterns; *p; ++p) {
-		d_array_add(patterns_array, strdup(*p));
+		d_array_add(patterns_array, STRDUP(*p));
 	}
-	cglob_options_t* opt = malloc(sizeof(cglob_options_t));
+	cglob_options_t* opt = MALLOC(sizeof(cglob_options_t));
 	if( ! opt ) {
-		DEBUG_MSG("Failed to allocate memory for cglob_options_t");
 		d_array_destroy(patterns_array);
 		return NULL;
 	}

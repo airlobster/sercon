@@ -16,6 +16,7 @@
 #include "d_array.h"
 #include "vocabulary.h"
 #include "cglob.h"
+#include "mem.h"
 
 /**
  * @brief Node for a linked list of registered commands.
@@ -78,7 +79,7 @@ static char* makeHistoryFilePath(const char* appname, const char* historyContext
 	if( historyContext && *historyContext ) {
 		// if a history context is provided, we will include it in the history file name
 		// to allow separate histories for different contexts (e.g. different serial ports).
-		char* historyContextCpy = strdup(historyContext);
+		char* historyContextCpy = STRDUP(historyContext);
 		// normalize the history context by replacing any non-alphanumeric characters with underscores
 		for(char* p = historyContextCpy; *p; p++) {
 			if( ! isalnum(*p) ) {
@@ -86,7 +87,7 @@ static char* makeHistoryFilePath(const char* appname, const char* historyContext
 			}
 		}
 		asprintf(&path, "%s/.%s.%s.rlx.history", homeDir, appname, historyContextCpy);
-		free(historyContextCpy);
+		FREE(historyContextCpy);
 	} else {
 		asprintf(&path, "%s/.%s.rlx.history", homeDir, appname);
 	}
@@ -119,7 +120,7 @@ static void readline_callback_wrapper(char* line) {
 		} else {
 			rlx->callback((rlx_t)rlx, line, strlen(line), rlx->context);
 		}
-		free(line); // free the line buffer after processing to avoid memory leaks
+		FREE(line); // free the line buffer after processing to avoid memory leaks
 	} else {
 		// EOF received (e.g., Ctrl+D). notify the callback with a NULL line
 		rlx->callback((rlx_t)rlx, 0, 0, rlx->context);
@@ -178,9 +179,9 @@ static void autocomplete_files_callback(rlx_t rlx, const char* text, void* conte
 			continue;
 		}
 		rlx_add_autocomplete_vocabulary_entry(rlx, word);
-		free(word);
+		FREE(word);
 	}
-	free(wildcard);
+	FREE(wildcard);
 }
 
 /**
@@ -274,18 +275,18 @@ void rlx_end(rlx_t rlx) {
 
 	rlx_commit_history(rlx);
 
-	free(rlx->historyFilePath);
+	FREE(rlx->historyFilePath);
 	rlx->historyFilePath = 0;
 
 	if( rlx->savedLineBuffer ) {
-		free(rlx->savedLineBuffer);
+		FREE(rlx->savedLineBuffer);
 		rlx->savedLineBuffer = 0;
 	}
 
 	// free the registered commands linked list
 	for(rlx_command_node_t* cmd = rlx->commands; cmd; ) {
 		rlx_command_node_t* next = cmd->next;
-		free(cmd);
+		FREE(cmd);
 		cmd = next;
 	}
 
@@ -336,7 +337,7 @@ void rlx_register_commands(rlx_t rlx, const rlx_registered_command_t* commands) 
 	ASSERT(commands);
 	for( const rlx_registered_command_t* rc = commands; rc && rc->command && rc->handler; rc++ ) {
 		if( rlx_get_command(rlx, rc->command) ) continue;
-		rlx_command_node_t* cmd = malloc(sizeof(rlx_command_node_t));
+		rlx_command_node_t* cmd = MALLOC(sizeof(rlx_command_node_t));
 		cmd->cmd = *rc;
 		cmd->next = rlx->commands;
 		rlx->commands = cmd;
@@ -400,7 +401,7 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 	}
 
 	if( expanded ) {
-		free(expanded);
+		FREE(expanded);
 	}
 
 	return cmd != 0;
@@ -425,7 +426,7 @@ static void rlx_add_history_entry(rlx_t rlx, const char* line) {
 void rlx_pause(rlx_t rlx) {
 	ASSERT(rlx);
 	if( rlx->isPaused ) return; // if we're already paused, no need to do anything
-	rlx->savedLineBuffer = strdup(rl_line_buffer); // save the current readline input so we can restore it after printing serial output
+	rlx->savedLineBuffer = STRDUP(rl_line_buffer); // save the current readline input so we can restore it after printing serial output
 	rl_save_prompt(); // save the current prompt in case it gets overwritten by serial output
 	rl_replace_line("", 0); // clear any partial input from the user while waiting for serial input
 	rl_redisplay();
@@ -445,7 +446,7 @@ void rlx_resume(rlx_t rlx, bool redisplayPrompt) {
 	if( redisplayPrompt ) {
 		rl_redisplay(); // redraw the prompt and any user input after printing serial output
 	}
-	free(rlx->savedLineBuffer);
+	FREE(rlx->savedLineBuffer);
 	rlx->savedLineBuffer = 0;
 	rlx->isPaused = false;
 }
@@ -460,7 +461,7 @@ void rlx_inject_input(rlx_t h, const char* input) {
 	(void)h;
 	ASSERT(h);
 	if( ! input ) return;
-	readline_callback_wrapper(strdup(input));
+	readline_callback_wrapper(STRDUP(input));
 }
 
 /**
@@ -481,7 +482,7 @@ void rlx_process_input(rlx_t rlx) {
 			size_t len = 0;
 			ssize_t read = 0;
 			if( (read = getline(&line, &len, stdin)) == -1 ) {
-				free(line); // !! getline allocates a buffer even on EOF !!
+				FREE(line); // !! getline allocates a buffer even on EOF !!
 				readline_callback_wrapper(0);
 				break;
 			}
@@ -525,7 +526,7 @@ int rlx_get_history_length(rlx_t rlx) {
 	using_history();
 	HISTORY_STATE* historyState = history_get_history_state();
 	int length = historyState ? historyState->length : 0;
-	free(historyState);
+	FREE(historyState);
 	return length;
 }
 
@@ -585,7 +586,7 @@ void rlx_print_registered_commands(rlx_t rlx) {
 	}
 
 	// create an array of pointers to the registered commands for sorting
-	const rlx_registered_command_t** commands = malloc(sizeof(rlx_registered_command_t*) * nCommands);
+	const rlx_registered_command_t** commands = MALLOC(sizeof(rlx_registered_command_t*) * nCommands);
 	for( rlx_command_node_t* cmd = rlx->commands; cmd; cmd = cmd->next ) {
 		commands[i++] = &cmd->cmd;
 	}
@@ -603,7 +604,7 @@ void rlx_print_registered_commands(rlx_t rlx) {
 	}
 
 	// cleanup
-	free(commands);
+	FREE(commands);
 }
 
 /**
@@ -696,7 +697,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 	while( vocabIndex < d_array_size(completionList) ) {
 		const char* candidate = (const char*)d_array_get(completionList, vocabIndex++);
 		if( strncmp(candidate, text, textLen) == 0 ) {
-			return strdup(candidate);
+			return STRDUP(candidate);
 		}
 	}
 

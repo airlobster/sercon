@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include "ansi.h"
 #include "utils.h"
+#include "mem.h"
 
 #define ESC '\033'
 
@@ -114,7 +115,7 @@ static int ansi_vwrite(FILE* stream, FILE* ref_stream, const char* fmt, va_list 
 	}
 
 	fflush(stream);
-	free(buffer);
+	FREE(buffer);
 
 	return n;
 }
@@ -197,7 +198,7 @@ int a_normal(const char* fmt, ...) {
 	n = ansi_vfprintf(stdout, buf, args);
 	va_end(args);
 
-	free(buf);
+	FREE(buf);
 
 	return n;
 }
@@ -219,7 +220,7 @@ int a_info(const char* fmt, ...) {
 	n = ansi_vfprintf(stdout, buf, args);
 	va_end(args);
 
-	free(buf);
+	FREE(buf);
 
 	return n;
 }
@@ -241,7 +242,7 @@ int a_error(const char* fmt, ...) {
 	n = ansi_vfprintf(stderr, buf, args);
 	va_end(args);
 
-	free(buf);
+	FREE(buf);
 
 	return n;
 }
@@ -263,7 +264,7 @@ int a_warning(const char* fmt, ...) {
 	n = ansi_vfprintf(stderr, buf, args);
 	va_end(args);
 
-	free(buf);
+	FREE(buf);
 
 	return n;
 }
@@ -285,7 +286,7 @@ int a_success(const char* fmt, ...) {
 	n = ansi_vfprintf(stdout, buf, args);
 	va_end(args);
 
-	free(buf);
+	FREE(buf);
 
 	return n;
 }

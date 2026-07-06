@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <math.h>
 #include "utils.h"
+#include "mem.h"
 
 /**
  * @brief Get the current time.
@@ -109,7 +110,7 @@ void debug_msg(const char* file, int line, const char* func, const char* fmt, ..
 	fflush(stderr);
 
 	if( msg ) {
-		free(msg);
+		FREE(msg);
 	}
 }
 #endif

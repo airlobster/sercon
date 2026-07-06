@@ -9,6 +9,7 @@
 #include "cglob.h"
 #include "d_array.h"
 #include "strtok_iter.h"
+#include "mem.h"
 
 #define ENV_NAME "PORTS_SEARCH_PATH"
 
@@ -51,7 +52,7 @@ iterator_t enumSerialPorts() {
 
 	// cleanup
 	d_array_destroy(paths_array);
-	free(paths);
+	FREE(paths);
 
 	return g;
 }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "d_array.h"
+#include "mem.h"
 
 #define PAGE_SIZE (16)
 #define DEFAULT_MAX_ENTRIES (1024*2)
@@ -31,9 +32,8 @@ static void null_dtor(void* element) {
  * @return d_array_t The created dynamic array.
  */
 d_array_t d_array_create(size_t maxEntries, d_array_dtor_t dtor) {
-	d_array_internal_t* a = (d_array_internal_t*)malloc(sizeof(d_array_internal_t));
+	d_array_internal_t* a = (d_array_internal_t*)MALLOC(sizeof(d_array_internal_t));
 	if( ! a ) {
-		DEBUG_MSG("ERROR: Failed to allocate memory for d_array_internal_t");
 		return 0;
 	}
 	a->elements = 0;
@@ -57,9 +57,9 @@ void d_array_destroy(d_array_t array) {
 			ASSERT(a->dtor);
 			a->dtor(a->elements[i]);
 		}
-		free(a->elements);
+		FREE(a->elements);
 	}
-	free(a);
+	FREE(a);
 }
 
 /**
@@ -81,7 +81,7 @@ bool d_array_add(d_array_t array, void* element) {
 	// need to grow the array?
 	if( a->size >= a->capacity ) {
 		size_t new_capacity = a->capacity ? a->capacity * 2 : PAGE_SIZE;
-		void** new_elements = realloc(a->elements, (new_capacity + 1) * sizeof(void*));
+		void** new_elements = REALLOC(a->elements, (new_capacity + 1) * sizeof(void*));
 		if( ! new_elements ) {
 			DEBUG_MSG("ERROR: Failed to allocate memory for d_array elements");
 			return false;
