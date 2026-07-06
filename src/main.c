@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include "utils.h"
 #include "getopt_ex.h"
 #include "serlist.h"
@@ -12,6 +14,7 @@
 #include "termctl.h"
 #include "settings.h"
 #include "shell.h"
+#include "cglob.h"
 
 #ifndef VERSION
 #define VERSION "0.0.0.0"
@@ -431,7 +434,7 @@ int reconnect_callback(termctl_t tc, int fd, void* context) {
  * @param text The current input text for which to provide autocomplete suggestions.
  * @param context User data pointer.
  */
-static void autocomplete_callback(rlx_t rlx, const char* text, void* context) {
+static void autocomplete_ports_callback(rlx_t rlx, const char* text, void* context) {
 	(void)context;
 	(void)text;
 	ASSERT(rlx);
@@ -506,7 +509,7 @@ int main(int argc, char* argv[]) {
 	termctl_set_user_input_callback(termctl, user_input_callback);
 	termctl_set_newline_callback(termctl, newline_callback);
 	termctl_set_reconnect_callback(termctl, reconnect_callback);
-	rlx_add_autocomplete_callback(termctl_get_rlx(termctl), autocomplete_callback);
+	rlx_add_autocomplete_callback(termctl_get_rlx(termctl), autocomplete_ports_callback);
 
 	setupTerminalRegisteredCommands(termctl);
 
