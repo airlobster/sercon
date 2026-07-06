@@ -77,12 +77,13 @@ typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length, void* c
 /**
  * @brief Callback function type for building the autocomplete vocabulary.
  * @param rlx The readline_ex session handle.
+ * @param text The text to complete.
  * @param context User data passed to the callback function.
  * @details Use this callback to add words to the auto-complete vocabulary using
  * the rlx_add_autocomplete_vocabulary_entry() function.
  * It is allowed to register multiple such callbacks.
  */
-typedef void (*rlx_vocabulary_build_callback_t)(rlx_t rlx, void* context);
+typedef void (*rlx_vocabulary_build_callback_t)(rlx_t rlx, const char* text, void* context);
 
 // RLX session management
 rlx_t rlx_begin(
@@ -98,7 +99,7 @@ void rlx_end(rlx_t h);
 void rlx_pause(rlx_t h);
 void rlx_resume(rlx_t h, bool redisplayPrompt);
 void rlx_change_prompt(rlx_t h, const char* newPrompt);
-void rlx_rebuild_completion_vocabulary(rlx_t rlx);
+void rlx_rebuild_completion_vocabulary(rlx_t rlx, const char* text);
 
 // should be called whenever content is available for reading from stdin,
 // typically from an event loop or select/poll/epoll callback

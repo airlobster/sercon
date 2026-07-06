@@ -130,12 +130,14 @@ static int event_hook(void) {
 }
 
 /**
- * @brief Add an autocomplete callback to the readline_ex session.
+ * @brief Autocomplete callback for registered commands.
  * @param h The readline_ex session handle.
+ * @param text The text to complete.
  * @param callback The callback function to add.
  */
-static void autocomplete_commands_callback(rlx_t rlx, void* context) {
+static void autocomplete_commands_callback(rlx_t rlx, const char* text, void* context) {
 	(void)context;
+	(void)text;
 	ASSERT(rlx);
 	ASSERT(rlx->completionVocabulary);
 	// add registered commands to the autocomplete vocabulary
@@ -599,8 +601,9 @@ static char** rlx_custom_completion(const char* text, int start, int end) {
 /**
  * @brief Rebuild the autocomplete vocabulary by invoking all registered autocomplete callbacks.
  * @param rlx The readline_ex session handle.
+ * @param text The text to complete.
  */
-void rlx_rebuild_completion_vocabulary(rlx_t rlx) {
+void rlx_rebuild_completion_vocabulary(rlx_t rlx, const char* text) {
 	ASSERT(rlx);
 	if( ! rlx->completionVocabulary || ! rlx->autocompleteCallbacks ) {
 		DEBUG_MSG("Cannot rebuild autocomplete vocabulary: RLX_OPT_AUTOCOMPLETE_CUSTOM was not set.");
@@ -612,7 +615,7 @@ void rlx_rebuild_completion_vocabulary(rlx_t rlx) {
 		rlx_vocabulary_build_callback_t callback =
 			(rlx_vocabulary_build_callback_t)d_array_get(rlx->autocompleteCallbacks, i);
 		ASSERT(callback);
-		callback((rlx_t)rlx, rlx->context);
+		callback((rlx_t)rlx, text, rlx->context);
 	}
 }
 
@@ -634,7 +637,7 @@ static char* rlx_custom_completion_generator(const char* text, int state) {
 
 	// first call for a given completion, we need to build the list of possible completions
 	if( state == 0 ) {
-		rlx_rebuild_completion_vocabulary(rlx);
+		rlx_rebuild_completion_vocabulary(rlx, text);
 		// replace the previous completion list with the new one from the vocabulary
 		if( completionList ) {
 			// since this array has no dtor function set, only the array itself will be freed,

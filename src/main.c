@@ -426,12 +426,14 @@ int reconnect_callback(termctl_t tc, int fd, void* context) {
 }
 
 /**
- * @brief Autocomplete callback function for a termctl instance.
+ * @brief Autocomplete callback function that returns available port.
  * @param rlx The rlx instance.
+ * @param text The current input text for which to provide autocomplete suggestions.
  * @param context User data pointer.
  */
-static void autocomplete_callback(rlx_t rlx, void* context) {
+static void autocomplete_callback(rlx_t rlx, const char* text, void* context) {
 	(void)context;
+	(void)text;
 	ASSERT(rlx);
 	iterator_t i = enumSerialPorts();
 	_foreach(i, res) {
