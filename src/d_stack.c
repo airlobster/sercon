@@ -127,7 +127,7 @@ void* d_stack_peek(d_stack_t stack, bool* success) {
 		return NULL;
 	}
 	if( success ) *success = true;
-	return s->top->data;	
+	return s->top->data;
 }
 
 /**

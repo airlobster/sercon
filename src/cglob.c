@@ -22,7 +22,7 @@ typedef struct {
 
 /**
  * @brief Frees the resources associated with the glob iterator state.
- * 
+ *
  * @param state Pointer to the iterator state to be freed.
  */
 static void cglob_free(void* state) {
@@ -35,7 +35,7 @@ static void cglob_free(void* state) {
 
 /**
  * @brief Get the next matching file from the glob iterator.
- * 
+ *
  * @param state Pointer to the iterator state.
  * @param done Pointer to an integer that will be set to 1 when iteration is complete.
  * @param context Pointer to the iterator context (cglob_options_t).
@@ -100,7 +100,7 @@ static void* cglob_next(void** state, int* done, void* context) {
 
 /**
  * @brief Creates a glob iterator for the specified patterns and options.
- * 
+ *
  * @param patterns Array of patterns to match (NULL-terminated).
  * @param options Options for filtering the matched files.
  * @return iterator_t The initialized iterator.
