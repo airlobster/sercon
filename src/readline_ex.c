@@ -173,6 +173,10 @@ static void autocomplete_files_callback(rlx_t rlx, const char* text, void* conte
 		const char* filename = (const char*)r.value;
 		// add a trailing slash to directories
 		asprintf(&word, "%s%s", filename, isDirectory(filename) ? "/" : "");
+		if( ! word ) {
+			DEBUG_MSG("Failed to allocate memory for autocomplete word.");
+			continue;
+		}
 		rlx_add_autocomplete_vocabulary_entry(rlx, word);
 		free(word);
 	}
