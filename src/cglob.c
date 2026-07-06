@@ -105,7 +105,7 @@ static void* cglob_next(void** state, int* done, void* context) {
  * @param options Options for filtering the matched files.
  * @return iterator_t The initialized iterator.
  */
-iterator_t cglob_iterator(const char* patterns[], unsigned long options) {
+iterator_t cglob_iter(const char* patterns[], unsigned long options) {
 	// make a copy of the patterns array to ensure it remains valid for the lifetime of the iterator
 	d_array_t patterns_array = d_array_create(0, free);
 	for(const char** p = patterns; *p; ++p) {

@@ -37,7 +37,7 @@ bool d_btree_exists(d_btree_t tree, const void* data);
 size_t d_btree_size(d_btree_t tree);
 void d_btree_reset(d_btree_t tree);
 
-iterator_t d_btree_iterator(d_btree_t tree);
+iterator_t d_btree_iter(d_btree_t tree);
 
 #ifdef __cplusplus
 }

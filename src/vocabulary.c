@@ -110,7 +110,7 @@ void vocab_reset(vocabulary_t vocab) {
 d_array_t vocab_get_words(vocabulary_t vocab) {
 	ASSERT(vocab);
 	d_array_t a = d_array_create(0, free);
-	iterator_t it = d_btree_iterator(vocab->words_tree);
+	iterator_t it = d_btree_iter(vocab->words_tree);
 	_foreach(it, result) {
 		d_array_add(a, strdup((const char*)result.value));
 	}
@@ -125,7 +125,7 @@ d_array_t vocab_get_words(vocabulary_t vocab) {
 void vocab_print(vocabulary_t vocab) {
 	ASSERT(vocab);
 	printf("Auto-Complete Vocabulary:\n");
-	iterator_t it = d_btree_iterator(vocab->words_tree);
+	iterator_t it = d_btree_iter(vocab->words_tree);
 	_foreach(it, result) {
 		printf("%s\n", (const char*)result.value);
 	}

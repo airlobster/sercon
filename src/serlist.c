@@ -48,7 +48,7 @@ iterator_t enumSerialPorts() {
 		return NULL;
 	}
 
-	iterator_t g = cglob_iterator((const char**)d_array_elements(path_array), CGLOB_FILE_CHAR_DEVICE);
+	iterator_t g = cglob_iter((const char**)d_array_elements(path_array), CGLOB_FILE_CHAR_DEVICE);
 
 	// cleanup
 	d_array_destroy(path_array);

@@ -237,7 +237,7 @@ static void* d_btree_next(void** state, int* done, void* context) {
  * @brief Frees the resources associated with the binary tree iterator.
  * @param state Pointer to the iterator state.
  */
-static void d_btree_iterator_free(void* state) {
+static void d_btree_iter_free(void* state) {
 	iterator_state_t* ctx = (iterator_state_t*)state;
 	if( ctx ) {
 		if( ctx->stack ) {
@@ -252,8 +252,8 @@ static void d_btree_iterator_free(void* state) {
  * @param tree The binary tree to iterate over.
  * @return An iterator for the binary tree.
  */
-iterator_t d_btree_iterator(d_btree_t tree) {
+iterator_t d_btree_iter(d_btree_t tree) {
 	ASSERT(tree);
 	d_btree_state_t* bt = (d_btree_state_t*)tree;
-	return iterator_init(d_btree_next, d_btree_iterator_free, bt);
+	return iterator_init(d_btree_next, d_btree_iter_free, bt);
 }

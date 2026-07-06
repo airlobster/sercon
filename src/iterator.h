@@ -16,12 +16,12 @@ extern "C" {
 /**
  * @brief Opaque type representing an iterator.
  */
-typedef struct _iterator_context_t* iterator_t;
+typedef struct _iter_context_t* iterator_t;
 
 /**
  * @brief Structure representing the result of an iterator operation.
  */
-typedef struct _iterator_result_t {
+typedef struct _iter_result_t {
 	/**< Indicates whether the iterator has reached the end. */
 	int done;
 	/**< The value returned by the iterator. */

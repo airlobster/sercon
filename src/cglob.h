@@ -28,7 +28,7 @@ typedef enum {
 	CGLOB_FILE_SOCKET = 1UL << 6, /**< Socket */
 } cglob_file_type_t;
 
-iterator_t cglob_iterator(const char* patterns[], unsigned long options);
+iterator_t cglob_iter(const char* patterns[], unsigned long options);
 
 #ifdef __cplusplus
 }
