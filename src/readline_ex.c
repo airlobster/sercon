@@ -2,6 +2,7 @@
 #include <math.h>
 #include <pwd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/param.h>
 #include <unistd.h>
 #include <string.h>
@@ -169,7 +170,18 @@ static void autocomplete_files_callback(rlx_t rlx, const char* text, void* conte
 	iterator_t g = cglob_iter((const char*[]){wildcard, NULL},
 										CGLOB_FILE_REGULAR | CGLOB_FILE_DIRECTORY | CGLOB_FILE_SYMLINK);
 	_foreach(g, r) {
-		rlx_add_autocomplete_vocabulary_entry(rlx, (const char*)r.value);
+		char* word = NULL;
+		struct stat s;
+		const char* filename = (const char*)r.value;
+		// add a trailing slash to directories
+		stat(filename, &s);
+		if( S_ISDIR(s.st_mode) ) {
+			asprintf(&word, "%s/", filename);
+		} else {
+			asprintf(&word, "%s", filename);
+		}
+		rlx_add_autocomplete_vocabulary_entry(rlx, word);
+		free(word);
 	}
 	free(wildcard);
 }
