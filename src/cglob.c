@@ -26,7 +26,11 @@ typedef struct {
  * @param state Pointer to the iterator state to be freed.
  */
 static void cglob_free(void* state) {
-	if( ! state ) return;
+	if( ! state ) {
+		// DEBUG_MSG("cglob_free called with NULL state");
+		return;
+	}
+	// DEBUG_MSG("Freeing cglob_state_t with %s", d_array_get(((cglob_state_t*)state)->options->patterns, 0));
 	globfree(&((cglob_state_t*)state)->glob_result);
 	d_array_destroy(((cglob_state_t*)state)->options->patterns);
 	free(((cglob_state_t*)state)->options);

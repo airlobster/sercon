@@ -67,6 +67,7 @@ for dockerfile in docker/Dockerfile.*; do
 		results["$distro"]=ok
 	else
 		results["$distro"]=failed
+		break
 	fi
 done
 

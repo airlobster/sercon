@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <sys/param.h>
 #include <termios.h>
 #include <string.h>
@@ -107,7 +108,12 @@ bool run_script(termctl_t tc, const char* scriptPath) {
 	for(;;) {
 		char line[1024];
 		if( ! fgets(line, sizeof(line), scriptFile) ) break;
-		termctl_inject_input(tc, line);
+		// remove trailing newline
+		char* p = line;
+		while( isspace((unsigned char)*p) ) p++;
+		if( ! *p || *p == '#' ) continue; // skip empty lines and comments
+		// inject the line into the input buffer of termctl
+		termctl_inject_input(tc, p);
 	}
 	fclose(scriptFile);
 	return true;

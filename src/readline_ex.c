@@ -159,7 +159,7 @@ static void autocomplete_files_callback(rlx_t rlx, const char* text, void* conte
 	char* wildcard = NULL;
 	// the caller has to use '/' to trigger file completion (./ or /path/to/file),
 	// otherwise we will not add any file names to the vocabulary
-	if( text && ! strchr(text, '/') ) return;
+	if( ! text || ! strchr(text, '/') ) return;
 	// create the glob wildcard pattern for matching files and directories
 	asprintf(&wildcard, "%s*", text ? text : "");
 	if( ! wildcard ) {
