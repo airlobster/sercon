@@ -16,6 +16,7 @@ typedef struct {
 typedef struct {
 	cglob_options_t* options;
 	glob_t glob_result;
+	int should_free_glob;  // Flag to indicate if glob_result should be freed
 	size_t current_pattern;
 	size_t iResult;
 } cglob_state_t;
@@ -28,9 +29,12 @@ typedef struct {
 static void cglob_free(void* state) {
 	ASSERT(state);
 	if( ! state ) return;
-	globfree(&((cglob_state_t*)state)->glob_result);
-	d_array_destroy(((cglob_state_t*)state)->options->patterns);
-	FREE(((cglob_state_t*)state)->options);
+	cglob_state_t* s = (cglob_state_t*)state;
+	if( s->should_free_glob ) {
+		globfree(&s->glob_result);
+	}
+	d_array_destroy(s->options->patterns);
+	FREE(s->options);
 	FREE(state);
 }
 
@@ -52,6 +56,7 @@ static void* cglob_next(void** state, int* done, void* context) {
 		ctx = MALLOC(sizeof(cglob_state_t));
 		ctx->current_pattern = 0;
 		ctx->iResult = 0;
+		ctx->should_free_glob = 0;
 		ctx->options = (cglob_options_t*)context;
 		*state = ctx;
 	}
@@ -59,11 +64,12 @@ static void* cglob_next(void** state, int* done, void* context) {
 	// for each pattern...
 	while( ctx->current_pattern < d_array_size(ctx->options->patterns) ) {
 		const char* pattern = d_array_get(ctx->options->patterns, ctx->current_pattern);
+		// if it's a new set of results, perform globbing
 		if( ctx->iResult == 0 ) {
-			// run glob search if it's a new set
-			if( ctx->current_pattern ) {
-				// free previous glob results before starting a new glob operation
+			// free previous glob results before starting a new glob operation
+			if( ctx->should_free_glob ) {
 				globfree(&ctx->glob_result);
+				ctx->should_free_glob = 0;
 			}
 			// perform globbing for the current pattern
 			int ret = glob(pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &ctx->glob_result);
@@ -72,6 +78,7 @@ static void* cglob_next(void** state, int* done, void* context) {
 				*done = 1;
 				return NULL;
 			}
+			ctx->should_free_glob = 1;
 		}
 		// iterate through the results of the globbing operation
 		while( ctx->iResult < ctx->glob_result.gl_pathc ) {
