@@ -483,7 +483,7 @@ static const rlx_registered_command_t commands[] = {
 	{'A', "vocabulary", "Show auto-complete vocabulary (debugging only)", registered_commands_callback},
 	{'S', "settings", "Show current settings (debugging only)", registered_commands_callback},
 #endif
-	RLX_REGISTERED_COMMAND_END
+	RLX_REGISTERED_COMMANDS_END
 };
 
 int main(int argc, char* argv[]) {

@@ -52,7 +52,7 @@ typedef struct _rlx_registered_command_t {
 	void(*handler)(rlx_t h, const struct _rlx_registered_command_t* cmd, int argc, const char *argv[], void* context);
 } rlx_registered_command_t;
 
-#define RLX_REGISTERED_COMMAND_END {0, 0, 0, 0} // end marker for registered commands array
+#define RLX_REGISTERED_COMMANDS_END {0, 0, 0, 0} // end marker for registered commands array
 
 /**
  * @brief Options for configuring a readline_ex session.
