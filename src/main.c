@@ -443,6 +443,13 @@ static void on_exit_handler(void) {
 	}
 }
 
+void abort_handler(int sig) {
+	(void)sig;
+	DEBUG_MSG("Aborting application due to signal %d", sig);
+	on_exit_handler();
+	exit(-1);
+}
+
 static void apply_loaded_settings() {
 	ASSERT(settings);
 	const char* color_mode = settings_get(settings, "color_mode");
@@ -483,7 +490,9 @@ int main(int argc, char* argv[]) {
 	const char* appname = basename(argv[0]);
 
 	settings = settings_init(appname);
+
 	atexit(on_exit_handler);
+	signal(SIGABRT, abort_handler);
 
 	parse_cli_args(argc, argv);
 	begin_ansi(false);
