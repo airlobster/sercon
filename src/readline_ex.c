@@ -168,7 +168,7 @@ static void autocomplete_files_callback(rlx_t rlx, const char* text, void* conte
 		return;
 	}
 	iterator_t g = cglob_iter((const char*[]){wildcard, NULL},
-										CGLOB_FILE_REGULAR | CGLOB_FILE_DIRECTORY | CGLOB_FILE_SYMLINK);
+					CGLOB_FILE_REGULAR | CGLOB_FILE_DIRECTORY | CGLOB_FILE_SYMLINK);
 	_foreach(g, r) {
 		char* word = NULL;
 		const char* filename = (const char*)r.value;

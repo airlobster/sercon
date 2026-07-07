@@ -27,11 +27,8 @@ typedef struct {
  * @param state Pointer to the iterator state to be freed.
  */
 static void cglob_free(void* state) {
-	if( ! state ) {
-		// DEBUG_MSG("cglob_free called with NULL state");
-		return;
-	}
-	// DEBUG_MSG("Freeing cglob_state_t with %s", d_array_get(((cglob_state_t*)state)->options->patterns, 0));
+	ASSERT(state);
+	if( ! state ) return;
 	globfree(&((cglob_state_t*)state)->glob_result);
 	d_array_destroy(((cglob_state_t*)state)->options->patterns);
 	FREE(((cglob_state_t*)state)->options);
@@ -63,16 +60,19 @@ static void* cglob_next(void** state, int* done, void* context) {
 	// for each pattern...
 	while( ctx->current_pattern < d_array_size(ctx->options->patterns) ) {
 		const char* pattern = d_array_get(ctx->options->patterns, ctx->current_pattern);
-		if( ctx->current_pattern ) {
-			// free previous glob results before starting a new glob operation
-			globfree(&ctx->glob_result);
-		}
-		// perform globbing for the current pattern
-		int ret = glob(pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &ctx->glob_result);
-		if( ret != 0 && ret != GLOB_NOMATCH ) {
-			DEBUG_MSG("Error occurred while globbing pattern: %s", pattern);
-			*done = 1;
-			return NULL;
+		if( ctx->iResult == 0 ) {
+			// run glob search if it's a new set
+			if( ctx->current_pattern ) {
+				// free previous glob results before starting a new glob operation
+				globfree(&ctx->glob_result);
+			}
+			// perform globbing for the current pattern
+			int ret = glob(pattern, GLOB_TILDE | GLOB_NOSORT, NULL, &ctx->glob_result);
+			if( ret != 0 && ret != GLOB_NOMATCH ) {
+				DEBUG_MSG("Error occurred while globbing pattern: %s", pattern);
+				*done = 1;
+				return NULL;
+			}
 		}
 		// iterate through the results of the globbing operation
 		while( ctx->iResult < ctx->glob_result.gl_pathc ) {
