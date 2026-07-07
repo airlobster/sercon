@@ -28,6 +28,7 @@ bool settings_delete(settings_t settings, const char* key);
 void settings_clear(settings_t settings);
 size_t settings_size(settings_t settings);
 void settings_print(settings_t settings);
+const char* settings_get_rcfilename(settings_t settings);
 
 #ifdef __cplusplus
 }

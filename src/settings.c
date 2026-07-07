@@ -14,6 +14,7 @@ typedef struct _settings_node_t {
 typedef struct {
 		char* appname; /**< The name of the application. */
 		char* filename; /**< The path to the settings file. */
+		char* rcfilename; /**< The path to the rc file. */
 		settings_node_t *head, *tail; /**< Pointers to the head and tail of the linked list of settings. */
 		size_t size; /**< The number of settings. */
 } settings_impl_t;
@@ -49,11 +50,13 @@ settings_t settings_init(const char* appname) {
 
 	s->appname = STRDUP(appname);
 	s->filename = NULL;
+	s->rcfilename = NULL;
 	s->head = NULL;
 	s->tail = NULL;
 	s->size = 0;
 
 	asprintf(&s->filename, "%s/.%s.conf", getHomeDir(), appname);
+	asprintf(&s->rcfilename, "%s/.%src", getHomeDir(), appname);
 
 	settings_load((settings_t)s);
 
@@ -69,6 +72,7 @@ void settings_free(settings_t settings) {
 	settings_impl_t* s = (settings_impl_t*)settings;
 	settings_save(settings);
 	FREE(s->filename);
+	FREE(s->rcfilename);
 	FREE(s->appname);
 	settings_clear(settings);
 	FREE(s);
@@ -272,4 +276,15 @@ size_t settings_size(settings_t settings) {
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
 	return s->size;
+}
+
+/**
+ * @brief Get the path to the rc file.
+ * @param settings The settings instance.
+ * @return The path to the rc file as a string.
+ */
+const char* settings_get_rcfilename(settings_t settings) {
+	ASSERT(settings);
+	settings_impl_t* s = (settings_impl_t*)settings;
+	return s->rcfilename;
 }

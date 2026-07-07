@@ -97,12 +97,14 @@ static bool disconnect(termctl_t tc) {
  * @param scriptPath The path to the script file.
  * @return bool True if the script was run successfully, false otherwise.
  */
-bool run_script(termctl_t tc, const char* scriptPath) {
+bool run_script(termctl_t tc, const char* scriptPath, bool ignoreErrors) {
 	ASSERT(tc);
 	ASSERT(scriptPath);
 	FILE* scriptFile = fopen(scriptPath, "r");
 	if( ! scriptFile ) {
-		a_error("Failed to open script file: %s\n", scriptPath);
+		if( ! ignoreErrors ) {
+			a_error("Failed to open script file: %s\n", scriptPath);
+		}
 		return false;
 	}
 	for(;;) {
@@ -299,7 +301,7 @@ static void registered_commands_callback(
 				a_error("Usage: script PATH\n");
 				break;
 			}
-			run_script(tc, argv[1]);
+			run_script(tc, argv[1], false);
 			break;
 		}
 		case 'B': {
@@ -518,6 +520,9 @@ int main(int argc, char* argv[]) {
 			a_error("Failed to connect to %s\n", port);
 		}
 	}
+
+	// run rc script if it exists
+	run_script(termctl, settings_get_rcfilename(settings), true);
 
 	return termctl_event_loop(termctl);
 }
