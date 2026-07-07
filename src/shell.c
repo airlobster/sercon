@@ -7,7 +7,6 @@
 #include "utils.h"
 #include "command.h"
 #include "shell.h"
-#include "mem.h"
 
 #define POLL_TIMEOUT (1000) // milliseconds
 #define POLL_MASK (POLLIN | POLLHUP | POLLERR)

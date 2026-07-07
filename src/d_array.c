@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "d_array.h"
-#include "mem.h"
 
 #define PAGE_SIZE (16)
 #define DEFAULT_MAX_ENTRIES (1024*2)

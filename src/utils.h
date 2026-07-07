@@ -11,6 +11,7 @@
 #include <libgen.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "mem.h"
 
 #ifdef __cplusplus
 extern "C" {

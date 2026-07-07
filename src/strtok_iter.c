@@ -3,7 +3,6 @@
 #include <string.h>
 #include "strtok_iter.h"
 #include "utils.h"
-#include "mem.h"
 
 /**
  * @brief Options for the strtok iterator.

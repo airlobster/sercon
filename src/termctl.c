@@ -8,7 +8,6 @@
 #include "utils.h"
 #include "termctl.h"
 #include "d_array.h"
-#include "mem.h"
 
 #define PULL_TIMEOUT_MS (500)
 

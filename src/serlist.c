@@ -9,7 +9,6 @@
 #include "cglob.h"
 #include "d_array.h"
 #include "strtok_iter.h"
-#include "mem.h"
 
 #define ENV_NAME "PORTS_SEARCH_PATH"
 

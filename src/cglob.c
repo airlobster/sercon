@@ -7,7 +7,6 @@
 #include "d_array.h"
 #include "cglob.h"
 #include "utils.h"
-#include "mem.h"
 
 typedef struct {
 	d_array_t patterns;  // Array of patterns to match

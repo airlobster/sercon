@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "iterator.h"
 #include "utils.h"
-#include "mem.h"
 
 typedef struct _iter_context_t {
 	/**< The state of the iterator. (created and managed by the next() function) */

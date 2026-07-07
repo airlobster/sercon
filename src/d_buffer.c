@@ -2,7 +2,6 @@
 #include <string.h>
 #include "d_buffer.h"
 #include "utils.h"
-#include "mem.h"
 
 #define DEFAULT_MAX_SIZE (512)
 

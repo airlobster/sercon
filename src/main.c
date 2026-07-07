@@ -12,7 +12,6 @@
 #include "termctl.h"
 #include "settings.h"
 #include "shell.h"
-#include "mem.h"
 
 #ifndef VERSION
 #define VERSION "0.0.0.0"

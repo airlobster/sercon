@@ -5,7 +5,6 @@
 #include "vocabulary.h"
 #include "utils.h"
 #include "d_btree.h"
-#include "mem.h"
 
 /**
  * @brief The internal structure of a vocabulary.

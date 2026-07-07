@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include "ansi.h"
 #include "utils.h"
-#include "mem.h"
 
 #define ESC '\033'
 

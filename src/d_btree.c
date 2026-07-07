@@ -2,7 +2,6 @@
 #include "d_btree.h"
 #include "utils.h"
 #include "d_stack.h"
-#include "mem.h"
 
 typedef struct _d_btree_node_t {
 	/** The data stored in the node. */

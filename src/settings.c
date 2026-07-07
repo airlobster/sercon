@@ -4,7 +4,6 @@
 #include <ctype.h>
 #include "settings.h"
 #include "utils.h"
-#include "mem.h"
 
 typedef struct _settings_node_t {
 	char* key; /**< The key of the setting. */

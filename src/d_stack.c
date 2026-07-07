@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include "d_stack.h"
 #include "utils.h"
-#include "mem.h"
 
 /**
  * @brief Internal structure representing a node in the stack.

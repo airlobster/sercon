@@ -16,7 +16,6 @@
 #include "d_array.h"
 #include "vocabulary.h"
 #include "cglob.h"
-#include "mem.h"
 
 /**
  * @brief Node for a linked list of registered commands.

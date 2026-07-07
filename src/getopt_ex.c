@@ -7,7 +7,6 @@
 #include "getopt_ex.h"
 #include "utils.h"
 #include "ansi.h"
-#include "mem.h"
 
 static int processing = 0;
 
