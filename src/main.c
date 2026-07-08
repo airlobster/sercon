@@ -92,36 +92,6 @@ static bool disconnect(termctl_t tc) {
 }
 
 /**
- * @brief Run a script file.
- * @param tc The termctl instance.
- * @param scriptPath The path to the script file.
- * @return bool True if the script was run successfully, false otherwise.
- */
-bool run_script(termctl_t tc, const char* scriptPath, bool ignoreErrors) {
-	ASSERT(tc);
-	ASSERT(scriptPath);
-	FILE* scriptFile = fopen(scriptPath, "r");
-	if( ! scriptFile ) {
-		if( ! ignoreErrors ) {
-			a_error("Failed to open script file: %s\n", scriptPath);
-		}
-		return false;
-	}
-	for(;;) {
-		char line[1024];
-		if( ! fgets(line, sizeof(line), scriptFile) ) break;
-		// remove trailing newline
-		char* p = line;
-		while( isspace((unsigned char)*p) ) p++;
-		if( ! *p || *p == '#' ) continue; // skip empty lines and comments
-		// inject the line into the input buffer of termctl
-		termctl_inject_input(tc, p);
-	}
-	fclose(scriptFile);
-	return true;
-}
-
-/**
  * @brief Apply a connection string to connect to a serial port.
  * @param tc The termctl instance.
  * @param connectionString The connection string in the format "PORT{:BAUD}".

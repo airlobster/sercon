@@ -5,9 +5,11 @@
 #include <poll.h>
 #include <string.h>
 #include <termios.h>
+#include <ctype.h>
 #include "utils.h"
 #include "termctl.h"
 #include "d_array.h"
+#include "ansi.h"
 
 #define PULL_TIMEOUT_MS (500)
 
@@ -274,6 +276,41 @@ static void termctl_update_prompt(termctl_internal_t* tc) {
 void termctl_inject_input(termctl_t termctl, const char* input) {
 	ASSERT(termctl);
 	rlx_inject_input(termctl_get_rlx(termctl), input);
+}
+
+/**
+ * @brief Run a script file.
+ * @param tc The termctl instance.
+ * @param scriptPath The path to the script file.
+ * @return bool True if the script was run successfully, false otherwise.
+ */
+bool run_script(termctl_t tc, const char* scriptPath, bool ignoreErrors) {
+	ASSERT(tc);
+	ASSERT(scriptPath);
+	FILE* scriptFile = fopen(scriptPath, "r");
+	if( ! scriptFile ) {
+		if( ! ignoreErrors ) {
+			a_error("Failed to open script file: %s\n", scriptPath);
+		}
+		return false;
+	}
+
+	char *line = NULL;
+	size_t linecap = 0;
+	for(;;) {
+		if( getline(&line, &linecap, scriptFile) == -1 ) break;
+		// remove trailing newline
+		char* p = line;
+		while( isspace((unsigned char)*p) ) p++;
+		if( ! *p || *p == '#' ) continue; // skip empty lines and comments
+		// inject the line into the input buffer of termctl
+		termctl_inject_input(tc, p);
+	}
+	fclose(scriptFile);
+	if( line ) {
+		free(line);
+	}
+	return true;
 }
 
 /**

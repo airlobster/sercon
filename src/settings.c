@@ -170,7 +170,8 @@ bool settings_save(settings_t settings) {
  * @return true if the settings were loaded successfully, false otherwise.
  */
 bool settings_load(settings_t settings) {
-	char line[1024];
+	char *line = NULL;
+	size_t linecap = 0;
 	ASSERT(settings);
 	settings_impl_t* s = (settings_impl_t*)settings;
 	ASSERT(s->filename);
@@ -179,7 +180,7 @@ bool settings_load(settings_t settings) {
 		return false;
 	}
 	settings_clear(settings);
-	while( fgets(line, sizeof(line), file) ) {
+	while( getline(&line, &linecap, file) != -1) {
 		char *start, *end;
 		char *key = NULL, *value = NULL;
 		for(start = line; isspace(*start); start++) {}
@@ -203,6 +204,9 @@ bool settings_load(settings_t settings) {
 		FREE(value);
 	}
 	fclose(file);
+	if( line ) {
+		free(line);
+	}
 	return true;
 }
 

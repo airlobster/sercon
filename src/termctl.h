@@ -81,6 +81,7 @@ int termctl_remove_fd(termctl_t termctl, int fd);
 
 rlx_t termctl_get_rlx(termctl_t termctl);
 void termctl_inject_input(termctl_t termctl, const char* input);
+bool run_script(termctl_t tc, const char* scriptPath, bool ignoreErrors);
 
 termctl_result_t termctl_event_loop(termctl_t termctl);
 
