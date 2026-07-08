@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#description: execute tests on CentOS using Docker
+
 function cleanup() {
 	docker system prune -f >/dev/null 2>&1
 }

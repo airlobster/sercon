@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#description: execute tests on macOS
+
 cd $(dirname "$0") || error "Failed to change directory to script location"
 
 while [ ! -f Makefile ]; do

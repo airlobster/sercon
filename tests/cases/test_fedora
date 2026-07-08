@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#description: execute tests on Fedora using Docker
+ 
 function cleanup() {
 	printf "\x1b[0m\n"
 	docker system prune -f >/dev/null 2>&1

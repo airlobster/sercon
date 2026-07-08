@@ -21,7 +21,7 @@ function logpath() {
 
 function test2title() {
 	local title="$(basename "$1")"
-	echo "${title/#test_/}"
+	echo "${title/#$tests_prefix/}"
 }
 
 function progress() {
@@ -34,10 +34,13 @@ function progress() {
 	done
 }
 
+cd $(dirname "$0") || error "Failed to change directory to script location"
+
+description_regex='^#[[:space:]]*[dD]escription:'
+tests_root_dir="${PWD}/cases"
+tests_prefix="test_"
 logroot=/tmp
 declare -A test_results || error "Bash 4+ required to run this script"
-
-cd $(dirname "$0") || error "Failed to change directory to script location"
 
 # get specific tests from command-line
 while [ -n "$1" ]; do
@@ -63,7 +66,7 @@ done
 
 # if no specific tests were provided, assume all tests in the cases directory
 if [[ "${#test_results[@]}" -eq 0 ]]; then
-	for test in cases/*; do
+	for test in ${tests_root_dir}/${tests_prefix}*; do
 		test_results["$test"]="not run"
 	done
 fi
@@ -88,7 +91,7 @@ for test in "${!test_results[@]}"; do
 		continue
 	fi
 	# run the test and capture its output
-	if bash -c "./$test" >"$(logpath "$test")" 2>&1; then
+	if bash -c "$test" >"$(logpath "$test")" 2>&1; then
 		test_results["$test"]="passed"
 	else
 		test_results["$test"]="failed"
@@ -106,28 +109,30 @@ printf "\r\033[2K" # clear the progress line
 total=0
 failures=0
 for test in "${!test_results[@]}"; do
+	echo "$test" >&2
+	description=$(cat "$test" 2>/dev/null | grep -E "$description_regex" | sed -E "s/$description_regex //")
 	total=$((total + 1))
 	title=$(basename "$test")
 	result="${test_results[$test]}"
 	case "$result" in
 		passed)
-			icon="✅"
+			icon="✅ PASS"
 			;;
 		failed)
-			icon="❌"
+			icon="❌ FAIL"
 			failures=$((failures + 1))
 			;;
 		"not found")
-			icon="❓"
+			icon="❓ NOT FOUND"
 			failures=$((failures + 1))
 			;;
 		"not run")
-			icon="⚠️"
+			icon="⚠️ NOT RUN"
 			failures=$((failures + 1))
 			;;
 	esac
-	printf "%d) %-10s %s (log: %s)\n" \
-		"$((total))" "$(test2title "$test")" "$icon" "$(logpath "$test")"
+	printf "%d) %-10s %s\n\tDescription: %s\n\tLog File: %s\n" \
+		"$((total))" "$(test2title "$test")" "$icon" "${description}" "$(logpath "$test")"
 done
 
 echo
