@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+function cleanup() {
+	printf "\x1b[0m\n"
+	docker system prune -f >/dev/null 2>&1
+}
+
+function test_linux() {
+	local dockerfile="$1"
+	local distro=${dockerfile##*.}
+	local image_name="dev-sercon-${distro}"
+	(
+		docker build --progress=plain -t "$image_name" -f "$dockerfile" .
+		echo -e "vocabulary\nhelp\nshell date" \
+			| docker run --rm  -i --privileged -v ~/sercon:/sercon "$image_name" bash -c "make run"
+	)
+	local status=$?
+	return $status
+}
+
+trap cleanup EXIT
+cd $(dirname "$0")
+test_linux "../docker/Dockerfile.ubuntu" || exit 1

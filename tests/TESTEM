@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+shopt -s nullglob
+
+function cleanup() {
+	if [ -n "$progress_pid" ]; then
+		kill "$progress_pid" >/dev/null 2>&1
+		wait "$progress_pid" >/dev/null 2>&1
+	fi
+	tput cnorm # show cursor
+}
+
+function error() {
+	echo "Error: $@" >&2
+	exit 1
+}
+
+function logpath() {
+	echo "$logroot/$(basename "$1").log"
+}
+
+function test2title() {
+	local title="$(basename "$1")"
+	echo "${title/#test_/}"
+}
+
+function progress() {
+	local chars='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+	while true; do
+		for ((i = 0; i < ${#chars}; i++)); do
+			printf "%s\b" "${chars:i:1}"
+			sleep 0.1
+		done
+	done
+}
+
+logroot=/tmp
+declare -A test_results || error "Bash 4+ required to run this script"
+
+cd $(dirname "$0") || error "Failed to change directory to script location"
+
+# get specific tests from command-line
+while [ -n "$1" ]; do
+	case "$1" in
+		*)
+			path="$1"
+			test_results["$path"]="not run"
+			;;
+	esac
+	shift
+done
+
+# if no specific tests were provided, assume all tests in the cases directory
+if [[ "${#test_results[@]}" -eq 0 ]]; then
+	for test in cases/*; do
+		test_results["$test"]="not run"
+	done
+fi
+
+[ ${#test_results[@]} -eq 0 ] && error "No tests to run."
+
+# run tests
+
+trap 'cleanup' EXIT
+tput civis # hide cursor
+progress &
+progress_pid=$!
+index=0
+for test in "${!test_results[@]}"; do
+	# show progress message
+	index=$((index + 1))
+	printf "\r\033[2KRunning test %d/%d: %s " \
+		"$index" "${#test_results[@]}" "$(test2title "$test")"
+	# skip if the test file does not exist
+	if [ ! -f "$test" ]; then
+		test_results["$test"]="not found"
+		continue
+	fi
+	# run the test and capture its output
+	if bash -c "./$test" >"$(logpath "$test")" 2>&1; then
+		test_results["$test"]="passed"
+	else
+		test_results["$test"]="failed"
+	fi
+done
+# kill progress indicator
+kill "$progress_pid" >/dev/null 2>&1
+wait "$progress_pid" >/dev/null 2>&1
+progress_pid=""
+tput cnorm # show cursor
+printf "\r\033[2K" # clear the progress line
+
+# summary
+
+total=0
+failures=0
+for test in "${!test_results[@]}"; do
+	total=$((total + 1))
+	title=$(basename "$test")
+	result="${test_results[$test]}"
+	case "$result" in
+		passed)
+			icon="✅"
+			;;
+		failed)
+			icon="❌"
+			failures=$((failures + 1))
+			;;
+		"not found")
+			icon="❓"
+			failures=$((failures + 1))
+			;;
+		"not run")
+			icon="⚠️"
+			failures=$((failures + 1))
+			;;
+	esac
+	printf "%d) %-10s %s (log: %s)\n" \
+		"$((total))" "$(test2title "$test")" "$icon" "$(logpath "$test")"
+done
+
+echo
+echo "Total tests: $total"
+echo "Failures: $failures"
+
+exit $failures

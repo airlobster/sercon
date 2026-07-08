@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+cd $(dirname "$0") || error "Failed to change directory to script location"
+
+while [ ! -f Makefile ]; do
+	cd .. || error "Failed to change directory to parent"
+done
+
+echo -e "vocabulary\nhelp\nshell date" | make run
