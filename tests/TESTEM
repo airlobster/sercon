@@ -48,8 +48,10 @@ while [ -n "$1" ]; do
 			;;
 		-l|--logdir)
 			shift
-			logroot="$1"
-			mkdir -p "$logroot" || error "Failed to create log directory: $logroot"
+			if [ -n "$1" ]; then
+				logroot="$1"
+				mkdir -p "$logroot" || error "Failed to create log directory: $logroot"
+			fi
 			;;
 		*)
 			path="$1"
