@@ -26,7 +26,7 @@ INCLUDE_DIRS :=
 LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lreadline -lm
-ARTIFACTS_ROOT_DIR ?= $(shell pwd)/artifacts
+ARTIFACTS_ROOT_DIR ?= artifacts
 
 # protect against accidentally setting ARTIFACTS_ROOT_DIR to the root directory, which could
 # lead to disastrous consequences if the Makefile is run with a 'cleanall' target.
