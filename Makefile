@@ -56,6 +56,8 @@ endif
 # under this root directories we will have a separate debug and release directories.
 BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(FULL_VERSION)/$(PLATFORM)/$(ARCH)
 
+TESTS_LOG_DIR := $(BUILD_PLAT_ROOT_DIR)/tests
+
 # select the appropriate include and library directories based on the platform and architecture.
 ifeq ($(PLATFORM), darwin)
 	TREE_FLAGS += --condense
@@ -172,13 +174,13 @@ uninstall:
 	@printf "$(COLOR_SUCCESS)** Uninstalled $(TARGET) and its man page from $(PREFIX)$(COLOR_RESET)\n"
 
 clean:
-	rm -rf $(BUILD_DIR) $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)
+	rm -rf $(BUILD_DIR) $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION) $(TESTS_LOG_DIR)
 
 cleanall:
 	rm -rf $(BUILD_ROOT) $(DIST_DIR) $(DOXYGEN_ARTIFACTS_DIR) Doxyfile*
 
 test:
-	@./tests/TESTEM --logdir $(ARTIFACTS_ROOT_DIR)/tests/$(FULL_VERSION)
+	@./tests/TESTEM --logdir $(TESTS_LOG_DIR)
 
 help:
 	@printf "$(COLOR_BOLD)Usage:$(COLOR_RESET)\n"
