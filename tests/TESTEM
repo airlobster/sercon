@@ -42,9 +42,18 @@ cd $(dirname "$0") || error "Failed to change directory to script location"
 # get specific tests from command-line
 while [ -n "$1" ]; do
 	case "$1" in
+		-h|--help)
+			echo "Usage: $0 {-h|--help} {-l|--logdir <logdir>} [test1 test2 ...]"
+			exit 0
+			;;
+		-l|--logdir)
+			shift
+			logroot="$1"
+			mkdir -p "$logroot" || error "Failed to create log directory: $logroot"
+			;;
 		*)
 			path="$1"
-			test_results["$path"]="not run"
+			[ -n "$path" ] && test_results["$path"]="not run"
 			;;
 	esac
 	shift
