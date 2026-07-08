@@ -27,9 +27,18 @@ LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lreadline -lm
 ARTIFACTS_ROOT_DIR ?= $(shell pwd)
-BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/build
-DIST_DIR := $(ARTIFACTS_ROOT_DIR)/dist
-DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/doxygen
+
+# protect against accidentally setting ARTIFACTS_ROOT_DIR to the root directory, which could
+# lead to disastrous consequences if the Makefile is run with a 'cleanall' target.
+ifeq ($(ARTIFACTS_ROOT_DIR),/)
+$(error ARTIFACTS_ROOT_DIR cannot be set to the root directory (/)!)
+endif
+
+BUILD_ROOT := $(ARTIFACTS_ROOT_DIR)/$(FULL_VERSION)/build
+DIST_DIR := $(ARTIFACTS_ROOT_DIR)/$(FULL_VERSION)/dist
+DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/$(FULL_VERSION)/doxygen
+TESTS_LOG_DIR := $(ARTIFACTS_ROOT_DIR)/$(FULL_VERSION)/tests
+
 SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
 
 BUILD ?= debug
@@ -43,20 +52,12 @@ MAN_DIR = $(PREFIX)/share/man/man$(MAN_SECTION)
 MAN_PAGE = $(TARGET).$(MAN_SECTION)
 README = README.md
 
-# protect against accidentally setting ARTIFACTS_ROOT_DIR to the root directory, which could
-# lead to disastrous consequences if the Makefile is run with a 'cleanall' target.
-ifeq ($(ARTIFACTS_ROOT_DIR),/)
-$(error ARTIFACTS_ROOT_DIR cannot be set to the root directory (/)!)
-endif
-
 # after we've established the platform and architecture, we can define the
 # build directory based on those variables. This allows us to have separate
 # build directories for different configurations, which is useful for managing
 # multiple builds without conflicts.
 # under this root directories we will have a separate debug and release directories.
-BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(FULL_VERSION)/$(PLATFORM)/$(ARCH)
-
-TESTS_LOG_DIR := $(BUILD_PLAT_ROOT_DIR)/tests
+BUILD_PLAT_ROOT_DIR := $(BUILD_ROOT)/$(PLATFORM)/$(ARCH)
 
 # select the appropriate include and library directories based on the platform and architecture.
 ifeq ($(PLATFORM), darwin)
@@ -135,15 +136,15 @@ readme:
 	@$(OPENER) $(README)
 
 doxygen:
-	@rm -rf $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)
-	@mkdir -p $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)
+	@rm -rf $(DOXYGEN_ARTIFACTS_DIR)
+	@mkdir -p $(DOXYGEN_ARTIFACTS_DIR)
 	@doxygen -g
 	@sed -E -i '' 's|^INPUT.+|INPUT = src|g' Doxyfile
 	@sed -E -i '' 's|^GENERATE_HTML.+|GENERATE_HTML = YES|g' Doxyfile
 	@sed -E -i '' 's|^SEARCHENGINE.+|SEARCHENGINE = YES|g' Doxyfile
-	@sed -E -i '' 's|^OUTPUT_DIRECTORY.+|OUTPUT_DIRECTORY = "$(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)"|g' Doxyfile
+	@sed -E -i '' 's|^OUTPUT_DIRECTORY.+|OUTPUT_DIRECTORY = "$(DOXYGEN_ARTIFACTS_DIR)"|g' Doxyfile
 	@doxygen Doxyfile
-	@$(OPENER) $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION)/html/index.html
+	@$(OPENER) $(DOXYGEN_ARTIFACTS_DIR)/html/index.html
 	@rm -rf Doxyfile*
 
 # open the GitHub repository in the default browser
@@ -174,10 +175,10 @@ uninstall:
 	@printf "$(COLOR_SUCCESS)** Uninstalled $(TARGET) and its man page from $(PREFIX)$(COLOR_RESET)\n"
 
 clean:
-	rm -rf $(BUILD_DIR) $(DOXYGEN_ARTIFACTS_DIR)/$(FULL_VERSION) $(TESTS_LOG_DIR)
+	rm -rf $(ARTIFACTS_ROOT_DIR)/$(FULL_VERSION)
 
 cleanall:
-	rm -rf $(BUILD_ROOT) $(DIST_DIR) $(DOXYGEN_ARTIFACTS_DIR) Doxyfile*
+	rm -rf $(ARTIFACTS_ROOT_DIR)/* Doxyfile*
 
 test:
 	@./tests/TESTEM --logdir $(TESTS_LOG_DIR)
