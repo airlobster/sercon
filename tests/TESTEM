@@ -109,7 +109,6 @@ printf "\r\033[2K" # clear the progress line
 total=0
 failures=0
 for test in "${!test_results[@]}"; do
-	echo "$test" >&2
 	description=$(cat "$test" 2>/dev/null | grep -E "$description_regex" | sed -E "s/$description_regex //")
 	total=$((total + 1))
 	title=$(basename "$test")
