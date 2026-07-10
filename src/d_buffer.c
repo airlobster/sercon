@@ -80,8 +80,7 @@ size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
  * @return size_t The number of bytes appended, or 0 on failure.
  */
 size_t d_buffer_append_s(buffer_t buffer, const char* data) {
-	d_buffer_t* b = (d_buffer_t*)buffer;
-	ASSERT(b);
+	ASSERT(buffer);
 	return d_buffer_append(buffer, data, strlen(data));
 }
 
