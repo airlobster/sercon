@@ -529,6 +529,9 @@ int main(int argc, char* argv[]) {
 
 	rlx_register_commands(termctl_get_rlx(termctl), commands);
 
+	// run rc script if it exists
+	run_script(termctl, settings_get_rcfilename(settings), true);
+
 	// if port was specified in the command-line, attempt to connect to it
 	// before entering the event loop
 	if( port ) {
@@ -539,9 +542,6 @@ int main(int argc, char* argv[]) {
 			a_error("Failed to connect to %s\n", port);
 		}
 	}
-
-	// run rc script if it exists
-	run_script(termctl, settings_get_rcfilename(settings), true);
 
 	return termctl_event_loop(termctl);
 }
