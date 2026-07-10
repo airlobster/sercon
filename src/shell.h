@@ -28,6 +28,8 @@ int sc_shell(
 	void* context
 );
 
+char* sc_shell_make_command(const char* shell, int argc, const char* argv[]);
+
 #ifdef __cplusplus
 }
 #endif

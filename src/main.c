@@ -312,30 +312,36 @@ static void registered_commands_callback(
 			run_script(tc, argv[1], false);
 			break;
 		}
-		case 'B': {
+		case 'B': { // shell
 			if( argc < 2 ) {
 				a_error("Usage: shell COMMAND\n");
 				break;
 			}
 			ASSERT(argv[argc] == NULL); // ensure argv is null-terminated
-			int err = sc_shell_v(argv + 1, 0, shell_stdout_callback, shell_stderr_callback, tc);
+			const char* shell = settings_get(settings, "shell");
+			char* command = sc_shell_make_command(shell, argc - 1, argv + 1);
+			if( ! command ) {
+				a_error("Failed to construct shell command\n");
+				break;
+			}
+			int err = sc_shell(command, NULL, shell_stdout_callback, shell_stderr_callback, tc);
 			if( err ) {
 				a_error("Shell command failed with exit code %d\n", err);
 			}
+			FREE(command);
 			break;
 		}
-		case 'E': {
-			// clear screen
+		case 'E': { // clear screen
 			ansi_fprintf(stdout, ANSI_CLEAR_SCREEN ANSI_INIT_CURSOR_POS);
 			printBanner();
 			break;
 		}
 #ifdef _DEBUG_
-		case 'A': {
+		case 'A': { // show autocomplete vocabulary
 			rlx_print_autocomplete_vocabulary(h);
 			break;
 		}
-		case 'S': {
+		case 'S': { // show settings
 			settings_print(settings);
 			break;
 		}

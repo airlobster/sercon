@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "command.h"
 #include "shell.h"
+#include "d_buffer.h"
 
 #define POLL_TIMEOUT (1000) // milliseconds
 #define POLL_MASK (POLLIN | POLLHUP | POLLERR)
@@ -187,4 +188,24 @@ int sc_shell(
 	int ret = sc_shell_v((const char**)argv, input, stdout_callback, stderr_callback, context);
 	free_command_args(argc, argv);
 	return ret;
+}
+
+/**
+ * @brief Construct a shell command string from an argument vector.
+ * @param shell The shell to use (e.g., "/bin/sh"). If NULL, defaults to the value of the SHELL environment variable or "/bin/sh" if SHELL is not set.
+ * @param argc The number of arguments.
+ * @param argv The argument vector.
+ * @return char* A dynamically allocated string containing the shell command. The caller is responsible for freeing this string.
+ */
+char* sc_shell_make_command(const char* shell, int argc, const char* argv[]) {
+	const char* shellPath = shell ? shell : (getenv("SHELL") ? getenv("SHELL") : "/bin/sh");
+	buffer_t c = d_buffer_create(0);
+	d_buffer_append(c, shellPath, strlen(shellPath));
+	d_buffer_append(c, " -c \"", 5);
+	for(int i=0; i<argc; ++i) {
+		if( i > 0 ) d_buffer_append(c, " ", 1);
+		d_buffer_append(c, argv[i], strlen(argv[i]));
+	}
+	d_buffer_append(c, "\"", 1);
+	return d_buffer_detach_data(c);
 }
