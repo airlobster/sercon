@@ -11,6 +11,7 @@ RUN dnf install -y epel-release && \
     cmake \
     gdb \
     git \
+		bc \
     pkgconfig \
     sqlite-devel \
     readline-devel \

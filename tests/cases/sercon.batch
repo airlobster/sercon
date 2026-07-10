@@ -1,0 +1,4 @@
+vocabulary
+help
+shell echo "240 / 5" | bc
+

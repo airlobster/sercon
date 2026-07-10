@@ -17,6 +17,7 @@ RUN dnf -y install \
     cmake \
     gdb \
     git \
+		bc \
     pkgconfig \
     curl \
     vim \

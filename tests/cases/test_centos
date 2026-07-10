@@ -12,7 +12,7 @@ function test_linux() {
 	local image_name="dev-sercon-${distro}"
 	(
 		docker build --progress=plain -t "$image_name" -f "$dockerfile" .
-		echo -e "vocabulary\nhelp\nshell date" \
+		cat sercon.batch \
 			| docker run --rm  -i --privileged -v ~/sercon:/sercon "$image_name" bash -c "make run"
 	)
 	local status=$?
