@@ -357,6 +357,16 @@ void rlx_register_commands(rlx_t rlx, const rlx_registered_command_t* commands) 
 }
 
 /**
+ * @brief Set the idle action callback for the readline_ex session.
+ * @param h The readline_ex session handle.
+ * @param callback The callback function to set for idle actions.
+ */
+void rlx_set_idle_action_callback(rlx_t h, rlx_idle_action_callback_t callback) {
+	ASSERT(h != NULL);
+	h->idleActionCallback = callback;
+}
+
+/**
 	@brief Get a registered command by its name.
 	@param rlx The readline_ex session handle.
 	@param command The name of the command to retrieve.
@@ -830,14 +840,4 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 #undef POP
 #undef PEEK
 #undef UNGET
-}
-
-/**
- * @brief Set the idle action callback for the readline_ex session.
- * @param h The readline_ex session handle.
- * @param callback The callback function to set for idle actions.
- */
-void rlx_set_idle_action_callback(rlx_t h, rlx_idle_action_callback_t callback) {
-	ASSERT(h != NULL);
-	h->idleActionCallback = callback;
 }
