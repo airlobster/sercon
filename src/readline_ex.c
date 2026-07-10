@@ -51,6 +51,8 @@ typedef struct _rlx_internal_t {
 	d_array_t autocompleteCallbacks;
 	/** The vocabulary for autocompletion. */
 	vocabulary_t completionVocabulary;
+	/** The idle action callback function. */
+	rlx_idle_action_callback_t idleActionCallback;
 	/** Flag indicating whether the readline_ex session is paused. */
 	bool isPaused;
 } rlx_internal_t;
@@ -126,7 +128,16 @@ static void readline_callback_wrapper(char* line) {
 	}
 }
 
+/**
+ * @brief Event hook called by readline during idle periods.
+ * @return Always returns 0.
+ */
 static int event_hook(void) {
+	rlx_internal_t* rlx = &rlxStatic;
+	ASSERT(rlx->isInitialized);
+	if( rlx->idleActionCallback ) {
+		rlx->idleActionCallback((rlx_t)rlx, rlx->context);
+	}
 	return 0;
 }
 
@@ -218,9 +229,10 @@ rlx_t rlx_begin(
 	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
 	rlx->maxHistoryEntries = MAX(maxHistoryEntries, 10);
 	rlx->savedLineBuffer = 0;
-	rlx->commands = 0;
-	rlx->autocompleteCallbacks = 0;
-	rlx->completionVocabulary = 0;
+	rlx->commands = NULL;
+	rlx->autocompleteCallbacks = NULL;
+	rlx->completionVocabulary = NULL;
+	rlx->idleActionCallback = NULL;
 	rlx->isPaused = false;
 
 	history_max_entries = rlx->maxHistoryEntries;
@@ -232,6 +244,7 @@ rlx_t rlx_begin(
 
 	rl_callback_handler_install(prompt, readline_callback_wrapper);
 
+	// setup auto-completion based on the options provided
 	if( rlx->options & RLX_OPT_AUTOCOMPLETE_MASK ) {
 		if( rlx->options & RLX_OPT_AUTOCOMPLETE_DEFAULT ) {
 			rl_attempted_completion_function = 0; // use default readline filename completion
@@ -817,4 +830,14 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 #undef POP
 #undef PEEK
 #undef UNGET
+}
+
+/**
+ * @brief Set the idle action callback for the readline_ex session.
+ * @param h The readline_ex session handle.
+ * @param callback The callback function to set for idle actions.
+ */
+void rlx_set_idle_action_callback(rlx_t h, rlx_idle_action_callback_t callback) {
+	ASSERT(h != NULL);
+	h->idleActionCallback = callback;
 }

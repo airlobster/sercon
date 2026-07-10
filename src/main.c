@@ -439,7 +439,6 @@ static const rlx_registered_command_t commands[] = {
 	{'i', "history", "Show command history", registered_commands_callback},
 	{'c', "clear", "Clear history", registered_commands_callback},
 	{'h', "help", "Show this help message", registered_commands_callback},
-	{'q', "exit", "Exit the program", registered_commands_callback},
 	{'q', "quit", "Exit the program", registered_commands_callback},
 	{'v', "version", "Show version information", registered_commands_callback},
 	{'p', "ports", "List available serial ports", registered_commands_callback},

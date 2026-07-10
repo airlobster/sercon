@@ -88,6 +88,13 @@ typedef void (*rlx_callback_t)(rlx_t h, const char* line, size_t length, void* c
  */
 typedef void (*rlx_vocabulary_build_callback_t)(rlx_t rlx, const char* text, void* context);
 
+/**
+ * @brief Callback function type for idle actions.
+ * @param h The readline_ex session handle.
+ * @param context User data passed to the callback function.
+ */
+typedef void (*rlx_idle_action_callback_t)(rlx_t h, void* context);
+
 // RLX session management
 rlx_t rlx_begin(
 	const char* appname,
@@ -135,6 +142,8 @@ void rlx_print_autocomplete_vocabulary(rlx_t h);
 #endif
 
 void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt);
+
+void rlx_set_idle_action_callback(rlx_t h, rlx_idle_action_callback_t callback);
 
 #ifdef __cplusplus
 }
