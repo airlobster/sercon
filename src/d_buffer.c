@@ -6,12 +6,21 @@
 #define DEFAULT_MAX_SIZE (512)
 
 typedef struct _d_buffer_t {
+	/** Dynamic buffer data. */
 	char* data;
+	/** Current length of the data in the buffer. */
 	size_t length;
+	/** Current capacity of the buffer. */
 	size_t capacity;
+	/** Maximum allowed size of the buffer. */
 	size_t max_size;
 } d_buffer_t;
 
+/**
+ * @brief Create a new dynamic buffer.
+ * @param max_size The maximum allowed size of the buffer. If 0, defaults to DEFAULT_MAX_SIZE.
+ * @return buffer_t A new dynamic buffer instance.
+ */
 buffer_t d_buffer_create(size_t max_size) {
 	d_buffer_t* b = (d_buffer_t*)MALLOC(sizeof(struct _d_buffer_t));
 	b->data = NULL;
@@ -21,6 +30,10 @@ buffer_t d_buffer_create(size_t max_size) {
 	return b;
 }
 
+/**
+ * @brief Destroy a dynamic buffer and free its resources.
+ * @param buffer The dynamic buffer to destroy.
+ */
 void d_buffer_destroy(buffer_t buffer) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
@@ -31,6 +44,13 @@ void d_buffer_destroy(buffer_t buffer) {
 	FREE(b);
 }
 
+/**
+ * @brief Append data to a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ * @param data The data to append.
+ * @param length The length of the data to append.
+ * @return size_t The number of bytes appended, or 0 on failure.
+ */
 size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
@@ -53,12 +73,34 @@ size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	return length;
 }
 
+/**
+ * @brief Append a null-terminated string to a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ * @param data The null-terminated string to append.
+ * @return size_t The number of bytes appended, or 0 on failure.
+ */
+size_t d_buffer_append_s(buffer_t buffer, const char* data) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
+	ASSERT(b);
+	return d_buffer_append(buffer, data, strlen(data));
+}
+
+/**
+ * @brief Get the data from a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ * @return const char* The data in the buffer.
+ */
 const char* d_buffer_get_data(buffer_t buffer) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
 	return b->data;
 }
 
+/**
+ * @brief Detach the data from a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ * @return char* The detached data. The caller is responsible for freeing it.
+ */
 char* d_buffer_detach_data(buffer_t buffer) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
@@ -68,7 +110,10 @@ char* d_buffer_detach_data(buffer_t buffer) {
 	b->capacity = 0;
 	return data;
 }
-
+/**
+ * @brief Clear the contents of a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ */
 void d_buffer_clear(buffer_t buffer) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
@@ -79,6 +124,11 @@ void d_buffer_clear(buffer_t buffer) {
 	b->length = 0;
 }
 
+/**
+ * @brief Get the current size of a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ * @return size_t The current size of the buffer.
+ */
 size_t d_buffer_size(buffer_t buffer) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
