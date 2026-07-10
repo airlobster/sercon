@@ -17,21 +17,20 @@
 #define VERSION "0.0.0.0"
 #endif
 
-int baud = 9600;
-bool printTimestamps = true;
-char* port = 0;
-int fdPort = -1;
-termctl_t termctl = 0;
-settings_t settings = 0;
+static bool printTimestamps = true;
+static char* port = 0;
+static int fdPort = -1;
+static termctl_t termctl = 0;
+static settings_t settings = 0;
 
-void shell_stdout_callback(const char* output, size_t length, void* context) {
+static void shell_stdout_callback(const char* output, size_t length, void* context) {
 	(void)context;
 	(void)length;
 	(void)context;
 	ansi_fprintf(stdout, ANSI_ITALIC ANSI_WHITE "%s", output);
 }
 
-void shell_stderr_callback(const char* output, size_t length, void* context) {
+static void shell_stderr_callback(const char* output, size_t length, void* context) {
 	(void)context;
 	(void)length;
 	(void)context;
@@ -41,7 +40,7 @@ void shell_stderr_callback(const char* output, size_t length, void* context) {
 /**
  * @brief Print the list of available serial ports.
  */
-static void print_ports_list() {
+static void print_ports_list(void) {
 	ansi_fprintf(stdout, ANSI_UNDERLINE ANSI_BOLD "Available serial ports:\n");
 	iterator_t i = enumSerialPorts();
 	_foreach(i, res) {
@@ -92,6 +91,25 @@ static bool disconnect(termctl_t tc) {
 }
 
 /**
+ * @brief Create a connection string from a port specification.
+ * @param s The port specification in the format "PORT{:BAUD}".
+ * @return char* The connection string in the format "PORT:BAUD", or NULL on failure.
+ */
+static char* makeConnectionString(const char *s) {
+	char* out = NULL;
+	char portName[256];
+	int baudRate = 9600;
+	if( ! s ) return NULL;
+	int n = sscanf(s, "%[^:]:%d", portName, &baudRate);
+	if( n < 1 ) {
+		a_error("Invalid port specification: %s\n", s);
+		return NULL;
+	}
+	asprintf(&out, "%s:%d", portName, baudRate ? baudRate : 9600);
+	return out;
+}
+
+/**
  * @brief Apply a connection string to connect to a serial port.
  * @param tc The termctl instance.
  * @param connectionString The connection string in the format "PORT{:BAUD}".
@@ -122,7 +140,12 @@ static void cli_args_callback(int pos, int opt, const char* optarg) {
 		}
 		case 'p': {
 			ASSERT(! port);
-			port = STRDUP(optarg);
+			char* connectionString = makeConnectionString(optarg);
+			if( ! connectionString ) {
+				a_error("Invalid port specification: %s\n", optarg);
+				exit(1);
+			}
+			port = connectionString; // take ownership of the string
 			break;
 		}
 		case 'T': {
@@ -229,10 +252,19 @@ static void registered_commands_callback(
 				a_error("Already connected. Please disconnect first.\n");
 				break;
 			}
+			char* connectionString = makeConnectionString(argv[1]);
+			if( ! connectionString ) {
+				a_error("Invalid connection string: %s\n", argv[1]);
+				break;
+			}
 			fdPort = applyConnectionString(tc, argv[1]);
 			if( fdPort > 0 ) {
-				port = STRDUP(argv[1]);
+				if( port ) free(port);
+				port = connectionString; // take ownership of the string
 				termctl_add_fd(tc, fdPort);
+			} else {
+				a_error("Failed to connect to %s\n", argv[1]);
+				FREE(connectionString);
 			}
 			break;
 		}
@@ -333,7 +365,7 @@ static char* prompt_callback(termctl_t tc, void* context) {
  * @param length The length of the input line.
  * @param context User data pointer.
  */
-void user_input_callback(termctl_t tc, const char* line, size_t length, void* context) {
+static void user_input_callback(termctl_t tc, const char* line, size_t length, void* context) {
 	(void)tc;
 	(void)context;
 	if( fdPort > 0 ) {
@@ -349,7 +381,7 @@ void user_input_callback(termctl_t tc, const char* line, size_t length, void* co
  * @param tc The termctl instance.
  * @param context User data pointer.
  */
-void newline_callback(termctl_t tc, void* context) {
+static void newline_callback(termctl_t tc, void* context) {
 	(void)tc;
 	(void)context;
 	if( ! printTimestamps ) return;
@@ -365,7 +397,7 @@ void newline_callback(termctl_t tc, void* context) {
  * @param context User data pointer.
  * @return fd if successful, -1 if failed.
  */
-int reconnect_callback(termctl_t tc, int fd, void* context) {
+static int reconnect_callback(termctl_t tc, int fd, void* context) {
 	(void)context;
 	(void)fd;
 	ASSERT(tc);
@@ -413,7 +445,7 @@ static void on_exit_handler(void) {
 	}
 }
 
-void abort_handler(int sig) {
+static void abort_handler(int sig) {
 	(void)sig;
 	DEBUG_MSG("Aborting application due to signal %d", sig);
 	on_exit_handler();
