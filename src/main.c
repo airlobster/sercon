@@ -37,6 +37,12 @@ static void shell_stderr_callback(const char* output, size_t length, void* conte
 	ansi_fprintf(stderr, ANSI_ITALIC ANSI_RED "%s", output);
 }
 
+static void printBanner() {
+	if( ! isatty(fileno(stdin)) ) return; // only print banner if stdout is a terminal
+	ansi_fprintf(stdout, ANSI_BOLD "sercon - A Serial-Ports Console (v%s)\n", VERSION);
+	ansi_fprintf(stdout, "(Type 'help' for a list of commands, and 'quit' to exit)\n");
+}
+
 /**
  * @brief Print the list of available serial ports.
  */
@@ -318,6 +324,12 @@ static void registered_commands_callback(
 			}
 			break;
 		}
+		case 'E': {
+			// clear screen
+			ansi_fprintf(stdout, ANSI_CLEAR_SCREEN ANSI_INIT_CURSOR_POS);
+			printBanner();
+			break;
+		}
 #ifdef _DEBUG_
 		case 'A': {
 			rlx_print_autocomplete_vocabulary(h);
@@ -469,7 +481,8 @@ static void apply_loaded_settings() {
 // registered commnands
 static const rlx_registered_command_t commands[] = {
 	{'i', "history", "Show command history", registered_commands_callback},
-	{'c', "clear", "Clear history", registered_commands_callback},
+	{'c', "clear-history", "Clear history", registered_commands_callback},
+	{'E', "clear-screen", "Clear the terminal screen", registered_commands_callback},
 	{'h', "help", "Show this help message", registered_commands_callback},
 	{'q', "quit", "Exit the program", registered_commands_callback},
 	{'v', "version", "Show version information", registered_commands_callback},
@@ -499,11 +512,7 @@ int main(int argc, char* argv[]) {
 	begin_ansi(false);
 	apply_loaded_settings();
 
-	// print banner (only if stdin is a terminal)
-	if( isatty(fileno(stdin)) ) {
-		ansi_fprintf(stdout, ANSI_BOLD "%s - A Serial-Ports Console (v%s)\n", appname, VERSION);
-		ansi_fprintf(stdout, "(Type 'help' for a list of commands, and 'quit' to exit)\n");
-	}
+	printBanner();
 
 	termctl = termctl_create(appname, 0);
 	if( ! termctl ) {

@@ -46,6 +46,7 @@
 #define ANSI_SAVE_CURSOR        ANSI_CSI "s"
 #define ANSI_RESTORE_CURSOR     ANSI_CSI "u"
 #define ANSI_CLEAR_LINE         ANSI_CSI "K"
+#define ANSI_CLEAR_SCREEN       ANSI_CSI "2J"
 #define ANSI_BEGIN_ALT_SCREEN   ANSI_CSI "?1049h"
 #define ANSI_END_ALT_SCREEN     ANSI_CSI "?1049l"
 
