@@ -207,5 +207,7 @@ char* sc_shell_make_command(const char* shell, int argc, const char* argv[]) {
 		d_buffer_append_s(c, argv[i]);
 	}
 	d_buffer_append_s(c, "\"");
-	return d_buffer_detach_data(c);
+	char* out =  d_buffer_detach_data(c);
+	d_buffer_destroy(c);
+	return out;
 }
