@@ -118,14 +118,14 @@ Allows declaring command-line arguments with automatic help information generati
 
 Shell-like command-line parser - translate a raw string into argc/argv duo.
 
-### shell.h, shell.c
+#### shell.h, shell.c
 
 Execute shell commands while interceptiny standard devices.
 
-### cglob.h, cglob.c
+#### cglob.h, cglob.c
 
 Multi-pattern, iterator-based globbing.
 
-### d_XXXX.h, d_XXXX.c
+#### d_XXXX.h, d_XXXX.c
 
 Data structures utilized by sercon.
