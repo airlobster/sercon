@@ -208,7 +208,6 @@ char* sc_shell_make_command(const char* shell, int argc, const char* argv[]) {
 	}
 	d_buffer_append_c(c, '"');
 	char* out =  d_buffer_detach_data(c);
-	DEBUG_MSG("Constructed shell command: %s", out);
 	d_buffer_destroy(c);
 	return out;
 }
