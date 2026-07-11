@@ -203,7 +203,7 @@ char* sc_shell_make_command(const char* shell, int argc, const char* argv[]) {
 	d_buffer_append_s(c, shellPath);
 	d_buffer_append_s(c, " -c \"");
 	for(int i=0; i<argc; ++i) {
-		if( i > 0 ) d_buffer_append_s(c, " ");
+		if( i > 0 ) d_buffer_append_c(c, '	');
 		d_buffer_append_s(c, argv[i]);
 	}
 	d_buffer_append_c(c, '"');
