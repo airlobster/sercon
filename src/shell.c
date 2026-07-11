@@ -57,6 +57,13 @@ int sc_shell_v(
 	}
 
 	pid_t pid = fork();
+	if( pid < 0 ) {
+		DEBUG_MSG("fork failed: %s", strerror(errno));
+		close_pipe(pStdin);
+		close_pipe(pStdout);
+		close_pipe(pStderr);
+		return -1;
+	}
 	if( pid == 0 ) {
 		// CHILD PROCESS
 		close(pStdin[1]); // Close write end of stdin pipe
