@@ -14,13 +14,11 @@ It supports:
 
 - A C toolchain (cc)
 - make
-- libserialport
 - libreadline
-- sqlite3
 
 On macOS with Homebrew:
 
-    brew install libserialport readline sqlite3
+    brew install readline
 
 ## Usage
 
@@ -65,10 +63,6 @@ After cloning this repository, just enter the repository's root directory and ru
 
 	make install
 
-This will build the project and install it. To test for installation correctness, run
-
-	make test
-
 
 ## Behavior notes
 
@@ -96,6 +90,10 @@ Additionally, the pattern-sets above can be extended by using the ```PORTS_SEARC
 
 ### Reussable modules
 
+#### iterator.h, iterator.c
+
+An API for creating iterator objects.
+
 #### readline_ex.h, readline_ex.c
 
 readline_ex is a wrapper around the GNU readline library that provides some additional features, such as:
@@ -119,3 +117,15 @@ Allows declaring command-line arguments with automatic help information generati
 #### command.h, command.c
 
 Shell-like command-line parser - translate a raw string into argc/argv duo.
+
+### shell.h, shell.c
+
+Execute shell commands while interceptiny standard devices.
+
+### cglob.h, cglob.c
+
+Multi-pattern, iterator-based globbing.
+
+### d_XXXX.h, d_XXXX.c
+
+Data structures utilized by sercon.
