@@ -120,7 +120,7 @@ Shell-like command-line parser - translate a raw string into argc/argv duo.
 
 #### shell.h, shell.c
 
-Execute shell commands while interceptiny standard devices.
+Execute shell commands while intercepting standard devices.
 
 #### cglob.h, cglob.c
 
