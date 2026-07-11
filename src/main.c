@@ -38,7 +38,7 @@ static void shell_stderr_callback(const char* output, size_t length, void* conte
 }
 
 static void printBanner() {
-	if( ! isatty(fileno(stdin)) ) return; // only print banner if stdout is a terminal
+	if( ! isatty(fileno(stdin)) ) return; // only print banner if stdin is a terminal
 	ansi_fprintf(stdout, ANSI_BOLD "sercon - A Serial-Ports Console (v%s)\n", VERSION);
 	ansi_fprintf(stdout, "(Type 'help' for a list of commands, and 'quit' to exit)\n");
 }
