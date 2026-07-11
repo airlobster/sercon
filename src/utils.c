@@ -115,6 +115,45 @@ void debug_msg(const char* file, int line, const char* func, const char* fmt, ..
 }
 #endif
 
+/**
+ * @brief Parse a connection string in the format "PORT{:BAUD}".
+ * @param connectionString The input connection string.
+ * @param portName Buffer to store the extracted port name.
+ * @param portNameSize Size of the portName buffer.
+ * @param baudRate Pointer to store the extracted baud rate. Defaults to 9600 if not specified or invalid.
+ * @return The number of components successfully parsed (1 for port, 2 for port and baud), or -1 on error.
+ */
+int parseConnectionString(const char* connectionString, char* portName, size_t portNameSize, int* baudRate) {
+	ASSERT(connectionString);
+	ASSERT(portName);
+	ASSERT(baudRate);
+	if( ! connectionString || ! portName || ! baudRate ) return -1;
+	int n = 0;
+	*baudRate = 0;
+	const char *pRd=connectionString;
+	char *pWr = portName;
+	// Skip leading whitespace
+	while( isspace(*pRd) ) pRd++;
+	while( *pRd && *pRd != ':' && ! isspace(*pRd) && (size_t)(pWr - portName) < (portNameSize - 1) ) {
+		*pWr++ = *pRd++;
+	}
+	*pWr = '\0'; // null-terminate the port name
+	n += (pWr - portName) ? 1 : 0; // increment n if port name was found
+	while( *pRd && (isspace(*pRd) || *pRd == ':') ) pRd++; // skip whitespace after port name
+	// Parse baud rate if present
+	while( isdigit(*pRd) ) {
+		*baudRate = (*baudRate * 10) + (*pRd - '0');
+		pRd++;
+	}
+	if( *baudRate >= 9600 ) {
+		n += 1; // increment n if baud rate was found
+	} else {
+		*baudRate = 9600; // default baud rate
+	}
+	return n;
+}
+
+
 static struct termios originalTermios;
 static void reset_termios(void) {
 	DEBUG_MSG("Resetting termios changes");

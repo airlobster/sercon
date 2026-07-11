@@ -45,6 +45,33 @@ void d_buffer_destroy(buffer_t buffer) {
 }
 
 /**
+ * @brief Append a single character to a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ * @param c The character to append.
+ * @return size_t 1 if the character was appended successfully, 0 on failure.
+ */
+size_t d_buffer_append_c(buffer_t buffer, char c) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
+	ASSERT(b);
+	if( b->max_size && b->length + 1 >= b->max_size ) {
+		DEBUG_MSG("Buffer overflow: cannot append character to buffer");
+		return 0;
+	}
+	if( b->length + 1 >= b->capacity ) {
+		size_t newCapacity = MAX(b->capacity * 2, b->length + 1);
+		char* newData = (char*)REALLOC(b->data, (newCapacity + 1) * sizeof(char)); // +1 for null terminator
+		if( ! newData ) {
+			return 0;
+		}
+		b->data = newData;
+		b->capacity = newCapacity;
+	}
+	b->data[b->length++] = c;
+	b->data[b->length] = '\0'; // null-terminate the buffer
+	return 1;
+}
+
+/**
  * @brief Append data to a dynamic buffer.
  * @param buffer The dynamic buffer.
  * @param data The data to append.
@@ -54,23 +81,12 @@ void d_buffer_destroy(buffer_t buffer) {
 size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
 	d_buffer_t* b = (d_buffer_t*)buffer;
 	ASSERT(b);
-	if( b->max_size && b->length + length >= b->max_size ) {
-		DEBUG_MSG("Buffer overflow: cannot append data to buffer");
-		return 0;
-	}
-	if( b->length + length >= b->capacity ) {
-		size_t newCapacity = MAX(b->capacity * 2, b->length + length);
-		char* newData = (char*)REALLOC(b->data, (newCapacity + 1) * sizeof(char)); // +1 for null terminator
-		if( ! newData ) {
-			return 0;
+	for( size_t i = 0; i < length; ++i ) {
+		if( ! d_buffer_append_c(buffer, data[i]) ) {
+			return i; // return the number of bytes successfully appended
 		}
-		b->data = newData;
-		b->capacity = newCapacity;
 	}
-	memcpy(b->data + b->length, data, length);
-	b->length += length;
-	b->data[b->length] = '\0'; // null-terminate the buffer
-	return length;
+	return length; // all bytes appended successfully
 }
 
 /**
@@ -81,7 +97,14 @@ size_t d_buffer_append(buffer_t buffer, const char* data, size_t length) {
  */
 size_t d_buffer_append_s(buffer_t buffer, const char* data) {
 	ASSERT(buffer);
-	return d_buffer_append(buffer, data, strlen(data));
+	const char* start = data;
+	while( *data ) {
+		if( ! d_buffer_append_c(buffer, *data) ) {
+			break;
+		}
+		data++;
+	}
+	return data - start;
 }
 
 /**

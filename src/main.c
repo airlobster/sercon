@@ -106,7 +106,7 @@ static char* makeConnectionString(const char *s) {
 	char portName[256];
 	int baudRate = 9600;
 	if( ! s ) return NULL;
-	int n = sscanf(s, "%[^:]:%d", portName, &baudRate);
+	int n = parseConnectionString(s, portName, sizeof(portName), &baudRate);
 	if( n < 1 ) {
 		a_error("Invalid port specification: %s\n", s);
 		return NULL;
@@ -125,7 +125,7 @@ static int applyConnectionString(termctl_t tc, const char *connectionString) {
 	char portName[256];
 	int baudRate = 9600;
 	ASSERT(connectionString);
-	int n = sscanf(connectionString, "%[^:]:%d", portName, &baudRate);
+	int n = parseConnectionString(connectionString, portName, sizeof(portName), &baudRate);
 	if( n < 1 ) {
 		a_error("Invalid port specification: %s\n", connectionString);
 		return -1;

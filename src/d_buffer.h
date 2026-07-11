@@ -27,6 +27,7 @@ typedef struct _d_buffer_t* buffer_t;
 
 buffer_t d_buffer_create(size_t max_size);
 void d_buffer_destroy(buffer_t buffer);
+size_t d_buffer_append_c(buffer_t buffer, char c);
 size_t d_buffer_append(buffer_t buffer, const char* data, size_t length);
 size_t d_buffer_append_s(buffer_t buffer, const char* data);
 const char* d_buffer_get_data(buffer_t buffer);

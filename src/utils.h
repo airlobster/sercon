@@ -67,6 +67,8 @@ int numdigits(long long v, unsigned short base);
 
 int strnetcontent(char* s, char** start, char** end);
 
+int parseConnectionString(const char* connectionString, char* portName, size_t portNameSize, int* baudRate);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
