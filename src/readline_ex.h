@@ -111,6 +111,8 @@ void rlx_resume(rlx_t h, bool redisplayPrompt);
 void rlx_change_prompt(rlx_t h, const char* newPrompt);
 void rlx_rebuild_completion_vocabulary(rlx_t rlx, const char* text);
 
+void rlx_set_ctrlC(rlx_t h, bool enabled);
+
 // should be called whenever content is available for reading from stdin,
 // typically from an event loop or select/poll/epoll callback
 void rlx_process_input(rlx_t h);

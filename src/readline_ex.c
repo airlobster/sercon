@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <pwd.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <sys/param.h>
 #include <unistd.h>
@@ -268,6 +269,8 @@ rlx_t rlx_begin(
 
 	using_history();
 
+	rlx_set_ctrlC((rlx_t)rlx, true);
+
 	rl_event_hook = event_hook;
 
 	return (rlx_t)rlx;
@@ -283,6 +286,7 @@ void rlx_end(rlx_t rlx) {
 
 	if( ! rlx || ! rlx->isInitialized ) return;
 
+	rlx_set_ctrlC((rlx_t)rlx, false);
 	rl_callback_handler_remove();
 
 	rlx_commit_history(rlx);
@@ -437,7 +441,11 @@ bool rlx_process_command(rlx_t rlx, const char* line) {
 static void rlx_add_history_entry(rlx_t rlx, const char* line) {
 	(void)rlx;
 	ASSERT(rlx);
-	if( ! line || ! *line ) return;
+	ASSERT(rlx->isInitialized);
+	ASSERT(line);
+	if( ! line ) return;
+	while( isspace(*line) ) line++; // skip leading whitespace
+	if( ! *line ) return;
 	add_history(line);
 }
 
@@ -840,4 +848,30 @@ void rlx_make_safe_prompt(const char* prompt, char** outSafePrompt) {
 #undef POP
 #undef PEEK
 #undef UNGET
+}
+
+/**
+ * @brief Signal handler for SIGINT (Ctrl+C) to clear the current input line and redisplay the prompt.
+ * @param signum The signal number (unused).
+ */
+static void on_sigint(int signum) {
+	(void)signum;
+	rl_on_new_line(); // tell readline that we have a new line
+	rl_replace_line("", 0); // clear the current input line
+	printf("\n"); // print a newline to move to the next line after Ctrl+C
+	rl_redisplay(); // redisplay the prompt and any input line (which is now cleared)
+}
+
+/**
+ * @brief Enable or disable handling of Ctrl+C (SIGINT) in the readline_ex session.
+ * @param h The readline_ex session handle.
+ * @param enabled If true, enable Ctrl+C handling; if false, restore default behavior.
+ */
+void rlx_set_ctrlC(rlx_t h, bool enabled) {
+	ASSERT(h);
+	struct sigaction sa;
+	sa.sa_handler = enabled ? on_sigint : SIG_DFL;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0; 
+	sigaction(SIGINT, &sa, NULL);
 }

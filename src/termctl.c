@@ -336,6 +336,10 @@ termctl_result_t termctl_event_loop(termctl_t termctl) {
 
 		// Check for poll errors
 		if( ret < 0 ) {
+			if( errno == EINTR ) {
+				// interrupted by a signal, continue polling
+				continue;
+			}
 			DEBUG_MSG("Error during poll: %s", strerror(errno));
 			rc = TERMCTL_R_POLLERROR;
 			break;
