@@ -228,7 +228,7 @@ rlx_t rlx_begin(
 	rlx->context = context;
 	rlx->options = options;
 	rlx->historyFilePath = makeHistoryFilePath(appname, historyContext);
-	rlx->maxHistoryEntries = MAX(maxHistoryEntries, 10);
+	rlx->maxHistoryEntries = MIN(MAX(maxHistoryEntries, 10), 500);
 	rlx->savedLineBuffer = 0;
 	rlx->commands = NULL;
 	rlx->autocompleteCallbacks = NULL;
