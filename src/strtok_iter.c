@@ -116,19 +116,18 @@ static void *strtok_iter_next(void** state, int* done, void* context) {
  * This function creates an iterator that tokenizes a string based on the specified delimiters.
  *
  * @param str The string to be tokenized.
- * @param delim The delimiters to use for tokenization.
+ * @param delim The delimiters to use for tokenization. Default is whitespace characters if NULL.
  * @return iterator_t The created iterator.
  */
 iterator_t strtok_iter(const char *str, const char *delim) {
 	ASSERT(str != NULL);
-	ASSERT(delim != NULL);
 	// allocate options struct and copy arguments into it, so that the iterator
 	// can be used after the original strings go out of scope
 	strtok_iter_options_t *options = MALLOC(sizeof(strtok_iter_options_t));
 	if( ! options ) {
 		return NULL;
 	}
-	options->delim = STRDUP(delim);
+	options->delim = STRDUP(delim ? delim : " \t\n\r");
 	options->str = STRDUP(str);
 	return iterator_init(strtok_iter_next, strtok_iter_state_dtor, options);
 }
