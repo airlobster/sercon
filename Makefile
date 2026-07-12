@@ -125,7 +125,7 @@ $(BUILD_DIR):
 # run arguments are taken from the command line arguments, excluding leading supported targets.
 run: RUN_ARGS := $(filter-out $(SUPPORTED_TARGETS), $(MAKECMDGOALS))
 run: all
-	@$(BUILD_DIR)/$(TARGET) $(RUN_ARGS)
+	bash -c "set -m; $(BUILD_DIR)/$(TARGET) $(RUN_ARGS)"
 
 # show man page (pre-installation)
 man:
