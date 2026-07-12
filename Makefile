@@ -9,7 +9,7 @@ ifneq ($(and $(MAKE_TERMOUT),$(MAKE_TERMERR)),)
 	COLOR_ERROR := \033[31m
 	COLOR_SUCCESS := \033[32m
 	COLOR_WARNING := \033[33m
-	COLOR_INFO := \033[34m
+	COLOR_INFO := \033[40;94m
 endif
 
 # versioning: get the short git commit hash if available, otherwise use 'unknown'
