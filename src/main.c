@@ -27,7 +27,7 @@ static void shell_stdout_callback(const char* output, size_t length, void* conte
 	(void)context;
 	(void)length;
 	(void)context;
-	ansi_fprintf(stdout, ANSI_ITALIC ANSI_WHITE "%s", output);
+	fprintf(stdout, "%s", output);
 }
 
 static void shell_stderr_callback(const char* output, size_t length, void* context) {
