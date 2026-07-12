@@ -57,7 +57,8 @@ while [ -n "$1" ]; do
 			fi
 			;;
 		*)
-			path="$1"
+			# tests are specified by their name (without the prefix, e.g., "example" for "test_example")
+			path="${tests_root_dir}/${tests_prefix}$1"
 			[ -n "$path" ] && test_results["$path"]="not run"
 			;;
 	esac

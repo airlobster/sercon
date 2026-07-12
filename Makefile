@@ -40,6 +40,7 @@ DOXYGEN_ARTIFACTS_DIR := $(ARTIFACTS_ROOT_DIR)/$(FULL_VERSION)/doxygen
 TESTS_LOG_DIR := $(ARTIFACTS_ROOT_DIR)/$(FULL_VERSION)/tests
 
 SUPPORTED_TARGETS := $(sort $(shell cat $(lastword $(MAKEFILE_LIST)) | grep -Eo '^[[:alnum:]]+:' | tr -d ':'))
+ADDITIONAL_ARGS := $(filter-out $(SUPPORTED_TARGETS), $(MAKECMDGOALS))
 
 BUILD ?= debug
 ARCH ?= $(shell uname -m | tr '[:upper:]' '[:lower:]')
@@ -123,9 +124,8 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 # run arguments are taken from the command line arguments, excluding leading supported targets.
-run: RUN_ARGS := $(filter-out $(SUPPORTED_TARGETS), $(MAKECMDGOALS))
 run: all
-	@bash -c "set -m; $(BUILD_DIR)/$(TARGET) $(RUN_ARGS)"
+	@bash -c "set -m; $(BUILD_DIR)/$(TARGET) $(ADDITIONAL_ARGS)"
 
 # show man page (pre-installation)
 man:
@@ -181,7 +181,7 @@ cleanall:
 	rm -rf $(ARTIFACTS_ROOT_DIR)/* Doxyfile*
 
 test:
-	@./tests/TESTEM --logdir $(TESTS_LOG_DIR)
+	@./tests/TESTEM --logdir $(TESTS_LOG_DIR) $(ADDITIONAL_ARGS)
 
 help:
 	@printf "$(COLOR_BOLD)Usage:$(COLOR_RESET)\n"
