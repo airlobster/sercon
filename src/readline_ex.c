@@ -868,6 +868,7 @@ static void on_sigint(int signum) {
  * @param enabled If true, enable Ctrl+C handling; if false, restore default behavior.
  */
 void rlx_set_ctrlC(rlx_t h, bool enabled) {
+	(void)h;
 	ASSERT(h);
 	struct sigaction sa;
 	sa.sa_handler = enabled ? on_sigint : SIG_DFL;
