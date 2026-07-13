@@ -84,6 +84,52 @@ Serial-ports patterns being used:
 
 Additionally, the pattern-sets above can be extended by using the ```PORTS_SEARCH_PATH``` environment variable, which is formatted like a ```PATH``` string, using a colon (:) as a delimiter.
 
+## Using Makefile's Targets
+
+### Compile a debug version
+
+```make BUILD=debug all```
+
+or simply
+
+```make```
+
+### Compile a release version
+
+```make BUILD=release all```
+
+### Run the program
+
+```make run```
+
+or run the release version
+
+```make BUILD=release run```
+
+### Show artifacts tree
+
+```make tree```
+
+### Test
+
+```make test```
+
+### Install
+
+```make install```
+
+### Uninstall
+
+```make uninstall```
+
+### Go to project's GitHub site
+
+```make github```
+
+### Show all Makefile's available targets
+
+```make help```
+
 
 ## Appendix
 
