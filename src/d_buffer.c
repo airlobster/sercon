@@ -1,5 +1,6 @@
 #include <sys/param.h>
 #include <string.h>
+#include <stdarg.h>
 #include "d_buffer.h"
 #include "utils.h"
 
@@ -105,6 +106,30 @@ size_t d_buffer_append_s(buffer_t buffer, const char* data) {
 		data++;
 	}
 	return data - start;
+}
+
+/**
+ * @brief Append formatted data to a dynamic buffer.
+ * @param buffer The dynamic buffer.
+ * @param fmt The format string (printf-style).
+ * @param ... Additional arguments for the format string.
+ * @return size_t The number of bytes appended, or 0 on failure.
+ */
+size_t d_buffer_append_fmt(buffer_t buffer, const char* fmt, ...) {
+	d_buffer_t* b = (d_buffer_t*)buffer;
+	ASSERT(b);
+
+	char* formatted_str = NULL;
+	va_list args;
+
+	va_start(args, fmt);
+	vasprintf(&formatted_str, fmt, args);
+	va_end(args);
+
+	int result = d_buffer_append_s(buffer, formatted_str);
+	free(formatted_str);
+
+	return result;
 }
 
 /**

@@ -207,8 +207,7 @@ int sc_shell(
 char* sc_shell_make_command(const char* shell, int argc, const char* argv[]) {
 	const char* shellPath = shell ? shell : (getenv("SHELL") ? getenv("SHELL") : "/bin/sh");
 	buffer_t c = d_buffer_create(0);
-	d_buffer_append_s(c, shellPath);
-	d_buffer_append_s(c, " -c \"");
+	d_buffer_append_fmt(c, "%s -c \"", shellPath);
 	for(int i=0; i<argc; ++i) {
 		if( i > 0 ) d_buffer_append_c(c, ' ');
 		d_buffer_append_s(c, argv[i]);

@@ -30,6 +30,7 @@ void d_buffer_destroy(buffer_t buffer);
 size_t d_buffer_append_c(buffer_t buffer, char c);
 size_t d_buffer_append(buffer_t buffer, const char* data, size_t length);
 size_t d_buffer_append_s(buffer_t buffer, const char* data);
+size_t d_buffer_append_fmt(buffer_t buffer, const char* format, ...);
 const char* d_buffer_get_data(buffer_t buffer);
 char* d_buffer_detach_data(buffer_t buffer);
 void d_buffer_clear(buffer_t buffer);
