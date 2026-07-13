@@ -106,6 +106,10 @@ or run the release version
 
 ```make BUILD=release run```
 
+run with sercon CLI arguments
+
+```make run -- <args...>```
+
 ### Show artifacts tree
 
 ```make tree```
