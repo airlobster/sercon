@@ -54,7 +54,6 @@ Short flags are also available:
 - -p for --port
 - -T for --no-timestamps
 - -v for --version
-- -H for --non-persistent-history
 - -e for --max-history
 
 ## Installation
