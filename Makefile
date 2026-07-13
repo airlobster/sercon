@@ -22,7 +22,7 @@ CFLAGS := -Wall -Wextra -Wno-unused-result -MMD -MP -DVERSION=\"$(FULL_VERSION)\
 TREE_FLAGS := --charset=utf8 -F -C --dirsfirst --noreport
 TARGET := sercon
 SRC_DIRS := src
-INCLUDE_DIRS :=
+INCLUDE_DIRS := -Iinclude
 LIB_DIRS :=
 SRCS := $(wildcard $(SRC_DIRS)/*.c)
 LIBS := -lreadline -lm
