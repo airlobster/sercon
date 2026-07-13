@@ -116,8 +116,7 @@ size_t d_buffer_append_s(buffer_t buffer, const char* data) {
  * @return size_t The number of bytes appended, or 0 on failure.
  */
 size_t d_buffer_append_fmt(buffer_t buffer, const char* fmt, ...) {
-	d_buffer_t* b = (d_buffer_t*)buffer;
-	ASSERT(b);
+	ASSERT(buffer);
 
 	char* formatted_str = NULL;
 	va_list args;

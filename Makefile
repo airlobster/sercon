@@ -18,7 +18,7 @@ VERSION ?= 1.3.1
 FULL_VERSION := $(VERSION).$(GIT_COMMIT_HASH)
 
 CC := cc
-CFLAGS := -Wall -Wextra -MMD -MP -DVERSION=\"$(FULL_VERSION)\" -D_GNU_SOURCE
+CFLAGS := -Wall -Wextra -Wno-unused-result -MMD -MP -DVERSION=\"$(FULL_VERSION)\" -D_GNU_SOURCE
 TREE_FLAGS := --charset=utf8 -F -C --dirsfirst --noreport
 TARGET := sercon
 SRC_DIRS := src
